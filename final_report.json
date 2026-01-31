@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-01-31T18:41:01.414876",
+  "total_scanned": 105,
+  "initial_success": 75,
+  "initial_failures": 30,
+  "total_retries": 30,
+  "final_success": 105,
+  "final_failures": 0,
+  "unresolved": 0,
+  "failures": []
+}

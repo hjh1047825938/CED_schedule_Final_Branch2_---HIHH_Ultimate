@@ -37,6 +37,8 @@ void print_usage(const char* prog_name) {
     cout << "  --solver <name>      Solver: GA, DE, GDE, CCHIHH (default: GA)\n";
     cout << "  --migration          Enable rotated-ring subpopulation migration\n";
     cout << "  --nsubpop <n>        Number of subpopulations for migration (default: 8)\n";
+    cout << "  --log_every <n>      Log best_fit every n generations (or evals if --max_evals is set, default: 50)\n";
+    cout << "  --max_evals <n>      Stop after N evaluation calls (0 = disabled)\n";
     cout << "  --stable             Enable CCHIHH-Stable mode\n";
     cout << "  --resample_gate <n>  Stagnation gate for block resample (default: 15)\n";
     cout << "  --reward_clip <f>    Stable reward clip (default: 0.2)\n";
@@ -112,6 +114,8 @@ int main(int argc, char* argv[])
     int bench_eval = 0;
     bool migration_enabled = false;
     int nsubpop = 8;
+    int log_every = 50;
+    uint64_t max_evals = 0;
     bool init_only = false;
     bool synthetic_mode = false;
     bool stable_mode = false;
@@ -148,6 +152,11 @@ int main(int argc, char* argv[])
                 cerr << "Error: --nsubpop must be >= 2 for migration/CCHIHH to work" << endl;
                 return 1;
             }
+        } else if (strcmp(argv[i], "--log_every") == 0 && i + 1 < argc) {
+            log_every = atoi(argv[++i]);
+            if (log_every < 1) log_every = 1;
+        } else if (strcmp(argv[i], "--max_evals") == 0 && i + 1 < argc) {
+            max_evals = (uint64_t)atoll(argv[++i]);
         } else if (strcmp(argv[i], "--stable") == 0) {
             stable_mode = true;
         } else if (strcmp(argv[i], "--resample_gate") == 0 && i + 1 < argc) {
@@ -235,6 +244,7 @@ int main(int argc, char* argv[])
     solver.SetSeed(seed);
     solver.SetPini(pini);
     solver.Initial();
+    solver.ResetEvalCount();
     
     // Initialize migration if enabled (nG=nsubpop, nCircle=5, pElitist=0.8)
     if (migration_enabled) {
@@ -287,12 +297,18 @@ int main(int argc, char* argv[])
             cc_solver.SetLearningRateParams(lr0, lr_k);
         }
         cc_solver.Init();
+        solver.ResetEvalCount();
+        uint64_t next_log_eval = (uint64_t)log_every;
         
-        for (int gen = 0; gen < max_generations; gen++) {
+        for (int gen = 0; gen < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals); gen++) {
             cc_solver.RunGeneration(gen);
             
-            // Print progress every 50 generations or last generation
-            if ((gen + 1) % 50 == 0 || gen == max_generations - 1) {
+            if (max_evals > 0) {
+                while (solver.GetEvalCount() >= next_log_eval) {
+                    cout << "Eval " << next_log_eval << ": best_fit = " << cc_solver.GetGlobalBestFit() << endl;
+                    next_log_eval += (uint64_t)log_every;
+                }
+            } else if ((gen + 1) % log_every == 0 || gen == max_generations - 1) {
                 cout << "Gen " << (gen + 1) << ": best_fit = " << cc_solver.GetGlobalBestFit() << endl;
             }
         }
@@ -314,9 +330,9 @@ int main(int argc, char* argv[])
     double best = solver.gbest_fit;
     double* record = new double[max_generations];
     int generation = 0;
+    uint64_t next_log_eval = (uint64_t)log_every;
     
-
-    while (generation < max_generations)
+    while (generation < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals))
     {
         // Select solver based on command-line argument
         if (solver_name == "GA") {
@@ -347,9 +363,14 @@ int main(int argc, char* argv[])
         generation++;
         best = solver.gbest_fit;
         
-        // Print progress every 50 generations or last generation
-        if (generation % 50 == 0 || generation == max_generations)
+        if (max_evals > 0) {
+            while (solver.GetEvalCount() >= next_log_eval) {
+                cout << "Eval " << next_log_eval << ": best_fit = " << solver.gbest_fit << endl;
+                next_log_eval += (uint64_t)log_every;
+            }
+        } else if (generation % log_every == 0 || generation == max_generations) {
             cout << "Gen " << generation << ": best_fit = " << solver.gbest_fit << endl;
+        }
         
         record[generation - 1] = solver.gbest_fit;
     }

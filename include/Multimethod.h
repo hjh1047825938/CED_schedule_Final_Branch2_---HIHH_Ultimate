@@ -6,6 +6,7 @@
 #include <cassert>
 #include <climits>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -32,6 +33,7 @@ public:
     std::string DataFileName;       // Data file name
     double Pini;                    // Heuristic init probability
     Workspace workspace;             // Reusable workspace for fitness evaluation
+    uint64_t eval_count;             // Total evaluation calls since last reset
     
     //Prob
     int Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum;
@@ -156,8 +158,10 @@ public:
 	void pop_update(int p_start, int p_end);
 	void pop_better_update(int p_start, int p_end);
 	void Initial();
-	void Evaluation(bool s, int p_start, int p_end);             //s = 0: evalu pop, s = 1: evalu newpop
+    void Evaluation(bool s, int p_start, int p_end);             //s = 0: evalu pop, s = 1: evalu newpop
     double Eval(const double* var);
+    void ResetEvalCount() { eval_count = 0; }
+    uint64_t GetEvalCount() const { return eval_count; }
     void SetPini(double pini);
     
     //Prob

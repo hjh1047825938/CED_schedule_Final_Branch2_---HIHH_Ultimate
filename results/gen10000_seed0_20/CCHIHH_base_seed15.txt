@@ -1,0 +1,228 @@
+﻿=== CED_Schedule Configuration ===
+Data directory: ".\\\\data"
+Data file: data_matrix_100.txt
+Generations: 10000
+Population size: 40
+Random seed: 15
+Pini (heuristic prob): 0.4
+Solver: CCHIHH
+Migration: disabled
+=================================
+[Initial] Loading data from: ".\\\\data\\data_matrix_100.txt"
+
+=== Running CC-HIHH-UCB Solver ===
+[CC-HIHH] Initializing solver...
+  CE_Tnum=100, M_Jnum=100, M_OPTnum=5, ops=500
+  Nvar=1200, popsize=40, nSubpop=8
+  Block 0 (offload): start=0, len=200
+  Block 1 (seq): start=200, len=500
+  Block 2 (dev): start=700, len=500
+[CC-HIHH] Initial evaluation...
+[CC-HIHH] Initial gbest_fit = 55.7937
+Gen 50: best_fit = 55.7259
+Gen 100: best_fit = 55.6929
+Gen 150: best_fit = 55.6757
+Gen 200: best_fit = 55.6708
+Gen 250: best_fit = 55.6674
+Gen 300: best_fit = 55.6671
+Gen 350: best_fit = 55.6578
+Gen 400: best_fit = 55.6578
+Gen 450: best_fit = 55.6578
+Gen 500: best_fit = 55.6578
+Gen 550: best_fit = 55.6578
+Gen 600: best_fit = 55.6544
+Gen 650: best_fit = 55.6467
+Gen 700: best_fit = 55.6467
+Gen 750: best_fit = 55.6406
+Gen 800: best_fit = 55.6406
+Gen 850: best_fit = 55.6338
+Gen 900: best_fit = 55.6338
+Gen 950: best_fit = 55.6298
+Gen 1000: best_fit = 55.6298
+Gen 1050: best_fit = 55.6298
+Gen 1100: best_fit = 55.6298
+Gen 1150: best_fit = 55.6298
+Gen 1200: best_fit = 55.6298
+Gen 1250: best_fit = 55.6298
+Gen 1300: best_fit = 55.6267
+Gen 1350: best_fit = 55.6267
+Gen 1400: best_fit = 55.6267
+Gen 1450: best_fit = 55.6267
+Gen 1500: best_fit = 55.6187
+Gen 1550: best_fit = 55.6187
+Gen 1600: best_fit = 55.6187
+Gen 1650: best_fit = 55.6187
+Gen 1700: best_fit = 55.6144
+Gen 1750: best_fit = 55.6144
+Gen 1800: best_fit = 55.6144
+Gen 1850: best_fit = 55.6144
+Gen 1900: best_fit = 55.6144
+Gen 1950: best_fit = 55.6144
+Gen 2000: best_fit = 55.6101
+Gen 2050: best_fit = 55.6067
+Gen 2100: best_fit = 55.6067
+Gen 2150: best_fit = 55.595
+Gen 2200: best_fit = 55.5919
+Gen 2250: best_fit = 55.5919
+Gen 2300: best_fit = 55.5919
+Gen 2350: best_fit = 55.5919
+Gen 2400: best_fit = 55.5919
+Gen 2450: best_fit = 55.5919
+Gen 2500: best_fit = 55.5919
+Gen 2550: best_fit = 55.5919
+Gen 2600: best_fit = 55.5919
+Gen 2650: best_fit = 55.5919
+Gen 2700: best_fit = 55.5882
+Gen 2750: best_fit = 55.5845
+Gen 2800: best_fit = 55.5762
+Gen 2850: best_fit = 55.5762
+Gen 2900: best_fit = 55.5762
+Gen 2950: best_fit = 55.5731
+Gen 3000: best_fit = 55.5731
+Gen 3050: best_fit = 55.5688
+Gen 3100: best_fit = 55.5688
+Gen 3150: best_fit = 55.5617
+Gen 3200: best_fit = 55.558
+Gen 3250: best_fit = 55.558
+Gen 3300: best_fit = 55.558
+Gen 3350: best_fit = 55.546
+Gen 3400: best_fit = 55.546
+Gen 3450: best_fit = 55.546
+Gen 3500: best_fit = 55.546
+Gen 3550: best_fit = 55.5448
+Gen 3600: best_fit = 55.5402
+Gen 3650: best_fit = 55.5368
+Gen 3700: best_fit = 55.5321
+Gen 3750: best_fit = 55.5291
+Gen 3800: best_fit = 55.5251
+Gen 3850: best_fit = 55.5171
+Gen 3900: best_fit = 55.51
+Gen 3950: best_fit = 55.5069
+Gen 4000: best_fit = 55.502
+Gen 4050: best_fit = 55.4976
+Gen 4100: best_fit = 55.485
+Gen 4150: best_fit = 55.4807
+Gen 4200: best_fit = 55.4733
+Gen 4250: best_fit = 55.4693
+Gen 4300: best_fit = 55.4628
+Gen 4350: best_fit = 55.4595
+Gen 4400: best_fit = 55.4487
+Gen 4450: best_fit = 55.441
+Gen 4500: best_fit = 55.4363
+Gen 4550: best_fit = 55.4327
+Gen 4600: best_fit = 55.4262
+Gen 4650: best_fit = 55.4219
+Gen 4700: best_fit = 55.4179
+Gen 4750: best_fit = 55.4055
+Gen 4800: best_fit = 55.3982
+Gen 4850: best_fit = 55.3911
+Gen 4900: best_fit = 55.3824
+Gen 4950: best_fit = 55.3766
+Gen 5000: best_fit = 55.3735
+Gen 5050: best_fit = 55.3701
+Gen 5100: best_fit = 55.3624
+Gen 5150: best_fit = 55.3596
+Gen 5200: best_fit = 55.3523
+Gen 5250: best_fit = 55.3482
+Gen 5300: best_fit = 55.3439
+Gen 5350: best_fit = 55.3399
+Gen 5400: best_fit = 55.3338
+Gen 5450: best_fit = 55.3251
+Gen 5500: best_fit = 55.3251
+Gen 5550: best_fit = 55.3171
+Gen 5600: best_fit = 55.3162
+Gen 5650: best_fit = 55.3131
+Gen 5700: best_fit = 55.31
+Gen 5750: best_fit = 55.3088
+Gen 5800: best_fit = 55.3054
+Gen 5850: best_fit = 55.3011
+Gen 5900: best_fit = 55.3005
+Gen 5950: best_fit = 55.2937
+Gen 6000: best_fit = 55.2934
+Gen 6050: best_fit = 55.2897
+Gen 6100: best_fit = 55.2836
+Gen 6150: best_fit = 55.2792
+Gen 6200: best_fit = 55.2786
+Gen 6250: best_fit = 55.2749
+Gen 6300: best_fit = 55.2746
+Gen 6350: best_fit = 55.2743
+Gen 6400: best_fit = 55.27
+Gen 6450: best_fit = 55.27
+Gen 6500: best_fit = 55.2654
+Gen 6550: best_fit = 55.262
+Gen 6600: best_fit = 55.262
+Gen 6650: best_fit = 55.2586
+Gen 6700: best_fit = 55.258
+Gen 6750: best_fit = 55.2574
+Gen 6800: best_fit = 55.2574
+Gen 6850: best_fit = 55.2568
+Gen 6900: best_fit = 55.2531
+Gen 6950: best_fit = 55.2491
+Gen 7000: best_fit = 55.2469
+Gen 7050: best_fit = 55.2395
+Gen 7100: best_fit = 55.2361
+Gen 7150: best_fit = 55.2318
+Gen 7200: best_fit = 55.2318
+Gen 7250: best_fit = 55.2278
+Gen 7300: best_fit = 55.2275
+Gen 7350: best_fit = 55.2275
+Gen 7400: best_fit = 55.2235
+Gen 7450: best_fit = 55.2226
+Gen 7500: best_fit = 55.2226
+Gen 7550: best_fit = 55.2223
+Gen 7600: best_fit = 55.2219
+Gen 7650: best_fit = 55.2213
+Gen 7700: best_fit = 55.221
+Gen 7750: best_fit = 55.2204
+Gen 7800: best_fit = 55.217
+Gen 7850: best_fit = 55.2136
+Gen 7900: best_fit = 55.2127
+Gen 7950: best_fit = 55.2127
+Gen 8000: best_fit = 55.2127
+Gen 8050: best_fit = 55.2127
+Gen 8100: best_fit = 55.2124
+Gen 8150: best_fit = 55.2093
+Gen 8200: best_fit = 55.2062
+Gen 8250: best_fit = 55.2062
+Gen 8300: best_fit = 55.2062
+Gen 8350: best_fit = 55.2032
+Gen 8400: best_fit = 55.2013
+Gen 8450: best_fit = 55.201
+Gen 8500: best_fit = 55.1973
+Gen 8550: best_fit = 55.197
+Gen 8600: best_fit = 55.1967
+Gen 8650: best_fit = 55.1967
+Gen 8700: best_fit = 55.1967
+Gen 8750: best_fit = 55.1927
+Gen 8800: best_fit = 55.1927
+Gen 8850: best_fit = 55.1908
+Gen 8900: best_fit = 55.1884
+Gen 8950: best_fit = 55.185
+Gen 9000: best_fit = 55.185
+Gen 9050: best_fit = 55.1844
+Gen 9100: best_fit = 55.1844
+Gen 9150: best_fit = 55.1844
+Gen 9200: best_fit = 55.1804
+Gen 9250: best_fit = 55.1804
+Gen 9300: best_fit = 55.1804
+Gen 9350: best_fit = 55.177
+Gen 9400: best_fit = 55.1733
+Gen 9450: best_fit = 55.1702
+Gen 9500: best_fit = 55.1662
+Gen 9550: best_fit = 55.1653
+Gen 9600: best_fit = 55.1597
+Gen 9650: best_fit = 55.1597
+Gen 9700: best_fit = 55.1597
+Gen 9750: best_fit = 55.1591
+Gen 9800: best_fit = 55.1557
+Gen 9850: best_fit = 55.1489
+Gen 9900: best_fit = 55.1489
+Gen 9950: best_fit = 55.1489
+Gen 10000: best_fit = 55.1489
+
+=== Final Results (CC-HIHH-UCB) ===
+Solver: CCHIHH
+Subpopulations per block: 8
+Generations = 10000
+The best solution = 55.1489
+Time = 79.425 s
