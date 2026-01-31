@@ -1,0 +1,15 @@
+build/
+CMakeFiles/
+*.o
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.out
+*.log
+*.tmp
+.vs/
+.idea/
+.vscode/
+__MACOSX/
+.DS_Store
