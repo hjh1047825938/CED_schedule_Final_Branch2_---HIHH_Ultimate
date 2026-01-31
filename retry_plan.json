@@ -1,0 +1,209 @@
+[
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\CCHIHH_stable_seed12.txt",
+    "solver": "CCHIHH",
+    "seed": 12,
+    "stable": true,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\CCHIHH_stable_seed15.txt",
+    "solver": "CCHIHH",
+    "seed": 15,
+    "stable": true,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\CCHIHH_stable_seed17.txt",
+    "solver": "CCHIHH",
+    "seed": 17,
+    "stable": true,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\CCHIHH_stable_seed19.txt",
+    "solver": "CCHIHH",
+    "seed": 19,
+    "stable": true,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\CCHIHH_stable_seed2.txt",
+    "solver": "CCHIHH",
+    "seed": 2,
+    "stable": true,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\CCHIHH_stable_seed5.txt",
+    "solver": "CCHIHH",
+    "seed": 5,
+    "stable": true,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\CCHIHH_stable_seed7.txt",
+    "solver": "CCHIHH",
+    "seed": 7,
+    "stable": true,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\CCHIHH_stable_seed9.txt",
+    "solver": "CCHIHH",
+    "seed": 9,
+    "stable": true,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GA_seed7.txt",
+    "solver": "GA",
+    "seed": 7,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed0.txt",
+    "solver": "GDE",
+    "seed": 0,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed11.txt",
+    "solver": "GDE",
+    "seed": 11,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed13.txt",
+    "solver": "GDE",
+    "seed": 13,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed14.txt",
+    "solver": "GDE",
+    "seed": 14,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed15.txt",
+    "solver": "GDE",
+    "seed": 15,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed16.txt",
+    "solver": "GDE",
+    "seed": 16,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed17.txt",
+    "solver": "GDE",
+    "seed": 17,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed18.txt",
+    "solver": "GDE",
+    "seed": 18,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed19.txt",
+    "solver": "GDE",
+    "seed": 19,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed20.txt",
+    "solver": "GDE",
+    "seed": 20,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed3.txt",
+    "solver": "GDE",
+    "seed": 3,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed5.txt",
+    "solver": "GDE",
+    "seed": 5,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed7.txt",
+    "solver": "GDE",
+    "seed": 7,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  },
+  {
+    "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed9.txt",
+    "solver": "GDE",
+    "seed": 9,
+    "stable": null,
+    "cmd": null,
+    "expected_gen": 10000,
+    "reason": "no_success_marker"
+  }
+]

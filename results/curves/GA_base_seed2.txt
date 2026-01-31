@@ -1,0 +1,27 @@
+﻿=== CED_Schedule Configuration ===
+Data directory: ".\\\\data"
+Data file: data_matrix_100.txt
+Generations: 500
+Population size: 40
+Random seed: 2
+Pini (heuristic prob): 0.4
+Solver: GA
+Migration: disabled
+=================================
+[Initial] Loading data from: ".\\\\data\\data_matrix_100.txt"
+Gen 50: best_fit = 55.8075
+Gen 100: best_fit = 55.8075
+Gen 150: best_fit = 55.8075
+Gen 200: best_fit = 55.8075
+Gen 250: best_fit = 55.8075
+Gen 300: best_fit = 55.8042
+Gen 350: best_fit = 55.8042
+Gen 400: best_fit = 55.8042
+Gen 450: best_fit = 55.8042
+Gen 500: best_fit = 55.8042
+
+=== Final Results ===
+Solver: GA
+Generation = 500
+The best solution = 55.8042
+Time = 1.376 s

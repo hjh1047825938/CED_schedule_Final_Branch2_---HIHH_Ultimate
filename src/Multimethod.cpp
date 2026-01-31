@@ -51,6 +51,7 @@ MultiMet::MultiMet(int psize, int nn, double lb, double ub, int c_num, int e_num
     : Population(psize, nn, lb, ub), Cnum(c_num), Enum(e_num), Dnum(d_num), CE_Tnum(ce_tnum), M_Jnum(m_jnum), M_OPTnum(m_optnum), DataDir(data_dir), DataFileName(data_file), Pini(0.4)
 {
     EvaluFunc = evaluate;
+    eval_count = 0;
 
     //Prob
     CETask_Property = new CETask[CE_Tnum];
@@ -767,17 +768,24 @@ void MultiMet::Evaluation(bool s, int p_start, int p_end)
     if (s == 0)
     {
         for (int i = p_start; i < p_end; i ++)
+        {
             pop_fit[i] = EVAL_COMPAT(pop[i], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET);
+            eval_count++;
+        }
     }
     else
     {
         for (int i = p_start; i < p_end; i ++)
+        {
             newpop_fit[i] = EVAL_COMPAT(newpop[i], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET);
+            eval_count++;
+        }
     }
 }
 
 double MultiMet::Eval(const double* var)
 {
+    eval_count++;
     return EVAL_COMPAT(var, Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET);
 }
 

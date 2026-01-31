@@ -1,0 +1,40 @@
+﻿=== CED_Schedule Configuration ===
+Data directory: ".\\\\data"
+Data file: data_matrix_100.txt
+Generations: 500
+Population size: 40
+Random seed: 1
+Pini (heuristic prob): 0.4
+Solver: CCHIHH
+Migration: disabled
+Stable mode: enabled
+  resample_gate=15 reward_clip=0.2 eps0=0.2 eps_min=0.02 eps_k=0.01 lr0=0.05 lr_k=0.002
+=================================
+[Initial] Loading data from: ".\\\\data\\data_matrix_100.txt"
+
+=== Running CC-HIHH-UCB Solver ===
+[CC-HIHH] Initializing solver...
+  CE_Tnum=100, M_Jnum=100, M_OPTnum=5, ops=500
+  Nvar=1200, popsize=40, nSubpop=8
+  Block 0 (offload): start=0, len=200
+  Block 1 (seq): start=200, len=500
+  Block 2 (dev): start=700, len=500
+[CC-HIHH] Initial evaluation...
+[CC-HIHH] Initial gbest_fit = 55.7931
+Gen 50: best_fit = 55.7502
+Gen 100: best_fit = 55.7022
+Gen 150: best_fit = 55.6584
+Gen 200: best_fit = 55.6393
+Gen 250: best_fit = 55.6249
+Gen 300: best_fit = 55.607
+Gen 350: best_fit = 55.5848
+Gen 400: best_fit = 55.5685
+Gen 450: best_fit = 55.5491
+Gen 500: best_fit = 55.5343
+
+=== Final Results (CC-HIHH-UCB) ===
+Solver: CCHIHH
+Subpopulations per block: 8
+Generations = 500
+The best solution = 55.5343
+Time = 3.834 s
