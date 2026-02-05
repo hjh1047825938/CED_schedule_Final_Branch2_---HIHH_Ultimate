@@ -67,7 +67,6 @@ MultiMet::MultiMet(int psize, int nn, double lb, double ub, int c_num, int e_num
     EdgeLoad = new vector<int>[Enum];
     DeviceLoad = new vector<int>[Dnum];
     CETask_coDevice = new vector<int>[CE_Tnum];
-    Edge_Device_comm = new map<int, double>[Enum];
     ST = CreateMatrix(M_Jnum, M_OPTnum);
     ET = CreateMatrix(M_Jnum, M_OPTnum);
     CE_ST = new double[CE_Tnum];
@@ -75,6 +74,7 @@ MultiMet::MultiMet(int psize, int nn, double lb, double ub, int c_num, int e_num
 
     // Initialize workspace for reusable fitness evaluation buffers
     workspace.resize(CE_Tnum, M_Jnum, M_OPTnum, Enum, Dnum);
+    Edge_Device_comm = workspace.edge_device_comm.data();
 
     //PSO
     ibest = CreateMatrix(Popsize, Nvar);
@@ -151,7 +151,6 @@ MultiMet::~MultiMet()
     delete [] EdgeLoad;
     delete [] DeviceLoad;
     delete [] CETask_coDevice;
-    delete [] Edge_Device_comm;
     DeleteMatrix(ST, M_Jnum);
     DeleteMatrix(ET, M_Jnum);
     delete [] CE_ST;
@@ -203,14 +202,15 @@ MultiMet::~MultiMet()
 
 void MultiMet::CreateOA()
 {
-    int u = log((double)OArow) / log(2.0);
+    int u = (int)(log((double)OArow) / log(2.0));
     int b;
     for (int i = 0; i < OArow; i ++)
     {
         for (int j = 0; j < u; j ++)
         {
-            b = pow(2.0, j) - 1;
-            int tmp = floor( i / pow(2.0, u - j - 1) );
+            b = (1 << j) - 1;
+            int denom = 1 << (u - j - 1);
+            int tmp = i / denom;
             OA[i][b] = tmp % 2;
         }
     }
@@ -219,7 +219,7 @@ void MultiMet::CreateOA()
     {
         for (int j = 0; j < u; j ++)
         {
-            b = pow(2.0, j) - 1;
+            b = (1 << j) - 1;
             for (int s = 0; s < b; s ++)
                 OA[i][b + s + 1] = (OA[i][s] + OA[i][b]) % 2;
         }
@@ -803,7 +803,7 @@ void MultiMet::select(int p_start, int p_end)
 	for (i = 0; i < Popsize; i++)
 		sum += 1000.0 / pop_fit[i];                                //适应值总和
 	for (i = 0; i < Popsize; i++)
-		rfitness[i] = (1000.0 / pop_fit[i]) / sum;                 //适应值所占比�?
+		rfitness[i] = (1000.0 / pop_fit[i]) / sum;                 //适应值所占比??
 	cfitness[0] = rfitness[0];
 	for (i = 1; i < Popsize; i++)
 		cfitness[i] = cfitness[i-1] + rfitness[i];           //轮盘位置
@@ -924,7 +924,8 @@ void MultiMet::VAGA(int p_start, int p_end)
 
 void MultiMet::EAGA(int p_start, int p_end)
 {
-	double entr = pop_random_entropy((Ubound - Lbound) * 0.1 / 2, 0, Popsize);
+	int subn = (int)((Ubound - Lbound) * 0.1 / 2);
+	double entr = pop_random_entropy(subn, 0, Popsize);
 	double p = exp(-entr);
 	select(p_start, p_end);
 	crossover(1 - p, p_start, p_end);
@@ -1631,7 +1632,8 @@ void MultiMet::path_finding(double epsl, int p_start, int p_end)
 
 void MultiMet::phe_updating(int p_start, int p_end)
 {
-    int maxTao = -1e5, maxIndex = 0;
+    double maxTao = -1e5;
+    int maxIndex = 0;
     bool sameflag = false;
 	for (int i = p_start; i < p_end; i ++)
 	{
@@ -1641,7 +1643,8 @@ void MultiMet::phe_updating(int p_start, int p_end)
                 sameflag = true;
         if (sameflag == false)
         {
-            maxTao = -1e5, maxIndex = 0;
+            maxTao = -1e5;
+            maxIndex = 0;
             for (int j = 0; j < Popsize; j ++)
             {
                 if (ant_tao[j][Nvar] > maxTao)
@@ -2715,7 +2718,7 @@ double MultiMet::pop_random_entropy(int subn, int p_start, int p_end)
 		pp[i] = 0;
 	for (int i = p_start; i < p_end; i ++)
 	{
-		reg = subn * (pop[i][bit] - Lbound) / (Ubound - Lbound);
+		reg = (int)(subn * (pop[i][bit] - Lbound) / (Ubound - Lbound));
 		if (reg >= subn)
 			reg = subn - 1;
 		pp[reg] ++;
@@ -2749,7 +2752,7 @@ void MultiMet::CMAES_parametersetting(){
 	
 	for(int i=0; i<Nvar; i++) xstart[i] = 0.5 * (Lbound + Ubound);
 	for(int i=0; i<Nvar; i++) stddev[i] = 0.3 * (Ubound - Lbound);
-	lambda = 4 + floor(3 * log(Nvar));
+	lambda = 4 + (int)floor(3 * log(Nvar));
     mu = lambda / 2;
 	//setweight
 	for(int i = 0; i < mu; ++i) 
@@ -4091,7 +4094,7 @@ void MultiMet::meme_subprob_decomposition(int Gen, int MaxG, int kk, double scal
             heap_sort(dis, Popsize, 0);    //sort according to distance
             heap_sort(dis, kk, 1);      //sort according to reward
             
-            Ind_meme[i] = dis[kk - 1][2];
+            Ind_meme[i] = (int)dis[kk - 1][2];
         }
         for (i = 0; i < Popsize; i ++)
         {
@@ -4141,7 +4144,7 @@ void MultiMet::meme_biasd_roulette(int Gen, int MaxG, double scale)
         for (i = 0; i < 4; i++)
             sum += SubDecBase[i][1] / (SubDecBase[i][0] + 1);        //适应值总和
         for (i = 0; i < 4; i++)
-            rfitness[i] = (SubDecBase[i][1] / (SubDecBase[i][0] + 1)) / sum;                 //适应值所占比�?
+            rfitness[i] = (SubDecBase[i][1] / (SubDecBase[i][0] + 1)) / sum;                 //适应值所占比??
         cfitness[0] = rfitness[0];
         for (i = 1; i < 4; i++)
             cfitness[i] = cfitness[i-1] + rfitness[i];           //轮盘位置

@@ -1,5 +1,6 @@
 [
   {
+<<<<<<< HEAD
     "log_path": ".\\results\\gen10000_seed0_20\\CCHIHH_stable_seed12.txt",
     "solver": "CCHIHH",
     "seed": 12,
@@ -126,6 +127,8 @@
     "reason": "no_success_marker"
   },
   {
+=======
+>>>>>>> c83cd87092df00a0842341febbc525bc6caa9f89
     "log_path": ".\\results\\gen10000_seed0_20\\GDE_seed16.txt",
     "solver": "GDE",
     "seed": 16,

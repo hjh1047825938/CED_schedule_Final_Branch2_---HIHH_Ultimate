@@ -9,6 +9,7 @@ set(SOURCES
     src/Multimethod.cpp
     src/Problems.cpp
     src/CC_HIHH.cpp
+    src/GA_SLHH.cpp
 )
 
 set(HEADERS
@@ -17,6 +18,7 @@ set(HEADERS
     include/Problems.h
     include/Workspace.h
     include/CC_HIHH.h
+    include/GA_SLHH.h
     include/Rng.h
 )
 
@@ -28,6 +30,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 option(DEBUG_NEAREST "Enable nearest-device debug output" OFF)
 if (DEBUG_NEAREST)
     target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG_NEAREST)
+endif()
+
+# Profiling option for evaluation stages
+option(PROFILE_EVAL "Enable detailed eval profiling" OFF)
+if (PROFILE_EVAL)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE PROFILE_EVAL)
 endif()
 
 # MSVC-specific settings

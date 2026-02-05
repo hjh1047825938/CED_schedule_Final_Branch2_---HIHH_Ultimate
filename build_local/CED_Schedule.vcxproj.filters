@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\src\Multimethod.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\src\Problems.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\src\CC_HIHH.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\src\GA_SLHH.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\include\Multimethod.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\include\Population.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\include\Problems.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\include\Workspace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\include\CC_HIHH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\include\GA_SLHH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\include\Rng.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{A2483A7F-9198-3FFD-A298-0159D598BD03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{FC2E13D8-6DDB-3717-980F-1B7B12339C49}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

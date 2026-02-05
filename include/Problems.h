@@ -5,7 +5,6 @@
 #include <ctime>
 #include <random>
 #include <vector>
-#include <map>
 #include <iostream>
 #include <limits>
 #include <numeric>
@@ -33,6 +32,6 @@ typedef struct
     vector<int> AvailEdgeServerList;
 }CETask;
 
-double CED_Schedule(const double* var, Workspace& ws, int Cnum, int Enum, int Dnum, int CE_Tnum, int M_Jnum, int M_OPTnum, CETask* CETask_Property, double* MTask_Time, double** EtoD_Distance, double** DtoD_Distance, vector<int>* AvailDeviceList, double* EnergyList, vector<int>* CloudDevices, vector<int>* EdgeDevices, vector<int>* CloudLoad, vector<int>* EdgeLoad, vector<int>* DeviceLoad, vector<int>* CETask_coDevice, map<int, double>* Edge_Device_comm, double** ST, double** ET, double* CE_ST, double* CE_ET);
+double CED_Schedule(const double* var, Workspace& ws, int Cnum, int Enum, int Dnum, int CE_Tnum, int M_Jnum, int M_OPTnum, CETask* CETask_Property, double* MTask_Time, double** EtoD_Distance, double** DtoD_Distance, vector<int>* AvailDeviceList, double* EnergyList, vector<int>* CloudDevices, vector<int>* EdgeDevices, vector<int>* CloudLoad, vector<int>* EdgeLoad, vector<int>* DeviceLoad, vector<int>* CETask_coDevice, double* Edge_Device_comm, double** ST, double** ET, double* CE_ST, double* CE_ET);
 
 #endif // _PROBLEMS_H

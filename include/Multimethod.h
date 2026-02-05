@@ -19,7 +19,7 @@ using namespace std;
 
 #define TNN 1000
 
-typedef double (*FF) (const double* var, Workspace& ws, int Cnum, int Enum, int Dnum, int CE_Tnum, int M_Jnum, int M_OPTnum, CETask* CETask_Property, double* MTask_Time, double** EtoD_Distance, double** DtoD_Distance, vector<int>* AvailDeviceList, double* EnergyList, vector<int>* CloudDevice, vector<int>* EdgeDevices, vector<int>* CloudLoad, vector<int>* EdgeLoad, vector<int>* DeviceLoad, vector<int>* CETask_coDevice, map<int, double>* Edge_Device_comm, double** ST, double** ET, double* CE_ST, double* CE_ET);
+typedef double (*FF) (const double* var, Workspace& ws, int Cnum, int Enum, int Dnum, int CE_Tnum, int M_Jnum, int M_OPTnum, CETask* CETask_Property, double* MTask_Time, double** EtoD_Distance, double** DtoD_Distance, vector<int>* AvailDeviceList, double* EnergyList, vector<int>* CloudDevice, vector<int>* EdgeDevices, vector<int>* CloudLoad, vector<int>* EdgeLoad, vector<int>* DeviceLoad, vector<int>* CETask_coDevice, double* Edge_Device_comm, double** ST, double** ET, double* CE_ST, double* CE_ET);
 
 class MultiMet : public Population<double>
 {
@@ -50,7 +50,7 @@ public:
     vector<int>* EdgeLoad;
     vector<int>* DeviceLoad;
     vector<int>* CETask_coDevice;
-    map<int, double>* Edge_Device_comm;
+    double* Edge_Device_comm;        // Alias to workspace.edge_device_comm.data()
     double** ST;
     double** ET;
     double* CE_ST;
@@ -160,7 +160,12 @@ public:
 	void Initial();
     void Evaluation(bool s, int p_start, int p_end);             //s = 0: evalu pop, s = 1: evalu newpop
     double Eval(const double* var);
-    void ResetEvalCount() { eval_count = 0; }
+    void ResetEvalCount() {
+        eval_count = 0;
+#ifdef PROFILE_EVAL
+        workspace.reset_profile();
+#endif
+    }
     uint64_t GetEvalCount() const { return eval_count; }
     void SetPini(double pini);
     

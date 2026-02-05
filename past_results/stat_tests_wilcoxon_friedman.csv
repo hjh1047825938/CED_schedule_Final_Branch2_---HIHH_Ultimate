@@ -1,0 +1,8 @@
+Q,W_minus,W_plus,alg,baseline,df,folder,k,mean_diff,n,p,test
+,0,55.0,GA-SLHH,CCHIHH_stable,,gen10000_seed1_10_ga_slhh_vs_cchihh,,0.7823000000000008,10,0.001953125,wilcoxon
+10.0,,,ALL,CCHIHH_stable,1,gen10000_seed1_10_ga_slhh_vs_cchihh,2,,10,0.0015654022580025436,friedman
+,1.0,54.0,CCHIHH_base,CCHIHH_stable,,gen10000_seed1_10,,0.05427000000000035,10,0.00390625,wilcoxon
+,0,55.0,DE,CCHIHH_stable,,gen10000_seed1_10,,0.56892,10,0.001953125,wilcoxon
+,0,55.0,GA,CCHIHH_stable,,gen10000_seed1_10,,0.6832499999999996,10,0.001953125,wilcoxon
+,0,55.0,GDE,CCHIHH_stable,,gen10000_seed1_10,,0.5484900000000004,10,0.001953125,wilcoxon
+36.31999999999999,,,ALL,CCHIHH_stable,4,gen10000_seed1_10,5,,10,2.4866102148850995e-07,friedman

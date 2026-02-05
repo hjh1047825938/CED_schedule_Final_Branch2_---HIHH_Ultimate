@@ -1,0 +1,29 @@
+
+=== Folder: gen10000_seed1_10_ga_slhh_vs_cchihh ===
+Algorithms: CCHIHH_stable, GA-SLHH
+Baseline: CCHIHH_stable
+  CCHIHH_stable: n=10, mean=55.092690, median=55.089500
+  GA-SLHH: n=10, mean=55.874990, median=55.873500
+  Wilcoxon GA-SLHH vs CCHIHH_stable: n=10 W+=55.000 W-=0.000 p=0.001953 mean_diff(other-base)=0.782300
+  Friedman: n=10 k=2 Q=10.000000 df=1 p=0.001565
+    RankSum CCHIHH_stable: 10.000
+    RankSum GA-SLHH: 20.000
+
+=== Folder: gen10000_seed1_10 ===
+Algorithms: CCHIHH_base, CCHIHH_stable, DE, GA, GDE
+Baseline: CCHIHH_stable
+  CCHIHH_base: n=10, mean=55.146960, median=55.151250
+  CCHIHH_stable: n=10, mean=55.092690, median=55.089500
+  DE: n=10, mean=55.661610, median=55.664300
+  GA: n=10, mean=55.775940, median=55.777950
+  GDE: n=10, mean=55.641180, median=55.644300
+  Wilcoxon CCHIHH_base vs CCHIHH_stable: n=10 W+=54.000 W-=1.000 p=0.003906 mean_diff(other-base)=0.054270
+  Wilcoxon DE vs CCHIHH_stable: n=10 W+=55.000 W-=0.000 p=0.001953 mean_diff(other-base)=0.568920
+  Wilcoxon GA vs CCHIHH_stable: n=10 W+=55.000 W-=0.000 p=0.001953 mean_diff(other-base)=0.683250
+  Wilcoxon GDE vs CCHIHH_stable: n=10 W+=55.000 W-=0.000 p=0.001953 mean_diff(other-base)=0.548490
+  Friedman: n=10 k=5 Q=36.320000 df=4 p=0.000000
+    RankSum CCHIHH_base: 19.000
+    RankSum CCHIHH_stable: 11.000
+    RankSum DE: 37.000
+    RankSum GA: 49.000
+    RankSum GDE: 34.000

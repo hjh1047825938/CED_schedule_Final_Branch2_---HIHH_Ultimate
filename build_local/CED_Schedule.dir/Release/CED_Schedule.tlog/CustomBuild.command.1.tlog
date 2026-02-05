@@ -1,0 +1,10 @@
+^C:\USERS\HU\DESKTOP\CED_SCHEDULE_FINAL_BRANCH2_分块+HIHH_CLEAN - 副本\CMAKELISTS.TXT
+setlocal
+"D:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/Hu/Desktop/CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本" "-BC:/Users/Hu/Desktop/CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本/build_local" --check-stamp-file "C:/Users/Hu/Desktop/CED_schedule_Final_Branch2_分块+HIHH_CLEAN - 副本/build_local/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

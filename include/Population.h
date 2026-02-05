@@ -116,7 +116,7 @@ Population<T>::Population(int psize, int nn, T lb, T ub)
 
 	//CMAES
 
-	t = 100*time(0) + clock();
+	t = 100 * (long int)time(0) + (long int)clock();
 	seed = (long unsigned) (t < 0 ? -t : t);
 	if(seed < 1) seed = 1;
 	aktseed = seed;

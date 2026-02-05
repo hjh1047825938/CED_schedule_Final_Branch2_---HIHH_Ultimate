@@ -1,0 +1,5 @@
+folder,n,k,Q,df,p,mean_rank_CCHIHH_base,mean_rank_CCHIHH_stable,mean_rank_DE,mean_rank_GA,mean_rank_GDE
+gen10000_seed1_10_T200_E100_D300,10,5,21188.0,4,0.0,1.6,1.9,5.0,4.0,2.5
+gen10000_seed1_10_T300_E150_D500,10,5,21332.0,4,0.0,1.8,1.5,5.0,4.0,2.7
+gen10000_seed1_10_T500_E200_D800,10,5,21268.0,4,0.0,1.9,1.5,5.0,4.0,2.6
+gen10000_seed1_10_T50_E50_D150,10,5,21268.0,4,0.0,1.5,1.9,5.0,4.0,2.6

@@ -1,0 +1,10 @@
+^C:\USERS\HU\DESKTOP\论文\CED_SCHEDULE_FINAL\CMAKELISTS.TXT
+setlocal
+"D:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Hu/Desktop/论文/CED_schedule_Final -BC:/Users/Hu/Desktop/论文/CED_schedule_Final/build_profile --check-stamp-file C:/Users/Hu/Desktop/论文/CED_schedule_Final/build_profile/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

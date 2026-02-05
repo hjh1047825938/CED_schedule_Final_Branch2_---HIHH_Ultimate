@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <numeric>
 #include <iostream>
+#include <fstream>
+#include <string>
 #include "Multimethod.h"
 
 // Debug output for contextual bandit
@@ -396,13 +398,24 @@ enum OffloadOps {
 enum SeqOps {
     SEQ_OP_GA = 0,
     SEQ_OP_SWAP = 1,
-    SEQ_OP_BLOCK_RESAMPLE = 2
+    SEQ_OP_VNS = 2,
+    SEQ_OP_BLOCK_RESAMPLE = 3
 };
 
 enum DevOps {
     DEV_OP_DE = 0,
     DEV_OP_GDE = 1,
-    DEV_OP_BLOCK_RESAMPLE = 2
+    DEV_OP_LEVY = 2,
+    DEV_OP_BLOCK_RESAMPLE = 3
+};
+
+// Full-space ops for no-block ablation
+enum FullOps {
+    FULL_OP_GA = 0,
+    FULL_OP_DE = 1,
+    FULL_OP_GDE = 2,
+    FULL_OP_LEVY = 3,
+    FULL_OP_BLOCK_RESAMPLE = 4
 };
 
 //=============================================================================
@@ -419,6 +432,7 @@ public:
     BlockPopulation P_offload;
     BlockPopulation P_seq;
     BlockPopulation P_dev;
+    BlockPopulation P_full;
     
     // Shared context
     BlockContext context;
@@ -460,10 +474,28 @@ public:
     int num_ops_offload;
     int num_ops_seq;
     int num_ops_dev;
+    int num_ops_full;
     
     // Stagnation tracking
     int stagnation_count;
     double prev_gbest_fit;
+
+    // Ablation toggles
+    bool use_blocks;
+    bool enable_intra_migration;
+    bool use_bandit;
+
+    // Operator stats logging
+    bool op_stats_enabled;
+    int op_stats_every;
+    int op_stats_interval_gens;
+    std::string op_stats_path;
+    std::ofstream op_stats_out;
+    std::vector<long long> op_counts_offload;
+    std::vector<long long> op_counts_seq;
+    std::vector<long long> op_counts_dev;
+    std::vector<long long> op_counts_overall;
+    std::vector<long long> op_counts_full;
     
     CC_HIHH_Solver(MultiMet* s, int psize, int nsub, int ncircle, double pelite = 0.8);
     ~CC_HIHH_Solver();
@@ -481,13 +513,20 @@ public:
         lr0 = l0;
         lr_k = lk;
     }
+    void SetUseBlocks(bool v) { use_blocks = v; }
+    void SetMigrationEnabled(bool v) { enable_intra_migration = v; }
+    void SetUseBandit(bool v) { use_bandit = v; }
+    void SetOpStats(const std::string& path, int every);
     
     void Init();
     void RunGeneration(int gen);
+    void LogOpStatsIfNeeded(int gen, bool is_last);
+    void CloseOpStats();
     void MigrationWithinBlock(BlockPopulation& bp, int dispara);
     
     // Operator application
     void ApplyOperator(int op, BlockPopulation& bp, int p_start, int p_end);
+    void ApplyOperatorFull(int op, BlockPopulation& bp, int p_start, int p_end);
     
     // Block-specific operators
     void ApplyGA(BlockPopulation& bp, int p_start, int p_end);
@@ -495,6 +534,8 @@ public:
     void ApplyGDE(BlockPopulation& bp, int p_start, int p_end);
     void ApplyBitFlip(BlockPopulation& bp, int p_start, int p_end);
     void ApplySeqSwap(BlockPopulation& bp, int p_start, int p_end, int n_swaps);
+    void ApplyVNS(BlockPopulation& bp, int p_start, int p_end);
+    void ApplyLevy(BlockPopulation& bp, int p_start, int p_end);
     void ApplyBlockResample(BlockPopulation& bp, int p_start, int p_end, double rate);
     
     // Cooperative evaluation
@@ -508,6 +549,13 @@ public:
     const double* GetGlobalBest() const { return gbest.data(); }
     
 private:
+    double levy_beta;
+    double levy_step_coeff;
+    double levy_dim_ratio;
+    int vns_max_k;
+    int vns_samples_per_k;
+    double vns_elite_ratio;
+
     inline double randval(double low, double high) {
         return low + (double)rand() / RAND_MAX * (high - low);
     }
@@ -520,6 +568,11 @@ private:
     double ComputeEpsilon(int gen) const;
     double ComputeLearningRate(const ContextualBanditSelector& sel) const;
     bool IsResampleOp(int op, int block_id) const;
+    double LevyFlight(double beta);
+
+    void InitOpStats();
+    void ResetOpStatsInterval();
+    void RecordOpSelection(int block_id, int op_id);
 };
 
 #endif // CC_HIHH_H
