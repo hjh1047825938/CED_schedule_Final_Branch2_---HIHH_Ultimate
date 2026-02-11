@@ -1,0 +1,17 @@
+Command: 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\build_qhh\Release\CED_Schedule.exe' --solver GA-SLHH --seed 7 --generations 10000 --log_every 50 --data_dir 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\data' --data_file data_matrix_T200_E100_D300.txt --cnum 100 --enum 100 --dnum 300 --tnum 200 --mopt 5
+=== CED_Schedule Configuration ===
+Data directory: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data"
+Data file: data_matrix_T200_E100_D300.txt
+Generations: 10000
+Population size: 40
+Random seed: 7
+Pini (heuristic prob): 0.4
+Solver: GA-SLHH
+Cnum/Enum/Dnum/Tnum/Mopt: 100/100/300/200/5
+Migration: disabled
+=================================
+[Initial] Loading data from: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data\\data_matrix_T200_E100_D300.txt"
+
+=== Running GA-SLHH Solver ===
+
+exit code 4294967295

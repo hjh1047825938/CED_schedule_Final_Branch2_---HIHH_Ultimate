@@ -1,0 +1,14 @@
+\begin{table}[htbp]
+\centering
+\caption{Pairwise rank-sum test (Mann-Whitney U) and Cliff's delta on final fitness.}
+\label{tab:wilcoxon_ranksum_cliffs}
+\begin{tabular}{lrrrrl}
+\toprule
+Comparison & U & p-value & Sig. & Cliff's $\delta$ & Effect \\
+\midrule
+1) use_bandit=true vs 2) use_bandit=false & 57.000 & 0.623176 &  & 0.140000 & negligible \\
+1) use_bandit=true vs 3) fixed ops per block & 83.000 & 0.013983 & * & 0.660000 & large \\
+2) use_bandit=false vs 3) fixed ops per block & 75.000 & 0.063922 &  & 0.500000 & large \\
+\bottomrule
+\end{tabular}
+\end{table}

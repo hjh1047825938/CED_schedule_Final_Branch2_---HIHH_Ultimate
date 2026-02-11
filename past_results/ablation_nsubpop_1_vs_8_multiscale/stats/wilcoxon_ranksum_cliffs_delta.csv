@@ -1,0 +1,4 @@
+scale,group_a,group_b,n_a,n_b,U_stat,p_value,sig,cliffs_delta,effect_size
+T100,nsubpop=1,nsubpop=8,10,10,100.000,0.000182672,***,1.0000,large
+T200,nsubpop=1,nsubpop=8,10,10,100.000,0.000182672,***,1.0000,large
+T500,nsubpop=1,nsubpop=8,10,10,100.000,0.000182672,***,1.0000,large

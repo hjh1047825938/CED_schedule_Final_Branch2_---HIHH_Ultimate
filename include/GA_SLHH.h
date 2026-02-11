@@ -52,6 +52,7 @@ private:
     int ls_trials;
     int stagnation;
     int stagnation_trigger;
+    double diversity_threshold;
 
     std::vector<std::vector<double>> pop;
     std::vector<std::vector<double>> newpop;
@@ -73,6 +74,8 @@ private:
     double immigrant_base;
 
     std::vector<double> uniform_probs;
+    std::vector<double> eval_buffer;
+    std::vector<int> temp_llh;
 
     // Learning buffers
     std::vector<double> probs_cur;
@@ -96,6 +99,8 @@ private:
     int RouletteSelect(const std::vector<double>& fitness) const;
     void ApplyCrossover();
     void ApplyMutation();
+    void MaintainDiversity();
+    double ChromosomeDistance(const std::vector<double>& a, const std::vector<double>& b) const;
 
     void DecodeLLH(const std::vector<double>& chrom,
                    const std::vector<double>& probs,

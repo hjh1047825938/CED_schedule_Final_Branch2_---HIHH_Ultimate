@@ -1,0 +1,76 @@
+Command: 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\build_ablation\Release\CED_Schedule.exe' --solver GA-SLHH --seed 5 --generations 10000 --log_every 50 --data_dir 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\data' --data_file data_matrix_T200_E100_D300.txt --cnum 100 --enum 100 --dnum 300 --tnum 200 --mopt 5
+=== CED_Schedule Configuration ===
+Data directory: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data"
+Data file: data_matrix_T200_E100_D300.txt
+Generations: 10000
+Population size: 40
+Random seed: 5
+Pini (heuristic prob): 0.4
+Objective alpha: 0.5
+Solver: GA-SLHH
+Cnum/Enum/Dnum/Tnum/Mopt: 100/100/300/200/5
+Migration: disabled
+=================================
+[Initial] Loading data from: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data\\data_matrix_T200_E100_D300.txt"
+[Normalization] f1_ref (makespan) = 22665.1
+[Normalization] f2_ref (energy) = 1872.4
+[Normalization] alpha = 0.5
+
+=== Running GA-SLHH Solver ===
+Gen 50: best_fit = 0.0970286 mean_fit = 0.136761 unique_llh = 40
+Gen 100: best_fit = 0.0954798 mean_fit = 0.122718 unique_llh = 40
+Gen 150: best_fit = 0.0915444 mean_fit = 0.13919 unique_llh = 40
+Gen 200: best_fit = 0.0915444 mean_fit = 0.142839 unique_llh = 40
+Gen 250: best_fit = 0.0915444 mean_fit = 0.141059 unique_llh = 39
+Gen 300: best_fit = 0.0915444 mean_fit = 0.122709 unique_llh = 40
+Gen 350: best_fit = 0.0915444 mean_fit = 0.141981 unique_llh = 39
+Gen 400: best_fit = 0.0915444 mean_fit = 0.13215 unique_llh = 40
+Gen 450: best_fit = 0.0915444 mean_fit = 0.139717 unique_llh = 40
+Gen 500: best_fit = 0.0915444 mean_fit = 0.130024 unique_llh = 40
+Gen 550: best_fit = 0.0915444 mean_fit = 0.13178 unique_llh = 39
+Gen 600: best_fit = 0.0915444 mean_fit = 0.137806 unique_llh = 40
+Gen 650: best_fit = 0.0915444 mean_fit = 0.148741 unique_llh = 40
+Gen 700: best_fit = 0.0915444 mean_fit = 0.133085 unique_llh = 40
+Gen 750: best_fit = 0.0915444 mean_fit = 0.135605 unique_llh = 39
+Gen 800: best_fit = 0.0873904 mean_fit = 0.124087 unique_llh = 40
+Gen 850: best_fit = 0.0873904 mean_fit = 0.128831 unique_llh = 40
+Gen 900: best_fit = 0.0873904 mean_fit = 0.129309 unique_llh = 40
+Gen 950: best_fit = 0.0873904 mean_fit = 0.132673 unique_llh = 40
+Gen 1000: best_fit = 0.0873904 mean_fit = 0.126146 unique_llh = 40
+Gen 1050: best_fit = 0.0873904 mean_fit = 0.131796 unique_llh = 40
+Gen 1100: best_fit = 0.0873904 mean_fit = 0.132734 unique_llh = 40
+Gen 1150: best_fit = 0.0873904 mean_fit = 0.126305 unique_llh = 40
+Gen 1200: best_fit = 0.0873904 mean_fit = 0.136883 unique_llh = 40
+Gen 1250: best_fit = 0.0862263 mean_fit = 0.141325 unique_llh = 40
+Gen 1300: best_fit = 0.0840066 mean_fit = 0.133574 unique_llh = 39
+Gen 1350: best_fit = 0.0840066 mean_fit = 0.128573 unique_llh = 40
+Gen 1400: best_fit = 0.0840066 mean_fit = 0.115981 unique_llh = 40
+Gen 1450: best_fit = 0.0825306 mean_fit = 0.118492 unique_llh = 40
+Gen 1500: best_fit = 0.0818003 mean_fit = 0.125023 unique_llh = 40
+Gen 1550: best_fit = 0.0818003 mean_fit = 0.127101 unique_llh = 40
+Gen 1600: best_fit = 0.0812809 mean_fit = 0.126271 unique_llh = 39
+Gen 1650: best_fit = 0.0812809 mean_fit = 0.130661 unique_llh = 40
+Gen 1700: best_fit = 0.0812809 mean_fit = 0.122753 unique_llh = 40
+Gen 1750: best_fit = 0.0812809 mean_fit = 0.123913 unique_llh = 40
+Gen 1800: best_fit = 0.0812809 mean_fit = 0.125947 unique_llh = 40
+Gen 1850: best_fit = 0.0812809 mean_fit = 0.132036 unique_llh = 40
+Gen 1900: best_fit = 0.0812809 mean_fit = 0.114784 unique_llh = 40
+Gen 1950: best_fit = 0.0791314 mean_fit = 0.125113 unique_llh = 40
+Gen 2000: best_fit = 0.0791314 mean_fit = 0.115343 unique_llh = 40
+Gen 2050: best_fit = 0.0791314 mean_fit = 0.133812 unique_llh = 40
+Gen 2100: best_fit = 0.0791314 mean_fit = 0.116697 unique_llh = 40
+Gen 2150: best_fit = 0.0791314 mean_fit = 0.123399 unique_llh = 40
+Gen 2200: best_fit = 0.0791314 mean_fit = 0.120377 unique_llh = 40
+Gen 2250: best_fit = 0.0791314 mean_fit = 0.119241 unique_llh = 40
+Gen 2300: best_fit = 0.0791314 mean_fit = 0.131331 unique_llh = 40
+Gen 2350: best_fit = 0.0791314 mean_fit = 0.130694 unique_llh = 40
+Gen 2400: best_fit = 0.0791314 mean_fit = 0.125918 unique_llh = 40
+Gen 2450: best_fit = 0.0791314 mean_fit = 0.11654 unique_llh = 40
+Gen 2500: best_fit = 0.0791314 mean_fit = 0.114948 unique_llh = 40
+Gen 2550: best_fit = 0.0791314 mean_fit = 0.132552 unique_llh = 40
+Gen 2600: best_fit = 0.0791314 mean_fit = 0.130807 unique_llh = 39
+Gen 2650: best_fit = 0.0791314 mean_fit = 0.125055 unique_llh = 40
+Gen 2700: best_fit = 0.0791314 mean_fit = 0.130473 unique_llh = 40
+Gen 2750: best_fit = 0.0791314 mean_fit = 0.125116 unique_llh = 40
+
+exit code 4294967295

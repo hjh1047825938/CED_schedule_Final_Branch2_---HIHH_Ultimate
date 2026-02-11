@@ -1,0 +1,61 @@
+Command: 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\build_qhh\Release\CED_Schedule.exe' --solver GA --seed 9 --generations 10000 --log_every 50 --data_dir 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\data' --data_file data_matrix_T500_E200_D800.txt --cnum 200 --enum 200 --dnum 800 --tnum 500 --mopt 5
+=== CED_Schedule Configuration ===
+Data directory: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data"
+Data file: data_matrix_T500_E200_D800.txt
+Generations: 10000
+Population size: 40
+Random seed: 9
+Pini (heuristic prob): 0.4
+Solver: GA
+Cnum/Enum/Dnum/Tnum/Mopt: 200/200/800/500/5
+Migration: disabled
+=================================
+[Initial] Loading data from: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data\\data_matrix_T500_E200_D800.txt"
+Gen 50: best_fit = 2106.87
+Gen 100: best_fit = 2106.73
+Gen 150: best_fit = 2102.38
+Gen 200: best_fit = 2102.38
+Gen 250: best_fit = 2102.38
+Gen 300: best_fit = 2100.41
+Gen 350: best_fit = 2098.75
+Gen 400: best_fit = 2098.41
+Gen 450: best_fit = 2093.14
+Gen 500: best_fit = 2091.55
+Gen 550: best_fit = 2090.32
+Gen 600: best_fit = 2051.84
+Gen 650: best_fit = 2043.24
+Gen 700: best_fit = 2042.93
+Gen 750: best_fit = 2042.86
+Gen 800: best_fit = 2033.46
+Gen 850: best_fit = 2030.88
+Gen 900: best_fit = 2028.6
+Gen 950: best_fit = 2028.45
+Gen 1000: best_fit = 2028.3
+Gen 1050: best_fit = 2027.99
+Gen 1100: best_fit = 2025.36
+Gen 1150: best_fit = 2025.01
+Gen 1200: best_fit = 2023.46
+Gen 1250: best_fit = 2021.89
+Gen 1300: best_fit = 2021.85
+Gen 1350: best_fit = 2020.37
+Gen 1400: best_fit = 2019.07
+Gen 1450: best_fit = 2016.09
+Gen 1500: best_fit = 2015.09
+Gen 1550: best_fit = 2012.72
+Gen 1600: best_fit = 2012.51
+Gen 1650: best_fit = 2011.77
+Gen 1700: best_fit = 2009.76
+Gen 1750: best_fit = 2009.76
+Gen 1800: best_fit = 2009.76
+Gen 1850: best_fit = 2009.18
+Gen 1900: best_fit = 2008.96
+Gen 1950: best_fit = 2008.74
+Gen 2000: best_fit = 2008.74
+Gen 2050: best_fit = 2007.33
+Gen 2100: best_fit = 1999.95
+Gen 2150: best_fit = 1999.95
+Gen 2200: best_fit = 1999.95
+Gen 2250: best_fit = 1997.85
+Gen 2300: best_fit = 1997.85
+Gen 2350: best_fit = 1997.84
+Gen 2400: best_fit = 1997.84

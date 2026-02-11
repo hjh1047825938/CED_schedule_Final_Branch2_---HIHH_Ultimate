@@ -1,6 +1,8 @@
 #include "Multimethod.h"
 #include "CC_HIHH.h"
 #include "GA_SLHH.h"
+#include "QPHH.h"
+#include "Rng.h"
 #include <iostream>
 #include <fstream>
 #include <cstring>
@@ -13,6 +15,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <cmath>
+#include <cctype>
 using namespace std;
 
 // Default parameters
@@ -35,7 +38,8 @@ void print_usage(const char* prog_name) {
     cout << "  --popsize <n>        Population size (default: " << DEFAULT_POPSIZE << ")\n";
     cout << "  --seed <n>           Random seed (default: " << DEFAULT_SEED << ")\n";
     cout << "  --pini <f>           Heuristic init probability 0-1 (default: " << DEFAULT_PINI << ")\n";
-    cout << "  --solver <name>      Solver: GA, DE, GDE, CCHIHH, GA-SLHH (default: GA)\n";
+    cout << "  --alpha <f>          Weight for makespan vs energy (default: 0.5, range: [0,1])\n";
+    cout << "  --solver <name>      Solver: GA, DE, GDE, CCHIHH, QHH, GA-SLHH (default: GA)\n";
     cout << "  --cnum <n>           Number of cloud servers (default: " << DEFAULT_CNUM << ")\n";
     cout << "  --enum <n>           Number of edge servers (default: " << DEFAULT_ENUM << ")\n";
     cout << "  --dnum <n>           Number of devices (default: " << DEFAULT_DNUM << ")\n";
@@ -45,13 +49,21 @@ void print_usage(const char* prog_name) {
     cout << "  --nsubpop <n>        Number of subpopulations for migration (default: 8)\n";
     cout << "  --log_every <n>      Log best_fit every n generations (or evals if --max_evals is set, default: 50)\n";
     cout << "  --max_evals <n>      Stop after N evaluation calls (0 = disabled)\n";
+    cout << "  --qphh_p0_factor <n> QPHH init pool multiplier P0 = P * n (default: 5)\n";
+    cout << "  --qphh_tasksn <n>    QPHH greedy-insert tasks per LS (default: 1)\n";
+    cout << "  --qphh_gi_cap <n>    QPHH greedy-insert position cap (0=all, default: 20)\n";
+    cout << "  --qphh_map_cap <n>   QPHH mapping candidate cap (0=all, default: 30)\n";
+    cout << "  --qphh_threads <n>   QPHH OpenMP thread count (default: 8)\n";
     cout << "  --stable             Enable CCHIHH-Stable mode\n";
     cout << "  --cchihh_no_migration  Disable CCHIHH intra-block migration\n";
     cout << "  --cchihh_random_ops    Disable contextual bandit, random operators\n";
+    cout << "  --cchihh_fixed_ops     Fixed operators per block: offload=DE, seq=SWAP, dev=GDE\n";
     cout << "  --cchihh_no_blocks     Disable CC blocks, run on full variable space\n";
+    cout << "  --no_blocks            Alias of --cchihh_no_blocks\n";
+    cout << "  --use_blocks <bool>    Enable/disable CC blocks (true/false, default: true)\n";
     cout << "  --cchihh_op_stats <p>  Write operator frequency CSV to path\n";
     cout << "  --cchihh_op_stats_every <n>  Operator stats logging interval (default: log_every)\n";
-    cout << "  --resample_gate <n>  Stagnation gate for block resample (default: 15)\n";
+    cout << "  --resample_gate <n>  Stagnation gate for block resample (default: 15, 0=disable gate)\n";
     cout << "  --reward_clip <f>    Stable reward clip (default: 0.2)\n";
     cout << "  --eps0 <f>           Stable epsilon start (default: 0.2)\n";
     cout << "  --eps_min <f>        Stable epsilon min (default: 0.02)\n";
@@ -145,7 +157,13 @@ int main(int argc, char* argv[])
     int popsize = DEFAULT_POPSIZE;
     unsigned int seed = DEFAULT_SEED;
     double pini = DEFAULT_PINI;
+    double objective_alpha = 0.5;
     string solver_name = "GA";
+    int qphh_p0_factor = 5;
+    int qphh_tasksn = 1;
+    int qphh_gi_cap = 20;
+    int qphh_map_cap = 30;
+    int qphh_threads = 8;
     int bench_eval = 0;
     bool migration_enabled = false;
     int nsubpop = 8;
@@ -156,6 +174,7 @@ int main(int argc, char* argv[])
     bool stable_mode = false;
     bool cchihh_migration = true;
     bool cchihh_random_ops = false;
+    bool cchihh_fixed_ops = false;
     bool cchihh_no_blocks = false;
     string cchihh_op_stats_path;
     int cchihh_op_stats_every = 0;
@@ -185,6 +204,12 @@ int main(int argc, char* argv[])
             seed = (unsigned int)atoi(argv[++i]);
         } else if (strcmp(argv[i], "--pini") == 0 && i + 1 < argc) {
             pini = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--alpha") == 0 && i + 1 < argc) {
+            objective_alpha = atof(argv[++i]);
+            if (objective_alpha < 0.0 || objective_alpha > 1.0) {
+                cerr << "Error: --alpha must be in [0, 1]" << endl;
+                return 1;
+            }
         } else if (strcmp(argv[i], "--solver") == 0 && i + 1 < argc) {
             solver_name = argv[++i];
         } else if (strcmp(argv[i], "--cnum") == 0 && i + 1 < argc) {
@@ -197,6 +222,21 @@ int main(int argc, char* argv[])
             Tnum = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--mopt") == 0 && i + 1 < argc) {
             Mopt_num = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--qphh_p0_factor") == 0 && i + 1 < argc) {
+            qphh_p0_factor = atoi(argv[++i]);
+            if (qphh_p0_factor < 1) qphh_p0_factor = 1;
+        } else if (strcmp(argv[i], "--qphh_tasksn") == 0 && i + 1 < argc) {
+            qphh_tasksn = atoi(argv[++i]);
+            if (qphh_tasksn < 1) qphh_tasksn = 1;
+        } else if (strcmp(argv[i], "--qphh_gi_cap") == 0 && i + 1 < argc) {
+            qphh_gi_cap = atoi(argv[++i]);
+            if (qphh_gi_cap < 0) qphh_gi_cap = 0;
+        } else if (strcmp(argv[i], "--qphh_map_cap") == 0 && i + 1 < argc) {
+            qphh_map_cap = atoi(argv[++i]);
+            if (qphh_map_cap < 0) qphh_map_cap = 0;
+        } else if (strcmp(argv[i], "--qphh_threads") == 0 && i + 1 < argc) {
+            qphh_threads = atoi(argv[++i]);
+            if (qphh_threads < 1) qphh_threads = 1;
         } else if (strcmp(argv[i], "--bench_eval") == 0 && i + 1 < argc) {
             bench_eval = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--migration") == 0) {
@@ -218,8 +258,22 @@ int main(int argc, char* argv[])
             cchihh_migration = false;
         } else if (strcmp(argv[i], "--cchihh_random_ops") == 0) {
             cchihh_random_ops = true;
-        } else if (strcmp(argv[i], "--cchihh_no_blocks") == 0) {
+        } else if (strcmp(argv[i], "--cchihh_fixed_ops") == 0) {
+            cchihh_fixed_ops = true;
+        } else if (strcmp(argv[i], "--cchihh_no_blocks") == 0 || strcmp(argv[i], "--no_blocks") == 0) {
             cchihh_no_blocks = true;
+        } else if (strcmp(argv[i], "--use_blocks") == 0 && i + 1 < argc) {
+            string v = argv[++i];
+            transform(v.begin(), v.end(), v.begin(),
+                      [](unsigned char ch) { return (char)std::tolower(ch); });
+            if (v == "true" || v == "1" || v == "on" || v == "yes") {
+                cchihh_no_blocks = false;
+            } else if (v == "false" || v == "0" || v == "off" || v == "no") {
+                cchihh_no_blocks = true;
+            } else {
+                cerr << "Error: --use_blocks expects true/false (or 1/0, on/off)." << endl;
+                return 1;
+            }
         } else if (strcmp(argv[i], "--cchihh_op_stats") == 0 && i + 1 < argc) {
             cchihh_op_stats_path = argv[++i];
         } else if (strcmp(argv[i], "--cchihh_op_stats_every") == 0 && i + 1 < argc) {
@@ -256,6 +310,7 @@ int main(int argc, char* argv[])
     cout << "Population size: " << popsize << endl;
     cout << "Random seed: " << seed << endl;
     cout << "Pini (heuristic prob): " << pini << endl;
+    cout << "Objective alpha: " << objective_alpha << endl;
     cout << "Solver: " << solver_name << endl;
     cout << "Cnum/Enum/Dnum/Tnum/Mopt: " << Cnum << "/" << Enum << "/" << Dnum
          << "/" << Tnum << "/" << Mopt_num << endl;
@@ -272,12 +327,21 @@ int main(int argc, char* argv[])
              << " lr_k=" << lr_k << endl;
     }
     if (solver_name == "CCHIHH") {
+        cout << "CCHIHH gate: " << (resample_gate > 0 ? "enabled" : "disabled") << endl;
         cout << "CCHIHH blocks: " << (cchihh_no_blocks ? "disabled" : "enabled") << endl;
         cout << "CCHIHH migration: " << (cchihh_migration ? "enabled" : "disabled") << endl;
         cout << "CCHIHH bandit: " << (cchihh_random_ops ? "random" : "enabled") << endl;
+        cout << "CCHIHH fixed ops: " << (cchihh_fixed_ops ? "enabled" : "disabled") << endl;
         if (!cchihh_op_stats_path.empty()) {
             cout << "CCHIHH op stats: " << cchihh_op_stats_path << endl;
         }
+    }
+    if (solver_name == "QHH" || solver_name == "QPHH") {
+        cout << "QPHH params: p0_factor=" << qphh_p0_factor
+             << " tasksn=" << qphh_tasksn
+             << " gi_cap=" << qphh_gi_cap
+             << " map_cap=" << qphh_map_cap
+             << " threads=" << qphh_threads << endl;
     }
     cout << "=================================" << endl;
 
@@ -300,6 +364,7 @@ int main(int argc, char* argv[])
                               Cnum, Enum, Dnum, Tnum, Tnum, Mopt_num, CED_Schedule, data_dir, data_file);
             solver_a.SetSeed(s);
             solver_a.SetPini(1.0);
+            solver_a.workspace.set_alpha(objective_alpha);
             solver_a.Initial();
             double best_a = solver_a.gbest_fit;
 
@@ -308,6 +373,7 @@ int main(int argc, char* argv[])
                               Cnum, Enum, Dnum, Tnum, Tnum, Mopt_num, CED_Schedule, data_dir, data_file);
             solver_b.SetSeed(s);
             solver_b.SetPini(DEFAULT_PINI);
+            solver_b.workspace.set_alpha(objective_alpha);
             solver_b.Initial();
             double best_b = solver_b.gbest_fit;
 
@@ -317,19 +383,21 @@ int main(int argc, char* argv[])
     }
 
     srand(seed);
+    Rng::getInstance().setSeed(seed);
     
     // Create solver with data directory
     MultiMet solver(popsize, Tnum * 2 + Tnum * Mopt_num * 2, 0, 1,
                     Cnum, Enum, Dnum, Tnum, Tnum, Mopt_num, CED_Schedule, data_dir, data_file);
     solver.SetSeed(seed);
     solver.SetPini(pini);
+    solver.workspace.set_alpha(objective_alpha);
     solver.Initial();
     solver.ResetEvalCount();
     
     // Initialize migration if enabled (nG=nsubpop, nCircle=5, pElitist=0.8)
     if (migration_enabled) {
-        if (nsubpop < 2) {
-            cerr << "Error: --nsubpop must be >= 2 when migration is enabled" << endl;
+        if (nsubpop < 1) {
+            cerr << "Error: --nsubpop must be >= 1 when migration is enabled" << endl;
             return 1;
         }
         solver.InitMigration(nsubpop, 5, 0.8);
@@ -376,13 +444,14 @@ int main(int argc, char* argv[])
         cc_solver.SetUseBlocks(!cchihh_no_blocks);
         cc_solver.SetMigrationEnabled(cchihh_migration);
         cc_solver.SetUseBandit(!cchihh_random_ops);
+        cc_solver.SetFixedOpsPerBlock(cchihh_fixed_ops);
+        cc_solver.SetResampleGate(resample_gate);
         if (!cchihh_op_stats_path.empty()) {
             int stats_every = cchihh_op_stats_every > 0 ? cchihh_op_stats_every : log_every;
             cc_solver.SetOpStats(cchihh_op_stats_path, stats_every);
         }
         if (stable_mode) {
             cc_solver.SetStableMode(true);
-            cc_solver.SetResampleGate(resample_gate);
             cc_solver.SetStableRewardClip(stable_reward_clip);
             cc_solver.SetEpsilonParams(eps0, eps_min, eps_k);
             cc_solver.SetLearningRateParams(lr0, lr_k);
@@ -412,6 +481,8 @@ int main(int argc, char* argv[])
         cout << "Subpopulations per block: " << nsubpop << endl;
         cout << "Generations = " << max_generations << endl;
         cout << "The best solution = " << cc_solver.GetGlobalBestFit() << endl;
+        cout << "CCHIHH gate_blocked_total = " << cc_solver.GetGateBlockedTotal() << endl;
+        cout << "CCHIHH gate_fallback_total = " << cc_solver.GetGateFallbackTotal() << endl;
         cout << "Time = " << (double)(t2 - t1) / CLOCKS_PER_SEC << " s" << endl;
 
 #ifdef PROFILE_EVAL
@@ -424,12 +495,12 @@ int main(int argc, char* argv[])
         cout << "\n=== Running GA-SLHH Solver ===" << endl;
         GA_SLHH_Solver slhh(&solver, popsize);
         slhh.SetMaxGenerations(max_generations);
-        slhh.SetCrossoverRate(0.8);
-        slhh.SetMutationRate(0.3);
-        slhh.SetGeneMutationRate(0.02);
-        slhh.SetImmigrantRate(0.1);
-        slhh.SetElitismCount(2);
-        slhh.SetLocalSearchTrials(50);
+        slhh.SetCrossoverRate(0.9);
+        slhh.SetMutationRate(0.2);
+        slhh.SetGeneMutationRate(0.03);
+        slhh.SetImmigrantRate(0.15);
+        slhh.SetElitismCount(std::max(2, popsize / 50));
+        slhh.SetLocalSearchTrials(100);
         slhh.Init();
         solver.ResetEvalCount();
         uint64_t next_log_eval = (uint64_t)log_every;
@@ -456,6 +527,45 @@ int main(int argc, char* argv[])
         cout << "Solver: " << solver_name << endl;
         cout << "Generation = " << max_generations << endl;
         cout << "The best solution = " << slhh.GetBestFit() << endl;
+        cout << "Time = " << (double)(t2 - t1) / CLOCKS_PER_SEC << " s" << endl;
+#ifdef PROFILE_EVAL
+        PrintEvalProfile(solver);
+#endif
+        return 0;
+    }
+
+    if (solver_name == "QHH" || solver_name == "QPHH") {
+        cout << "\n=== Running QPHH Solver ===" << endl;
+        QPHH_Solver qphh(&solver, popsize);
+        qphh.SetMaxIterations(max_generations);
+        qphh.SetInitPoolFactor(qphh_p0_factor);
+        qphh.SetTasksN(qphh_tasksn);
+        qphh.SetGreedyInsertCap(qphh_gi_cap);
+        qphh.SetMappingCap(qphh_map_cap);
+        qphh.SetNumThreads(qphh_threads);
+        qphh.SetLog(false, false, log_every);
+        qphh.Init();
+        solver.ResetEvalCount();
+        uint64_t next_log_eval = (uint64_t)log_every;
+
+        for (int gen = 0; gen < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals); gen++) {
+            qphh.RunIteration(gen);
+
+            if (max_evals > 0) {
+                while (solver.GetEvalCount() >= next_log_eval) {
+                    cout << "Eval " << next_log_eval << ": best_fit = " << qphh.GetBestFit() << endl;
+                    next_log_eval += (uint64_t)log_every;
+                }
+            } else if ((gen + 1) % log_every == 0 || gen == max_generations - 1) {
+                cout << "Gen " << (gen + 1) << ": best_fit = " << qphh.GetBestFit() << endl;
+            }
+        }
+
+        clock_t t2 = clock();
+        cout << "\n=== Final Results (QPHH) ===" << endl;
+        cout << "Solver: " << solver_name << endl;
+        cout << "Generation = " << max_generations << endl;
+        cout << "The best solution = " << qphh.GetBestFit() << endl;
         cout << "Time = " << (double)(t2 - t1) / CLOCKS_PER_SEC << " s" << endl;
 #ifdef PROFILE_EVAL
         PrintEvalProfile(solver);
@@ -527,3 +637,4 @@ int main(int argc, char* argv[])
     delete[] record;
     return 0;
 }
+

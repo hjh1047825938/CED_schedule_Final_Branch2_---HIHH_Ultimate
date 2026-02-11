@@ -14,6 +14,11 @@
  *        then pass to CED_Schedule_Fast() for each evaluation.
  */
 struct Workspace {
+    // Normalization and weighting parameters for weighted objective
+    double f1_ref = 1.0;   // Reference makespan
+    double f2_ref = 1.0;   // Reference energy
+    double alpha = 0.5;    // Weight for makespan in [0, 1]
+
     // Decision variable buffers
     std::vector<bool> ce_sele;      // Cloud/Edge selection [CE_Tnum]
     std::vector<int> cevar;          // Cloud/Edge assignment [CE_Tnum]
@@ -125,6 +130,15 @@ struct Workspace {
 
     void reset_profile() {
         profile.reset();
+    }
+
+    void set_normalization(double f1_reference, double f2_reference) {
+        f1_ref = f1_reference;
+        f2_ref = f2_reference;
+    }
+
+    void set_alpha(double weight) {
+        alpha = std::clamp(weight, 0.0, 1.0);
     }
 };
 

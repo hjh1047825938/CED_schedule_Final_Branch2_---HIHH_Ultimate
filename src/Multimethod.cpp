@@ -226,6 +226,43 @@ void MultiMet::CreateOA()
     }
 }
 
+void MultiMet::ComputeReferenceValues()
+{
+    const double prev_alpha = workspace.alpha;
+    workspace.set_normalization(1.0, 1.0);
+
+    double max_makespan = 0.0;
+    double max_energy = 0.0;
+
+    for (int i = 0; i < Popsize; i++)
+    {
+        workspace.set_alpha(1.0);
+        double makespan = EVAL_COMPAT(pop[i], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum,
+                                      CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance,
+                                      AvailDeviceList, EnergyList, CloudDevices, EdgeDevices,
+                                      CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice,
+                                      Edge_Device_comm, ST, ET, CE_ST, CE_ET);
+
+        workspace.set_alpha(0.0);
+        double energy = EVAL_COMPAT(pop[i], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum,
+                                    CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance,
+                                    AvailDeviceList, EnergyList, CloudDevices, EdgeDevices,
+                                    CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice,
+                                    Edge_Device_comm, ST, ET, CE_ST, CE_ET);
+
+        if (makespan > max_makespan) max_makespan = makespan;
+        if (energy > max_energy) max_energy = energy;
+    }
+
+    workspace.f1_ref = (max_makespan > 1e-6) ? max_makespan : 1.0;
+    workspace.f2_ref = (max_energy > 1e-6) ? max_energy : 1.0;
+    workspace.set_alpha(prev_alpha);
+
+    cout << "[Normalization] f1_ref (makespan) = " << workspace.f1_ref << endl;
+    cout << "[Normalization] f2_ref (energy) = " << workspace.f2_ref << endl;
+    cout << "[Normalization] alpha = " << workspace.alpha << endl;
+}
+
 void MultiMet::Initial()
 {
     //Prob
@@ -705,6 +742,15 @@ void MultiMet::Initial()
 
         ibest_fit[i] = pop_fit[i];
     }
+
+    ComputeReferenceValues();
+    for (int i = 0; i < Popsize; i ++)
+    {
+        pop_fit[i] = EVAL_COMPAT(pop[i], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET);
+        newpop_fit[i] = pop_fit[i];
+        ibest_fit[i] = pop_fit[i];
+    }
+
     worst_and_best();
     for (int j = 0; j < Nvar; j ++)
         gbest[j] = pop[cur_best][j];
@@ -4299,6 +4345,7 @@ int MultiMet::GetSubpopWorst(int subpop_idx)
 void MultiMet::RingMigration(int gen)
 {
     if (!migrationEnabled) return;
+    if (nSubpop <= 1) return;
     if (gen % nCircle != 0 || gen == 0) return;
     
     int subpop_size = Popsize / nSubpop;
@@ -4355,8 +4402,6 @@ void MultiMet::RingMigration(int gen)
     
     cout << "[Migration] Gen " << gen << ": ring migration complete, Dispara=" << Dispara << endl;
 }
-
-
 
 
 

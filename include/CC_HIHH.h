@@ -466,6 +466,7 @@ public:
     int seq_swap_count;
     double resample_rate;
     bool stable_mode;
+    bool gate_enabled;
     int resample_gate;
     int gate_blocked_total;
     int gate_fallback_total;
@@ -484,6 +485,7 @@ public:
     bool use_blocks;
     bool enable_intra_migration;
     bool use_bandit;
+    bool fixed_ops_per_block;
 
     // Operator stats logging
     bool op_stats_enabled;
@@ -502,7 +504,7 @@ public:
 
     void SetMaxGenerations(int max_gen) { max_generations = max_gen > 0 ? max_gen : 1; }
     void SetStableMode(bool v) { stable_mode = v; }
-    void SetResampleGate(int t) { resample_gate = t > 0 ? t : 1; }
+    void SetResampleGate(int t) { resample_gate = t; gate_enabled = (t > 0); }
     void SetStableRewardClip(double v) { stable_reward_clip = v > 0.0 ? v : stable_reward_clip; }
     void SetEpsilonParams(double e0, double emin, double k) {
         epsilon0 = e0;
@@ -516,6 +518,7 @@ public:
     void SetUseBlocks(bool v) { use_blocks = v; }
     void SetMigrationEnabled(bool v) { enable_intra_migration = v; }
     void SetUseBandit(bool v) { use_bandit = v; }
+    void SetFixedOpsPerBlock(bool v) { fixed_ops_per_block = v; }
     void SetOpStats(const std::string& path, int every);
     
     void Init();
@@ -547,6 +550,8 @@ public:
     
     double GetGlobalBestFit() const { return gbest_fit; }
     const double* GetGlobalBest() const { return gbest.data(); }
+    int GetGateBlockedTotal() const { return gate_blocked_total; }
+    int GetGateFallbackTotal() const { return gate_fallback_total; }
     
 private:
     double levy_beta;

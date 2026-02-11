@@ -12,20 +12,21 @@ GA_SLHH_Solver::GA_SLHH_Solver(MultiMet* s, int psize)
       num_rules(14),
       max_generations(1),
       archive_size(psize),
-      pc(0.8),
-      pm(0.15),
-      gene_pm(0.02),
-      immigrant_rate(0.1),
-      elitism(2),
-      ls_trials(50),
+      pc(0.9),
+      pm(0.2),
+      gene_pm(0.03),
+      immigrant_rate(0.15),
+      elitism(std::max(2, psize / 50)),
+      ls_trials(100),
       stagnation(0),
-      stagnation_trigger(15),
+      stagnation_trigger(20),
+      diversity_threshold(0.1),
       gbest_fit(std::numeric_limits<double>::infinity()),
       last_mean_fit(std::numeric_limits<double>::infinity()),
       last_unique_llh(0),
-      pm_base(0.15),
-      gene_pm_base(0.02),
-      immigrant_base(0.1)
+      pm_base(0.2),
+      gene_pm_base(0.03),
+      immigrant_base(0.15)
 {
     pop.resize(popsize, std::vector<double>(Nvar, 0.0));
     newpop.resize(popsize, std::vector<double>(Nvar, 0.0));
@@ -40,10 +41,14 @@ GA_SLHH_Solver::GA_SLHH_Solver(MultiMet* s, int psize)
     probs_cur.assign(Nvar * num_rules, 1.0 / (double)num_rules);
     probs_his.assign(Nvar * num_rules, 1.0 / (double)num_rules);
     probs_mix.assign(Nvar * num_rules, 1.0 / (double)num_rules);
+    eval_buffer.assign(Nvar, 0.0);
+    temp_llh.assign(Nvar, 0);
 }
 
 void GA_SLHH_Solver::Init()
 {
+    eval_buffer.assign(Nvar, 0.0);
+    temp_llh.assign(Nvar, 0);
     InitializePopulation();
     EvaluatePopulation();
     UpdateArchive();
@@ -68,6 +73,8 @@ void GA_SLHH_Solver::RunGeneration(int gen)
     int elite = std::min(elitism, popsize);
     for (int i = 0; i < elite; i++) {
         newpop[i] = pop[idx[i]];
+        newpop_fit[i] = pop_fit[idx[i]];
+        llh_newpop[i] = llh_pop[idx[i]];
     }
     for (int i = elite; i < popsize; i++) {
         int sel = RouletteSelect(pop_fit);
@@ -77,14 +84,11 @@ void GA_SLHH_Solver::RunGeneration(int gen)
     ApplyCrossover();
     ApplyMutation();
 
-    // Decode and evaluate
-    std::vector<double> var_buf(Nvar, 0.0);
-    double gen_best = std::numeric_limits<double>::infinity();
-    for (int i = 0; i < popsize; i++) {
+    // Decode and evaluate (skip elites that are copied unchanged)
+    for (int i = elite; i < popsize; i++) {
         const std::vector<double>& probs = (i < popsize / 2) ? uniform_probs : probs_mix;
         DecodeLLH(newpop[i], probs, llh_newpop[i]);
-        newpop_fit[i] = EvalLLH(llh_newpop[i], var_buf);
-        if (newpop_fit[i] < gen_best) gen_best = newpop_fit[i];
+        newpop_fit[i] = EvalLLH(llh_newpop[i], eval_buffer);
     }
 
     pop.swap(newpop);
@@ -99,32 +103,67 @@ void GA_SLHH_Solver::RunGeneration(int gen)
         }
     }
 
-    if (gbest_fit + 1e-12 < prev_best || gen_best + 1e-12 < prev_best) {
+    // Stats for stagnation detection
+    double current_mean_fit = 0.0;
+    for (int i = 0; i < popsize; i++) current_mean_fit += pop_fit[i];
+    current_mean_fit /= (double)popsize;
+
+    double mean_improvement = std::numeric_limits<double>::infinity();
+    if (std::isfinite(last_mean_fit)) {
+        mean_improvement = std::abs(last_mean_fit - current_mean_fit);
+    }
+    double best_improvement = std::abs(prev_best - gbest_fit);
+
+    if (best_improvement > 1e-6 || mean_improvement > 1e-4) {
         stagnation = 0;
     } else {
         stagnation++;
     }
 
-    // Adaptive exploration on stagnation
+    // Graded response on stagnation
+    pm = pm_base;
+    gene_pm = gene_pm_base;
+    immigrant_rate = immigrant_base;
     if (stagnation >= stagnation_trigger) {
-        pm = std::min(0.9, pm_base * 2.5);
-        gene_pm = std::min(0.15, gene_pm_base * 4.0);
-        immigrant_rate = std::min(0.5, immigrant_base * 3.0);
-        ls_trials = std::min(200, ls_trials + 20);
-    } else {
-        pm = pm_base;
-        gene_pm = gene_pm_base;
-        immigrant_rate = immigrant_base;
-        if (ls_trials > 50) ls_trials = 50;
+        if (stagnation < stagnation_trigger * 2) {
+            pm = std::min(0.9, pm_base * 1.5);
+            gene_pm = std::min(0.1, gene_pm_base * 2.0);
+        } else if (stagnation < stagnation_trigger * 3) {
+            pm = std::min(0.9, pm_base * 2.5);
+            gene_pm = std::min(0.15, gene_pm_base * 4.0);
+            immigrant_rate = std::min(0.5, immigrant_base * 3.0);
+        } else {
+            int restart_count = std::max(1, popsize / 2);
+            for (int i = popsize - restart_count; i < popsize; i++) {
+                for (int j = 0; j < Nvar; j++) {
+                    pop[i][j] = randval(0.0, 1.0);
+                }
+                const std::vector<double>& probs = (i < popsize / 2) ? uniform_probs : probs_mix;
+                DecodeLLH(pop[i], probs, llh_pop[i]);
+                pop_fit[i] = EvalLLH(llh_pop[i], eval_buffer);
+            }
+            stagnation = 0;
+        }
     }
 
-    // Local search on best individual to break plateaus
+    // Enhanced local search on top individuals
     LocalSearch();
 
-    // Stats: mean + unique LLH count
-    last_mean_fit = 0.0;
-    for (int i = 0; i < popsize; i++) last_mean_fit += pop_fit[i];
-    last_mean_fit /= (double)popsize;
+    // Periodic diversity maintenance
+    if (gen % 10 == 0) {
+        MaintainDiversity();
+    }
+
+    // Refresh best and stats after local/diversity adjustments
+    current_mean_fit = 0.0;
+    for (int i = 0; i < popsize; i++) {
+        current_mean_fit += pop_fit[i];
+        if (pop_fit[i] < gbest_fit) {
+            gbest_fit = pop_fit[i];
+            DecodeToSolution(llh_pop[i], gbest);
+        }
+    }
+    last_mean_fit = current_mean_fit / (double)popsize;
     {
         std::vector<uint64_t> hashes;
         hashes.reserve(popsize);
@@ -147,7 +186,6 @@ void GA_SLHH_Solver::RunGeneration(int gen)
 void GA_SLHH_Solver::LocalSearch()
 {
     if (ls_trials <= 0) return;
-    int popsize = (int)pop.size();
     if (popsize <= 0) return;
 
     std::vector<int> idx(popsize);
@@ -155,52 +193,43 @@ void GA_SLHH_Solver::LocalSearch()
     std::sort(idx.begin(), idx.end(),
               [&](int a, int b) { return pop_fit[a] < pop_fit[b]; });
 
-    int best_idx = idx[0];
-    int worst_idx = idx[popsize - 1];
+    int search_count = std::max(1, popsize / 5);
+    const int scales[] = {1, 2, 3, 5, 8};
+    int scale_count = (int)(sizeof(scales) / sizeof(scales[0]));
+    int trials_per_scale = std::max(1, ls_trials / scale_count);
 
-    std::vector<double> best_chrom = pop[best_idx];
-    std::vector<int> best_llh = llh_pop[best_idx];
-    double best_fit = pop_fit[best_idx];
+    for (int s = 0; s < search_count; s++) {
+        int target_idx = idx[s];
+        std::vector<double> best_chrom = pop[target_idx];
+        double best_fit = pop_fit[target_idx];
 
-    std::vector<double> var_buf(Nvar, 0.0);
-    for (int t = 0; t < ls_trials; t++) {
-        std::vector<double> cand = best_chrom;
-        int changes = 1 + (rand() % 8);
-        for (int k = 0; k < changes; k++) {
-            int pos = rand() % Nvar;
-            cand[pos] = (double)rand() / RAND_MAX;
-        }
+        for (int si = 0; si < scale_count; si++) {
+            int scale = scales[si];
+            for (int t = 0; t < trials_per_scale; t++) {
+                std::vector<double> cand = best_chrom;
+                for (int k = 0; k < scale; k++) {
+                    int pos = rand() % Nvar;
+                    cand[pos] = randval(0.0, 1.0);
+                }
 
-        DecodeLLH(cand, probs_mix, best_llh);
-        double fit = EvalLLH(best_llh, var_buf);
-        if (fit < best_fit) {
-            best_fit = fit;
-            best_chrom = cand;
-        }
-    }
-
-    // Occasional larger perturbation for escaping deep local minima
-    if (ls_trials >= 20) {
-        for (int t = 0; t < ls_trials / 2; t++) {
-            std::vector<double> cand = best_chrom;
-            int changes = std::max(3, (int)(0.03 * Nvar));
-            for (int k = 0; k < changes; k++) {
-                int pos = rand() % Nvar;
-                cand[pos] = (double)rand() / RAND_MAX;
-            }
-            DecodeLLH(cand, probs_mix, best_llh);
-            double fit = EvalLLH(best_llh, var_buf);
-            if (fit < best_fit) {
-                best_fit = fit;
-                best_chrom = cand;
+                DecodeLLH(cand, probs_mix, temp_llh);
+                double fit = EvalLLH(temp_llh, eval_buffer);
+                if (fit < best_fit) {
+                    best_fit = fit;
+                    best_chrom.swap(cand);
+                }
             }
         }
-    }
 
-    if (best_fit + 1e-12 < pop_fit[worst_idx]) {
-        pop[worst_idx] = best_chrom;
-        DecodeLLH(best_chrom, probs_mix, llh_pop[worst_idx]);
-        pop_fit[worst_idx] = best_fit;
+        if (best_fit + 1e-12 < pop_fit[target_idx]) {
+            pop[target_idx] = best_chrom;
+            pop_fit[target_idx] = best_fit;
+            DecodeLLH(best_chrom, probs_mix, llh_pop[target_idx]);
+            if (best_fit < gbest_fit) {
+                gbest_fit = best_fit;
+                DecodeToSolution(llh_pop[target_idx], gbest);
+            }
+        }
     }
 }
 
@@ -224,10 +253,9 @@ void GA_SLHH_Solver::InitializePopulation()
 
 void GA_SLHH_Solver::EvaluatePopulation()
 {
-    std::vector<double> var_buf(Nvar, 0.0);
     for (int i = 0; i < popsize; i++) {
         DecodeLLH(pop[i], uniform_probs, llh_pop[i]);
-        pop_fit[i] = EvalLLH(llh_pop[i], var_buf);
+        pop_fit[i] = EvalLLH(llh_pop[i], eval_buffer);
         if (pop_fit[i] < gbest_fit) {
             gbest_fit = pop_fit[i];
             DecodeToSolution(llh_pop[i], gbest);
@@ -286,16 +314,16 @@ void GA_SLHH_Solver::BuildLearningProbabilities(int iter)
     probs_cur = ComputeProbabilities(cur_seqs);
     probs_his = ComputeProbabilities(his_seqs);
 
-    double w_his = (double)iter / (double)max_generations;
-    if (w_his < 0.0) w_his = 0.0;
-    if (w_his > 1.0) w_his = 1.0;
-    double w_cur = 1.0 - w_his;
+    double learning_rate = 0.5;
+    if (iter > max_generations / 2) {
+        learning_rate = 0.3;
+    }
 
     for (int q = 0; q < Nvar; q++) {
         double row_sum = 0.0;
         for (int h = 0; h < num_rules; h++) {
-            double v = w_his * probs_his[q * num_rules + h] +
-                       w_cur * probs_cur[q * num_rules + h];
+            double v = learning_rate * probs_cur[q * num_rules + h] +
+                       (1.0 - learning_rate) * probs_his[q * num_rules + h];
             probs_mix[q * num_rules + h] = v;
             row_sum += v;
         }
@@ -335,10 +363,26 @@ void GA_SLHH_Solver::ApplyCrossover()
     if (start < 0) start = 0;
     if (start > popsize) start = popsize;
     for (int i = start; i + 1 < popsize; i += 2) {
-        if (randval(0.0, 1.0) >= pc) continue;
-        for (int j = 0; j < Nvar; j++) {
-            if (rand() % 2 == 0) {
-                std::swap(newpop[i][j], newpop[i + 1][j]);
+        if (randval(0.0, 1.0) < pc) {
+            int crossover_type = rand() % 3;
+            if (crossover_type == 0) {
+                int pt = 1 + (rand() % (Nvar - 1));
+                for (int j = pt; j < Nvar; j++) {
+                    std::swap(newpop[i][j], newpop[i + 1][j]);
+                }
+            } else if (crossover_type == 1) {
+                int pt1 = rand() % Nvar;
+                int pt2 = rand() % Nvar;
+                if (pt1 > pt2) std::swap(pt1, pt2);
+                for (int j = pt1; j <= pt2; j++) {
+                    std::swap(newpop[i][j], newpop[i + 1][j]);
+                }
+            } else {
+                for (int j = 0; j < Nvar; j++) {
+                    if (randval(0.0, 1.0) < 0.5) {
+                        std::swap(newpop[i][j], newpop[i + 1][j]);
+                    }
+                }
             }
         }
     }
@@ -393,6 +437,7 @@ void GA_SLHH_Solver::ApplyMutation()
 
     // Random immigrants
     if (immigrant_rate > 0.0) {
+        if (start >= popsize) return;
         int immigrants = (int)std::round(immigrant_rate * popsize);
         if (immigrants < 1) immigrants = 1;
         for (int k = 0; k < immigrants; k++) {
@@ -400,6 +445,42 @@ void GA_SLHH_Solver::ApplyMutation()
             for (int j = 0; j < Nvar; j++) {
                 newpop[idx][j] = randval(0.0, 1.0);
             }
+        }
+    }
+}
+
+double GA_SLHH_Solver::ChromosomeDistance(const std::vector<double>& a, const std::vector<double>& b) const
+{
+    double dist = 0.0;
+    for (int i = 0; i < Nvar; i++) {
+        dist += std::abs(a[i] - b[i]);
+    }
+    return dist / (double)Nvar;
+}
+
+void GA_SLHH_Solver::MaintainDiversity()
+{
+    std::vector<int> idx(popsize);
+    std::iota(idx.begin(), idx.end(), 0);
+    std::sort(idx.begin(), idx.end(),
+              [&](int a, int b) { return pop_fit[a] < pop_fit[b]; });
+
+    for (int i = popsize / 2; i < popsize; i++) {
+        int cur = idx[i];
+        double min_dist = std::numeric_limits<double>::max();
+        int compare_count = std::min(5, i);
+        for (int j = 0; j < compare_count; j++) {
+            double d = ChromosomeDistance(pop[cur], pop[idx[j]]);
+            if (d < min_dist) min_dist = d;
+        }
+
+        if (min_dist < diversity_threshold) {
+            for (int j = 0; j < Nvar; j++) {
+                pop[cur][j] = randval(0.0, 1.0);
+            }
+            const std::vector<double>& probs = (cur < popsize / 2) ? uniform_probs : probs_mix;
+            DecodeLLH(pop[cur], probs, llh_pop[cur]);
+            pop_fit[cur] = EvalLLH(llh_pop[cur], eval_buffer);
         }
     }
 }

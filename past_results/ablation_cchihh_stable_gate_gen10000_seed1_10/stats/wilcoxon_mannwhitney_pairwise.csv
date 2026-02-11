@@ -1,0 +1,7 @@
+A,B,U,p-value,Sig,Cliff's delta,Magnitude
+"1: stable on, gate on","2: stable off, gate on",65.0000,0.273036,,0.300000,small
+"1: stable on, gate on","3: stable on, gate off",56.5000,0.650025,,0.130000,negligible
+"1: stable on, gate on","4: stable off, gate off",65.0000,0.273036,,0.300000,small
+"2: stable off, gate on","3: stable on, gate off",39.5000,0.449521,,-0.210000,small
+"2: stable off, gate on","4: stable off, gate off",50.0000,1,,0.000000,negligible
+"3: stable on, gate off","4: stable off, gate off",60.5000,0.449521,,0.210000,small

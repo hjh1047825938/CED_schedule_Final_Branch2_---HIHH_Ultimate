@@ -1,0 +1,17 @@
+Config,Threshold,N,MeanGen,StdGen
+"1) stable on, gate on",54.9,10,370.000000,33.166248
+"1) stable on, gate on",54.8,10,740.000000,99.498744
+"1) stable on, gate on",54.7,10,1855.000000,435.574333
+"1) stable on, gate on",54.65,10,8155.000000,2452.085847
+"2) stable off, gate on",54.9,10,845.000000,429.796463
+"2) stable off, gate on",54.8,10,2400.000000,772.657751
+"2) stable off, gate on",54.7,10,3910.000000,971.287805
+"2) stable off, gate on",54.65,10,7210.000000,2127.651287
+"3) stable on, gate off",54.9,10,425.000000,33.541020
+"3) stable on, gate off",54.8,10,795.000000,98.615415
+"3) stable on, gate off",54.7,10,3335.000000,2577.697616
+"3) stable on, gate off",54.65,10,7115.000000,3097.825850
+"4) stable off, gate off",54.9,10,845.000000,429.796463
+"4) stable off, gate off",54.8,10,2400.000000,772.657751
+"4) stable off, gate off",54.7,10,3910.000000,971.287805
+"4) stable off, gate off",54.65,10,7210.000000,2127.651287

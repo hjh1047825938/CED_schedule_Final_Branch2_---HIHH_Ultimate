@@ -43,9 +43,21 @@ Options:
   --popsize <n>        Population size (default: 40)
   --seed <n>           Random seed (default: 42)
   --pini <f>           Heuristic init probability 0-1 (default: 0.4)
-  --solver <name>      Solver: GA, DE, GDE, CCHIHH (default: GA)
+  --alpha <f>          Weight for makespan vs energy (default: 0.5, range: [0,1])
+  --solver <name>      Solver: GA, DE, GDE, CCHIHH, QHH, GA-SLHH (default: GA)
+  --cnum <n>           Number of cloud servers (default: 100)
+  --enum <n>           Number of edge servers (default: 100)
+  --dnum <n>           Number of devices (default: 300)
+  --tnum <n>           Number of tasks (default: 100)
+  --mopt <n>           Operations per task (default: 5)
   --migration          Enable rotated-ring subpopulation migration
   --nsubpop <n>        Number of subpopulations for migration (default: 8)
+  --log_every <n>      Log best_fit every n generations (default: 50)
+  --max_evals <n>      Stop after N evaluation calls (0 = disabled)
+  --qphh_p0_factor <n> QPHH init pool multiplier P0 = P * n (default: 5)
+  --qphh_tasksn <n>    QPHH greedy-insert tasks per LS (default: 1)
+  --qphh_gi_cap <n>    QPHH greedy-insert position cap (0=all, default: 1)
+  --qphh_map_cap <n>   QPHH mapping candidate cap (0=all, default: 1)
   --stable             Enable CCHIHH-Stable mode
   --resample_gate <n>  Stagnation gate for block resample (default: 15)
   --reward_clip <f>    Stable reward clip (default: 0.2)
@@ -86,6 +98,23 @@ Options:
 | GA | Genetic Algorithm (default) |
 | DE | Differential Evolution |
 | GDE | Gbest-centric DE with rollback crossover |
+| CCHIHH | Cooperative Co-evolution + Hyper-Heuristic (bandit) |
+| GA-SLHH | GA-based self-learning hyper-heuristic |
+| QHH / QPHH | Q-learning population hyper-heuristic (QPHH) |
+
+## QPHH speed preset (面向速度的参数)
+
+If you want QPHH to run faster (e.g., target: ~100s for 1e4 generations on T100), use smaller init pool + tighter caps:
+
+```powershell
+.\build\Release\CED_Schedule.exe --solver QHH --seed 1 --generations 10000 --log_every 10000 `
+  --popsize 40 --qphh_p0_factor 5 --qphh_map_cap 1 --qphh_gi_cap 1 --qphh_tasksn 1 `
+  --data_dir .\data --data_file data_matrix_100.txt
+```
+
+Notes:
+- `--qphh_p0_factor` mainly reduces the expensive initialization cost (`P0 = P * factor`).
+- `--qphh_map_cap` controls how many mapping candidates are evaluated during QPHH init (smaller = faster).
 
 ## Migration (Step 7)
 

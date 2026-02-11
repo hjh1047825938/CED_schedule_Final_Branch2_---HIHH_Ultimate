@@ -1,0 +1,6 @@
+Comparison,Meaning,N1,N2,p_value,Sig,Cliffs_delta,Effect
+cfg1 vs cfg2,stable contribution (gate on),10,10,0.273036,,0.300000,small
+cfg1 vs cfg3,gate contribution (stable on),10,10,0.650025,,0.130000,negligible
+cfg1 vs cfg4,overall contribution,10,10,0.273036,,0.300000,small
+cfg2 vs cfg4,gate-only effect (stable off),10,10,1,,0.000000,negligible
+cfg3 vs cfg4,stable-only effect (gate off),10,10,0.449521,,0.210000,small

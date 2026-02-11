@@ -1,0 +1,4 @@
+config_key,config_label,threshold,hit_gen_mean,hit_gen_std
+cfg1_bandit_on,1) use_bandit=true,54.654900,7740.00,2990.80
+cfg2_bandit_off,2) use_bandit=false,54.654900,6425.00,3253.74
+cfg3_fixed_ops,3) fixed ops per block,54.654900,4220.00,2370.33

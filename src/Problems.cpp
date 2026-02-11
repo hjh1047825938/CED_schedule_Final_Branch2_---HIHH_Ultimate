@@ -396,7 +396,14 @@ double CED_Schedule(const double* var, Workspace& ws, int Cnum, int Enum, int Dn
     ws.profile.tasks_us += std::chrono::duration_cast<std::chrono::microseconds>(clock::now() - t_stage).count();
 #endif
 
-    return time_max + energy;
+    const double eps = 1e-6;
+    const double f1_ref = (std::abs(ws.f1_ref) > eps) ? ws.f1_ref : 1.0;
+    const double f2_ref = (std::abs(ws.f2_ref) > eps) ? ws.f2_ref : 1.0;
+    const double alpha = std::clamp(ws.alpha, 0.0, 1.0);
+
+    const double f1_normalized = time_max / f1_ref;
+    const double f2_normalized = energy / f2_ref;
+    return alpha * f1_normalized + (1.0 - alpha) * f2_normalized;
 }
 
 

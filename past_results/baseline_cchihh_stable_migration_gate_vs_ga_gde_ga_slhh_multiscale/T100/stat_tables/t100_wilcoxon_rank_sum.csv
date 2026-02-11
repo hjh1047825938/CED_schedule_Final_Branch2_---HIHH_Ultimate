@@ -1,0 +1,5 @@
+Comparison,U_stat,p_value,Sig,Cliffs_delta,Effect
+CCHIHH_stable_migration_gate vs GA,0.0,0.000181651146091465,***,-1.0,large
+CCHIHH_stable_migration_gate vs GDE,0.0,0.00018267179110955002,***,-1.0,large
+CCHIHH_stable_migration_gate vs GA-SLHH,0.0,0.00018267179110955002,***,-1.0,large
+CCHIHH_stable_migration_gate vs QPHH,0.0,0.00018267179110955002,***,-1.0,large

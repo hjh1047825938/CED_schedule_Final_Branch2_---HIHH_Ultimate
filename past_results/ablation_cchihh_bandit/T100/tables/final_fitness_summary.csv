@@ -1,0 +1,4 @@
+config_key,config_label,mean,std,best,median,worst
+cfg1_bandit_on,1) use_bandit=true,54.654900,0.016697,54.621300,54.660850,54.676100
+cfg2_bandit_off,2) use_bandit=false,54.646850,0.021660,54.616900,54.642950,54.671200
+cfg3_fixed_ops,3) fixed ops per block,54.629810,0.018671,54.609200,54.624700,54.661900

@@ -1,0 +1,3 @@
+Scale,Config,N,Mean,Std,Best,Median,Worst
+T100,CCHIHH_stable_migration_on,10,54.6549,0.0167,54.6213,54.6608,54.6761
+T100,CCHIHH_stable_migration_off,10,54.7447,0.0268,54.7217,54.7379,54.8123

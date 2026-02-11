@@ -1,0 +1,23 @@
+Command: 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\build_qhh\Release\CED_Schedule.exe' --solver GDE --seed 6 --generations 10000 --log_every 50 --data_dir 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\data' --data_file data_matrix_T500_E200_D800.txt --cnum 200 --enum 200 --dnum 800 --tnum 500 --mopt 5
+=== CED_Schedule Configuration ===
+Data directory: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data"
+Data file: data_matrix_T500_E200_D800.txt
+Generations: 10000
+Population size: 40
+Random seed: 6
+Pini (heuristic prob): 0.4
+Solver: GDE
+Cnum/Enum/Dnum/Tnum/Mopt: 200/200/800/500/5
+Migration: disabled
+=================================
+[Initial] Loading data from: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data\\data_matrix_T500_E200_D800.txt"
+Gen 50: best_fit = 2062.93
+Gen 100: best_fit = 2021.66
+Gen 150: best_fit = 1976.69
+Gen 200: best_fit = 1907.29
+Gen 250: best_fit = 1874.29
+Gen 300: best_fit = 1819.26
+Gen 350: best_fit = 1746.04
+Gen 400: best_fit = 1718.97
+Gen 450: best_fit = 1700.29
+Gen 500: best_fit = 1681.66

@@ -8,8 +8,9 @@ set(SOURCES
     src/main.cpp
     src/Multimethod.cpp
     src/Problems.cpp
-    src/CC_HIHH.cpp
+    src/CC_HIHH_singleisland.cpp
     src/GA_SLHH.cpp
+    src/QPHH.cpp
 )
 
 set(HEADERS
@@ -19,12 +20,21 @@ set(HEADERS
     include/Workspace.h
     include/CC_HIHH.h
     include/GA_SLHH.h
+    include/QPHH.h
     include/Rng.h
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
+    message(STATUS "OpenMP enabled for ${PROJECT_NAME}")
+else()
+    message(STATUS "OpenMP not found; building without parallel pragmas")
+endif()
 
 # Debug option for nearest-device diagnostics
 option(DEBUG_NEAREST "Enable nearest-device debug output" OFF)

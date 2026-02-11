@@ -1,0 +1,7 @@
+scale,config,threshold,first_hit_gen_mean_std
+T100,blocks,54.6608,7275.0 +/- 3396.1
+T100,no_blocks,54.6608,10000.0 +/- 0.0
+T200,blocks,993.0460,9540.0 +/- 687.5
+T200,no_blocks,993.0460,10000.0 +/- 0.0
+T500,blocks,1217.3250,9200.0 +/- 1524.2
+T500,no_blocks,1217.3250,10000.0 +/- 0.0

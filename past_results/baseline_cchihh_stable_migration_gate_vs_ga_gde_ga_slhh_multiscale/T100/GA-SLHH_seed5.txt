@@ -1,0 +1,223 @@
+Command: 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\build_qhh\Release\CED_Schedule.exe' --solver GA-SLHH --seed 5 --generations 10000 --log_every 50 --data_dir 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\data' --data_file data_matrix_100.txt --cnum 100 --enum 100 --dnum 300 --tnum 100 --mopt 5
+=== CED_Schedule Configuration ===
+Data directory: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data"
+Data file: data_matrix_100.txt
+Generations: 10000
+Population size: 40
+Random seed: 5
+Pini (heuristic prob): 0.4
+Solver: GA-SLHH
+Cnum/Enum/Dnum/Tnum/Mopt: 100/100/300/100/5
+Migration: disabled
+=================================
+[Initial] Loading data from: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data\\data_matrix_100.txt"
+
+=== Running GA-SLHH Solver ===
+Gen 50: best_fit = 55.7282 mean_fit = 71.3546 unique_llh = 39
+Gen 100: best_fit = 55.7238 mean_fit = 71.425 unique_llh = 39
+Gen 150: best_fit = 55.7204 mean_fit = 71.5507 unique_llh = 39
+Gen 200: best_fit = 55.7204 mean_fit = 73.3059 unique_llh = 40
+Gen 250: best_fit = 55.7204 mean_fit = 73.2757 unique_llh = 38
+Gen 300: best_fit = 55.7204 mean_fit = 74.1074 unique_llh = 39
+Gen 350: best_fit = 55.7204 mean_fit = 73.8121 unique_llh = 40
+Gen 400: best_fit = 55.7204 mean_fit = 73.9352 unique_llh = 39
+Gen 450: best_fit = 55.7204 mean_fit = 73.8923 unique_llh = 39
+Gen 500: best_fit = 55.7204 mean_fit = 73.8014 unique_llh = 39
+Gen 550: best_fit = 55.7204 mean_fit = 73.5056 unique_llh = 40
+Gen 600: best_fit = 55.7204 mean_fit = 73.5747 unique_llh = 40
+Gen 650: best_fit = 55.7204 mean_fit = 73.78 unique_llh = 40
+Gen 700: best_fit = 55.7204 mean_fit = 73.7821 unique_llh = 40
+Gen 750: best_fit = 55.7204 mean_fit = 73.3359 unique_llh = 40
+Gen 800: best_fit = 55.7204 mean_fit = 73.5775 unique_llh = 40
+Gen 850: best_fit = 55.7204 mean_fit = 73.5179 unique_llh = 39
+Gen 900: best_fit = 55.7204 mean_fit = 73.4544 unique_llh = 40
+Gen 950: best_fit = 55.7204 mean_fit = 73.7107 unique_llh = 39
+Gen 1000: best_fit = 55.7204 mean_fit = 73.8475 unique_llh = 40
+Gen 1050: best_fit = 55.7204 mean_fit = 73.2935 unique_llh = 39
+Gen 1100: best_fit = 55.7204 mean_fit = 73.7453 unique_llh = 39
+Gen 1150: best_fit = 55.7204 mean_fit = 73.5868 unique_llh = 39
+Gen 1200: best_fit = 55.7204 mean_fit = 73.6441 unique_llh = 40
+Gen 1250: best_fit = 55.7204 mean_fit = 73.8263 unique_llh = 40
+Gen 1300: best_fit = 55.7204 mean_fit = 73.6118 unique_llh = 39
+Gen 1350: best_fit = 55.7204 mean_fit = 73.7906 unique_llh = 39
+Gen 1400: best_fit = 55.7204 mean_fit = 73.3198 unique_llh = 39
+Gen 1450: best_fit = 55.7204 mean_fit = 75.4598 unique_llh = 40
+Gen 1500: best_fit = 55.7204 mean_fit = 73.774 unique_llh = 40
+Gen 1550: best_fit = 55.7204 mean_fit = 73.7534 unique_llh = 40
+Gen 1600: best_fit = 55.7204 mean_fit = 73.6671 unique_llh = 40
+Gen 1650: best_fit = 55.7204 mean_fit = 73.5795 unique_llh = 40
+Gen 1700: best_fit = 55.7204 mean_fit = 73.6459 unique_llh = 40
+Gen 1750: best_fit = 55.7204 mean_fit = 73.6459 unique_llh = 39
+Gen 1800: best_fit = 55.7204 mean_fit = 73.6988 unique_llh = 40
+Gen 1850: best_fit = 55.7204 mean_fit = 73.6424 unique_llh = 40
+Gen 1900: best_fit = 55.7204 mean_fit = 73.5811 unique_llh = 40
+Gen 1950: best_fit = 55.7204 mean_fit = 73.5613 unique_llh = 40
+Gen 2000: best_fit = 55.7204 mean_fit = 73.4675 unique_llh = 40
+Gen 2050: best_fit = 55.7204 mean_fit = 73.4328 unique_llh = 40
+Gen 2100: best_fit = 55.7204 mean_fit = 73.5016 unique_llh = 39
+Gen 2150: best_fit = 55.7204 mean_fit = 73.5088 unique_llh = 40
+Gen 2200: best_fit = 55.7204 mean_fit = 73.8316 unique_llh = 40
+Gen 2250: best_fit = 55.7204 mean_fit = 73.6479 unique_llh = 39
+Gen 2300: best_fit = 55.7204 mean_fit = 73.731 unique_llh = 39
+Gen 2350: best_fit = 55.7204 mean_fit = 73.4942 unique_llh = 40
+Gen 2400: best_fit = 55.7204 mean_fit = 73.7151 unique_llh = 40
+Gen 2450: best_fit = 55.7204 mean_fit = 73.4689 unique_llh = 40
+Gen 2500: best_fit = 55.7204 mean_fit = 73.6511 unique_llh = 40
+Gen 2550: best_fit = 55.7204 mean_fit = 73.583 unique_llh = 40
+Gen 2600: best_fit = 55.7204 mean_fit = 73.6121 unique_llh = 40
+Gen 2650: best_fit = 55.7204 mean_fit = 73.5574 unique_llh = 40
+Gen 2700: best_fit = 55.7204 mean_fit = 73.8452 unique_llh = 39
+Gen 2750: best_fit = 55.7204 mean_fit = 73.7571 unique_llh = 40
+Gen 2800: best_fit = 55.7204 mean_fit = 73.6912 unique_llh = 39
+Gen 2850: best_fit = 55.7204 mean_fit = 73.7781 unique_llh = 40
+Gen 2900: best_fit = 55.7204 mean_fit = 73.6713 unique_llh = 40
+Gen 2950: best_fit = 55.7204 mean_fit = 73.2167 unique_llh = 40
+Gen 3000: best_fit = 55.7204 mean_fit = 73.6332 unique_llh = 39
+Gen 3050: best_fit = 55.7204 mean_fit = 73.7444 unique_llh = 40
+Gen 3100: best_fit = 55.7204 mean_fit = 73.6277 unique_llh = 40
+Gen 3150: best_fit = 55.7204 mean_fit = 73.7465 unique_llh = 40
+Gen 3200: best_fit = 55.7204 mean_fit = 73.3294 unique_llh = 39
+Gen 3250: best_fit = 55.7204 mean_fit = 74.2167 unique_llh = 39
+Gen 3300: best_fit = 55.7204 mean_fit = 73.6883 unique_llh = 40
+Gen 3350: best_fit = 55.7204 mean_fit = 73.7594 unique_llh = 40
+Gen 3400: best_fit = 55.7204 mean_fit = 73.7648 unique_llh = 40
+Gen 3450: best_fit = 55.7204 mean_fit = 73.6684 unique_llh = 40
+Gen 3500: best_fit = 55.7204 mean_fit = 73.6292 unique_llh = 39
+Gen 3550: best_fit = 55.7204 mean_fit = 73.8704 unique_llh = 40
+Gen 3600: best_fit = 55.7204 mean_fit = 73.5985 unique_llh = 39
+Gen 3650: best_fit = 55.7204 mean_fit = 73.529 unique_llh = 40
+Gen 3700: best_fit = 55.7204 mean_fit = 73.0598 unique_llh = 40
+Gen 3750: best_fit = 55.7204 mean_fit = 73.5749 unique_llh = 40
+Gen 3800: best_fit = 55.7204 mean_fit = 73.5722 unique_llh = 40
+Gen 3850: best_fit = 55.7204 mean_fit = 73.8106 unique_llh = 39
+Gen 3900: best_fit = 55.7204 mean_fit = 73.4459 unique_llh = 40
+Gen 3950: best_fit = 55.7204 mean_fit = 73.4347 unique_llh = 40
+Gen 4000: best_fit = 55.7204 mean_fit = 73.7304 unique_llh = 40
+Gen 4050: best_fit = 55.7204 mean_fit = 73.7589 unique_llh = 40
+Gen 4100: best_fit = 55.7204 mean_fit = 73.6767 unique_llh = 39
+Gen 4150: best_fit = 55.7204 mean_fit = 73.744 unique_llh = 40
+Gen 4200: best_fit = 55.7204 mean_fit = 73.4029 unique_llh = 40
+Gen 4250: best_fit = 55.7204 mean_fit = 73.8528 unique_llh = 40
+Gen 4300: best_fit = 55.7204 mean_fit = 73.6422 unique_llh = 40
+Gen 4350: best_fit = 55.7204 mean_fit = 73.7812 unique_llh = 39
+Gen 4400: best_fit = 55.7204 mean_fit = 73.8146 unique_llh = 40
+Gen 4450: best_fit = 55.7204 mean_fit = 73.7652 unique_llh = 40
+Gen 4500: best_fit = 55.7204 mean_fit = 73.6705 unique_llh = 40
+Gen 4550: best_fit = 55.7204 mean_fit = 73.3559 unique_llh = 39
+Gen 4600: best_fit = 55.7204 mean_fit = 73.3867 unique_llh = 40
+Gen 4650: best_fit = 55.7204 mean_fit = 73.643 unique_llh = 40
+Gen 4700: best_fit = 55.7204 mean_fit = 73.7993 unique_llh = 39
+Gen 4750: best_fit = 55.7204 mean_fit = 73.4466 unique_llh = 40
+Gen 4800: best_fit = 55.7204 mean_fit = 73.8809 unique_llh = 40
+Gen 4850: best_fit = 55.7204 mean_fit = 73.7281 unique_llh = 40
+Gen 4900: best_fit = 55.7204 mean_fit = 73.4223 unique_llh = 40
+Gen 4950: best_fit = 55.7204 mean_fit = 74.0651 unique_llh = 40
+Gen 5000: best_fit = 55.7204 mean_fit = 73.5188 unique_llh = 40
+Gen 5050: best_fit = 55.7204 mean_fit = 73.743 unique_llh = 40
+Gen 5100: best_fit = 55.7204 mean_fit = 73.5411 unique_llh = 40
+Gen 5150: best_fit = 55.7204 mean_fit = 73.5706 unique_llh = 39
+Gen 5200: best_fit = 55.7204 mean_fit = 73.6041 unique_llh = 39
+Gen 5250: best_fit = 55.7204 mean_fit = 73.4106 unique_llh = 39
+Gen 5300: best_fit = 55.7204 mean_fit = 73.611 unique_llh = 40
+Gen 5350: best_fit = 55.7204 mean_fit = 73.6885 unique_llh = 40
+Gen 5400: best_fit = 55.7204 mean_fit = 73.3215 unique_llh = 40
+Gen 5450: best_fit = 55.7204 mean_fit = 73.5465 unique_llh = 39
+Gen 5500: best_fit = 55.7204 mean_fit = 73.4903 unique_llh = 40
+Gen 5550: best_fit = 55.7204 mean_fit = 74.2313 unique_llh = 39
+Gen 5600: best_fit = 55.7204 mean_fit = 73.4754 unique_llh = 39
+Gen 5650: best_fit = 55.7204 mean_fit = 73.4138 unique_llh = 40
+Gen 5700: best_fit = 55.7204 mean_fit = 73.4906 unique_llh = 40
+Gen 5750: best_fit = 55.7204 mean_fit = 73.6373 unique_llh = 39
+Gen 5800: best_fit = 55.7204 mean_fit = 73.4997 unique_llh = 40
+Gen 5850: best_fit = 55.7204 mean_fit = 73.6718 unique_llh = 40
+Gen 5900: best_fit = 55.7204 mean_fit = 73.63 unique_llh = 39
+Gen 5950: best_fit = 55.7204 mean_fit = 73.663 unique_llh = 39
+Gen 6000: best_fit = 55.7204 mean_fit = 74.3085 unique_llh = 39
+Gen 6050: best_fit = 55.7204 mean_fit = 73.6833 unique_llh = 40
+Gen 6100: best_fit = 55.7204 mean_fit = 73.5071 unique_llh = 40
+Gen 6150: best_fit = 55.7204 mean_fit = 73.739 unique_llh = 40
+Gen 6200: best_fit = 55.7204 mean_fit = 73.6618 unique_llh = 40
+Gen 6250: best_fit = 55.7204 mean_fit = 73.4683 unique_llh = 40
+Gen 6300: best_fit = 55.7204 mean_fit = 73.5609 unique_llh = 40
+Gen 6350: best_fit = 55.7204 mean_fit = 73.652 unique_llh = 40
+Gen 6400: best_fit = 55.7204 mean_fit = 73.5786 unique_llh = 39
+Gen 6450: best_fit = 55.7204 mean_fit = 73.3102 unique_llh = 40
+Gen 6500: best_fit = 55.7204 mean_fit = 73.6398 unique_llh = 40
+Gen 6550: best_fit = 55.7204 mean_fit = 73.7357 unique_llh = 40
+Gen 6600: best_fit = 55.7204 mean_fit = 73.7648 unique_llh = 39
+Gen 6650: best_fit = 55.7204 mean_fit = 73.5583 unique_llh = 40
+Gen 6700: best_fit = 55.7204 mean_fit = 73.6638 unique_llh = 40
+Gen 6750: best_fit = 55.7204 mean_fit = 73.4366 unique_llh = 39
+Gen 6800: best_fit = 55.7204 mean_fit = 73.4423 unique_llh = 40
+Gen 6850: best_fit = 55.7204 mean_fit = 73.6214 unique_llh = 39
+Gen 6900: best_fit = 55.7204 mean_fit = 73.6038 unique_llh = 39
+Gen 6950: best_fit = 55.7204 mean_fit = 73.5187 unique_llh = 40
+Gen 7000: best_fit = 55.7136 mean_fit = 73.4895 unique_llh = 39
+Gen 7050: best_fit = 55.7136 mean_fit = 73.5835 unique_llh = 39
+Gen 7100: best_fit = 55.7136 mean_fit = 73.5152 unique_llh = 39
+Gen 7150: best_fit = 55.7136 mean_fit = 73.4507 unique_llh = 40
+Gen 7200: best_fit = 55.7136 mean_fit = 73.3385 unique_llh = 39
+Gen 7250: best_fit = 55.7136 mean_fit = 73.6679 unique_llh = 39
+Gen 7300: best_fit = 55.7136 mean_fit = 73.4672 unique_llh = 40
+Gen 7350: best_fit = 55.7136 mean_fit = 73.7985 unique_llh = 40
+Gen 7400: best_fit = 55.7136 mean_fit = 73.6944 unique_llh = 40
+Gen 7450: best_fit = 55.7136 mean_fit = 73.6073 unique_llh = 40
+Gen 7500: best_fit = 55.7136 mean_fit = 73.4963 unique_llh = 40
+Gen 7550: best_fit = 55.7136 mean_fit = 73.5266 unique_llh = 40
+Gen 7600: best_fit = 55.7136 mean_fit = 73.2109 unique_llh = 40
+Gen 7650: best_fit = 55.7136 mean_fit = 73.5814 unique_llh = 40
+Gen 7700: best_fit = 55.7136 mean_fit = 73.5199 unique_llh = 40
+Gen 7750: best_fit = 55.7136 mean_fit = 73.5216 unique_llh = 40
+Gen 7800: best_fit = 55.7136 mean_fit = 73.7903 unique_llh = 39
+Gen 7850: best_fit = 55.7136 mean_fit = 73.3407 unique_llh = 39
+Gen 7900: best_fit = 55.7136 mean_fit = 73.5934 unique_llh = 39
+Gen 7950: best_fit = 55.7136 mean_fit = 73.6203 unique_llh = 39
+Gen 8000: best_fit = 55.7136 mean_fit = 73.3848 unique_llh = 39
+Gen 8050: best_fit = 55.7136 mean_fit = 73.6926 unique_llh = 39
+Gen 8100: best_fit = 55.7136 mean_fit = 73.7566 unique_llh = 39
+Gen 8150: best_fit = 55.7136 mean_fit = 72.9586 unique_llh = 40
+Gen 8200: best_fit = 55.7136 mean_fit = 73.7072 unique_llh = 40
+Gen 8250: best_fit = 55.7136 mean_fit = 73.6248 unique_llh = 39
+Gen 8300: best_fit = 55.7136 mean_fit = 73.4015 unique_llh = 40
+Gen 8350: best_fit = 55.7136 mean_fit = 73.7205 unique_llh = 40
+Gen 8400: best_fit = 55.7136 mean_fit = 73.5408 unique_llh = 39
+Gen 8450: best_fit = 55.7136 mean_fit = 73.3736 unique_llh = 39
+Gen 8500: best_fit = 55.7136 mean_fit = 73.6551 unique_llh = 40
+Gen 8550: best_fit = 55.7136 mean_fit = 73.6749 unique_llh = 39
+Gen 8600: best_fit = 55.7136 mean_fit = 73.2407 unique_llh = 40
+Gen 8650: best_fit = 55.7115 mean_fit = 73.1959 unique_llh = 40
+Gen 8700: best_fit = 55.7115 mean_fit = 73.6925 unique_llh = 39
+Gen 8750: best_fit = 55.7115 mean_fit = 73.5395 unique_llh = 40
+Gen 8800: best_fit = 55.7115 mean_fit = 73.5114 unique_llh = 40
+Gen 8850: best_fit = 55.7115 mean_fit = 73.6716 unique_llh = 40
+Gen 8900: best_fit = 55.7115 mean_fit = 73.5888 unique_llh = 40
+Gen 8950: best_fit = 55.7001 mean_fit = 73.5943 unique_llh = 40
+Gen 9000: best_fit = 55.7001 mean_fit = 73.6214 unique_llh = 40
+Gen 9050: best_fit = 55.7001 mean_fit = 73.1561 unique_llh = 39
+Gen 9100: best_fit = 55.7001 mean_fit = 73.7867 unique_llh = 39
+Gen 9150: best_fit = 55.7001 mean_fit = 73.3655 unique_llh = 40
+Gen 9200: best_fit = 55.7001 mean_fit = 73.6855 unique_llh = 40
+Gen 9250: best_fit = 55.7001 mean_fit = 73.6932 unique_llh = 40
+Gen 9300: best_fit = 55.7001 mean_fit = 73.7345 unique_llh = 40
+Gen 9350: best_fit = 55.7001 mean_fit = 73.5587 unique_llh = 39
+Gen 9400: best_fit = 55.7001 mean_fit = 73.3995 unique_llh = 40
+Gen 9450: best_fit = 55.7001 mean_fit = 73.6451 unique_llh = 40
+Gen 9500: best_fit = 55.7001 mean_fit = 73.6009 unique_llh = 39
+Gen 9550: best_fit = 55.7001 mean_fit = 73.6232 unique_llh = 40
+Gen 9600: best_fit = 55.7001 mean_fit = 73.5491 unique_llh = 40
+Gen 9650: best_fit = 55.7001 mean_fit = 73.7984 unique_llh = 40
+Gen 9700: best_fit = 55.7001 mean_fit = 73.8632 unique_llh = 40
+Gen 9750: best_fit = 55.7001 mean_fit = 73.7831 unique_llh = 39
+Gen 9800: best_fit = 55.7001 mean_fit = 73.3792 unique_llh = 40
+Gen 9850: best_fit = 55.7001 mean_fit = 73.7951 unique_llh = 40
+Gen 9900: best_fit = 55.6994 mean_fit = 73.5721 unique_llh = 40
+Gen 9950: best_fit = 55.6994 mean_fit = 73.7188 unique_llh = 40
+Gen 10000: best_fit = 55.6994 mean_fit = 73.4544 unique_llh = 40
+
+=== Final Results (GA-SLHH) ===
+Solver: GA-SLHH
+Generation = 10000
+The best solution = 55.6994
+Time = 411.349 s
+
+exit code 0

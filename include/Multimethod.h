@@ -158,6 +158,7 @@ public:
 	void pop_update(int p_start, int p_end);
 	void pop_better_update(int p_start, int p_end);
 	void Initial();
+    void ComputeReferenceValues();
     void Evaluation(bool s, int p_start, int p_end);             //s = 0: evalu pop, s = 1: evalu newpop
     double Eval(const double* var);
     void ResetEvalCount() {
