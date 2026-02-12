@@ -84,8 +84,8 @@ EXPERIMENTS = {
         "configs": [
             ("CCHIHH_Full", ["--solver", "CCHIHH", "--stable", "--resample_gate", "15"]),
             ("GDE", ["--solver", "GDE"]),
-            ("GA_SLHH", ["--solver", "GA-SLHH"]),
-            ("QPHH", ["--solver", "QHH"]),
+            ("CGA", ["--solver", "CGA"]),
+            ("IMOMA", ["--solver", "IMOMA"]),
         ],
     },
 }
@@ -103,8 +103,8 @@ COLORS = {
     "stable_false": "#d62728",
     "CCHIHH_Full": "#d62728",
     "GDE": "#2ca02c",
-    "GA_SLHH": "#1f77b4",
-    "QPHH": "#ff7f0e",
+    "CGA": "#1f77b4",
+    "IMOMA": "#ff7f0e",
 }
 
 
@@ -157,29 +157,42 @@ def find_exe(root: Path, exe_arg: str):
 
 
 def parse_log(path: Path):
+    raw = path.read_bytes()
+    if raw.startswith(b"\xff\xfe") or raw.startswith(b"\xfe\xff"):
+        text = raw.decode("utf-16", errors="ignore")
+    else:
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            try:
+                text = raw.decode("gbk")
+            except UnicodeDecodeError:
+                text = raw.decode("utf-16", errors="ignore")
+    if "\x00" in text:
+        text = text.replace("\x00", "")
+
     series = {}
     final = None
     gate_blocked = None
     gate_fallback = None
-    with path.open("r", encoding="utf-8", errors="ignore") as f:
-        for raw in f:
-            line = raw.strip()
-            m = LINE_RE.match(line)
-            if m:
-                series[int(m.group(1))] = float(m.group(2))
-                continue
-            m = FINAL_RE.match(line)
-            if m:
-                final = float(m.group(1))
-                continue
-            m = GATE_BLOCK_RE.match(line)
-            if m:
-                gate_blocked = int(m.group(1))
-                continue
-            m = GATE_FALLBACK_RE.match(line)
-            if m:
-                gate_fallback = int(m.group(1))
-                continue
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        m = LINE_RE.match(line)
+        if m:
+            series[int(m.group(1))] = float(m.group(2))
+            continue
+        m = FINAL_RE.match(line)
+        if m:
+            final = float(m.group(1))
+            continue
+        m = GATE_BLOCK_RE.match(line)
+        if m:
+            gate_blocked = int(m.group(1))
+            continue
+        m = GATE_FALLBACK_RE.match(line)
+        if m:
+            gate_fallback = int(m.group(1))
+            continue
     if final is None and series:
         final = series[max(series.keys())]
     return {
@@ -209,8 +222,8 @@ def ensure_fixed_ops_support(root: Path):
         raise RuntimeError("Missing SetFixedOpsPerBlock wiring in src/main.cpp")
     if "if (fixed_ops_per_block)" not in cc_text:
         raise RuntimeError("Missing fixed_ops_per_block logic in src/CC_HIHH.cpp")
-    if "op_sel = OFF_OP_DE" not in cc_text or "op_sel = SEQ_OP_SWAP" not in cc_text or "op_sel = DEV_OP_GDE" not in cc_text:
-        raise RuntimeError("Fixed-ops mapping (Offload=DE, Seq=SWAP, Dev=GDE) not found in src/CC_HIHH.cpp")
+    if "op_sel = OFF_OP_GA" not in cc_text or "op_sel = SEQ_OP_GA" not in cc_text or "op_sel = DEV_OP_DE" not in cc_text:
+        raise RuntimeError("Fixed-ops mapping (Offload=GA, Seq=GA, Dev=DE) not found in src/CC_HIHH.cpp")
 
 
 def build_tasks(root: Path, exe: Path, out_root: Path, experiments, generations: int, log_every: int, seeds: int):
@@ -455,7 +468,7 @@ def write_wilcoxon(path: Path, finals_by_cfg, configs):
 
 def write_baseline_pair_tables(scale_dir: Path, finals_by_cfg):
     baseline = "CCHIHH_Full"
-    targets = ["GDE", "GA_SLHH", "QPHH"]
+    targets = ["GDE", "CGA", "IMOMA"]
     for t in targets:
         seeds = sorted(set(finals_by_cfg[baseline].keys()) & set(finals_by_cfg[t].keys()))
         xa = [finals_by_cfg[baseline][s] for s in seeds]

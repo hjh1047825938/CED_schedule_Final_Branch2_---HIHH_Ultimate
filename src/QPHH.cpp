@@ -56,11 +56,14 @@ QPHH_Solver::QPHH_Solver(MultiMet* s, int popsize, int n_tasks, double eps, doub
       p_c(1.0),
       p_greedy(1.0),
       greedy_decay(0.95),
-      gi_cap(20),
-      map_cap(30),
-      num_threads(8),
+      gi_cap(30),
+      map_cap(40),
+      num_threads(1),
       gbest_fit(1e30),
       prev_best_fit(1e30),
+      current_iter(0),
+      no_improve_count(0),
+      last_best(1e30),
       log_llh(false),
       log_q(false),
       log_every(50)
@@ -87,6 +90,9 @@ void QPHH_Solver::SetConfig(const QPHHConfig& cfg)
 
 double QPHH_Solver::randval(double low, double high) const
 {
+    if (num_threads <= 1) {
+        return low + (double)rand() / RAND_MAX * (high - low);
+    }
     std::uniform_real_distribution<double> dist(low, high);
     return dist(tls_rng());
 }
@@ -94,12 +100,22 @@ double QPHH_Solver::randval(double low, double high) const
 int QPHH_Solver::randint(int low, int high_exclusive) const
 {
     if (high_exclusive <= low) return low;
+    if (num_threads <= 1) {
+        return low + (rand() % (high_exclusive - low));
+    }
     std::uniform_int_distribution<int> dist(low, high_exclusive - 1);
     return dist(tls_rng());
 }
 
 void QPHH_Solver::Shuffle(std::vector<int>& data) const
 {
+    if (num_threads <= 1) {
+        for (int i = (int)data.size() - 1; i > 0; i--) {
+            int r = randint(0, i + 1);
+            std::swap(data[i], data[r]);
+        }
+        return;
+    }
     std::shuffle(data.begin(), data.end(), tls_rng());
 }
 
@@ -190,15 +206,22 @@ void QPHH_Solver::Init()
         }
     }
     prev_best_fit = gbest_fit;
+    current_iter = 0;
+    no_improve_count = 0;
+    last_best = 1e30;
     std::cout << "[QPHH] Init done. gbest=" << gbest_fit << std::endl;
     std::cout.flush();
 }
 
 void QPHH_Solver::RunIteration(int iter)
 {
+    current_iter = iter;
     double alpha = ComputeAlpha(iter);
     epsilon = ComputeEpsilon(iter);
     int action = SelectAction(prev_state);
+    double iter_ratio = (max_iterations > 0) ? (iter / (double)max_iterations) : 0.0;
+    if (iter_ratio < 0.0) iter_ratio = 0.0;
+    if (iter_ratio > 1.0) iter_ratio = 1.0;
 
     if (log_llh && ((iter + 1) % log_every == 0)) {
         static const char* names[6] = {
@@ -210,10 +233,25 @@ void QPHH_Solver::RunIteration(int iter)
                   << " (" << names[action] << ")" << std::endl;
     }
 
+    // Speed/quality balance: update mostly inferior individuals, keep elites stable.
+    std::vector<int> rank_idx(P);
+    std::iota(rank_idx.begin(), rank_idx.end(), 0);
+    std::sort(rank_idx.begin(), rank_idx.end(), [&](int a, int b) {
+        return pop[a].fit > pop[b].fit;
+    });
+    int apply_count = std::max(2, (int)(P * (0.45 + 0.2 * (1.0 - iter_ratio))));
+    if (apply_count > P) apply_count = P;
+    std::vector<int> apply_ids;
+    apply_ids.reserve(apply_count);
+    for (int k = 0; k < apply_count; k++) {
+        apply_ids.push_back(rank_idx[k]);
+    }
+
 #ifdef _OPENMP
     #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < P; i++) {
+    for (int n = 0; n < (int)apply_ids.size(); n++) {
+        int i = apply_ids[n];
         std::vector<int> order;
         std::vector<int> dev_idx_by_op(ops, 0);
         std::vector<double> local_tmp_var(Nvar, 0.0);
@@ -254,15 +292,17 @@ void QPHH_Solver::RunIteration(int iter)
         return pop[a].fit > pop[b].fit;
     });
 
-    int num_improve = std::max(1, (int)(P * (0.3 + 0.4 * (1.0 - iter / (double)max_iterations))));
-    if (num_improve > P) num_improve = P;
-    for (int k = 0; k < num_improve; k++) {
-        int i = idx[k];
-        double r = randval(0.0, 1.0);
-        if (r < p_c) {
-            TwoPointCrossover(pop[i]);
-        } else {
-            NTasksGreedyInsert(pop[i], tmp_var);
+    if ((iter % 3) == 0) {
+        int num_improve = std::max(1, (int)(P * (0.11 + 0.09 * (1.0 - iter_ratio))));
+        if (num_improve > P) num_improve = P;
+        for (int k = 0; k < num_improve; k++) {
+            int i = idx[k];
+            double r = randval(0.0, 1.0);
+            if (r < p_c) {
+                TwoPointCrossover(pop[i]);
+            } else {
+                NTasksGreedyInsert(pop[i], tmp_var);
+            }
         }
     }
 
@@ -271,6 +311,38 @@ void QPHH_Solver::RunIteration(int iter)
         if (pop[i].fit < gbest_fit) {
             gbest_fit = pop[i].fit;
             gbest = pop[i].var;
+        }
+    }
+
+    // Light elite intensification to improve convergence quality.
+    if ((iter % 200) == 0) {
+        int elite_count = std::max(1, P / 10);
+        if (elite_count > 2) elite_count = 2;
+        for (int e = 0; e < elite_count; e++) {
+            int i = idx[P - 1 - e];
+            NTasksGreedyInsert(pop[i], tmp_var);
+            if (pop[i].fit < gbest_fit) {
+                gbest_fit = pop[i].fit;
+                gbest = pop[i].var;
+            }
+        }
+
+        // Very low-cost refinement around current global best.
+        for (int r = 0; r < 3; r++) {
+            trial_var = gbest;
+            int changes = std::max(4, Nvar / 80);
+            for (int c = 0; c < changes; c++) {
+                int pos = randint(0, Nvar);
+                double v = trial_var[pos] + randval(-0.08, 0.08);
+                if (v < 0.0) v = 0.0;
+                if (v > 1.0) v = 1.0;
+                trial_var[pos] = v;
+            }
+            double fit = EvalVarSafe(trial_var.data());
+            if (fit < gbest_fit) {
+                gbest_fit = fit;
+                gbest = trial_var;
+            }
         }
     }
 
@@ -302,9 +374,66 @@ void QPHH_Solver::RunIteration(int iter)
     prev_action = action;
     prev_best_fit = gbest_fit;
 
-    // decay pc
-    p_c = p_c - config.p_c_decay;
-    if (p_c < 0.0) p_c = 0.0;
+    // Improved p_c decay strategy
+    p_c = std::max(0.1, p_c * 0.998);
+    if (iter % 500 == 0) p_c = 0.8;
+
+    // Stagnation detection
+    if (std::fabs(gbest_fit - last_best) < config.min_improvement) {
+        no_improve_count++;
+    } else {
+        no_improve_count = 0;
+        last_best = gbest_fit;
+    }
+
+    // Population restart mechanism
+    if (no_improve_count >= config.patience) {
+        std::cout << "[QPHH] Stagnation detected at iter " << iter
+                  << ", restarting 25% population..." << std::endl;
+        std::cout.flush();
+
+        int restart_count = P / 4;
+        if (restart_count < 1) restart_count = 1;
+
+        for (int k = 0; k < restart_count; k++) {
+            int i = idx[k];
+            // Half guided restart around gbest, half full random.
+            const bool guided = (k < restart_count / 2);
+            for (int j = 0; j < Nvar; j++) {
+                if (guided) {
+                    double v = gbest[j] + randval(-0.12, 0.12);
+                    if (v < 0.0) v = 0.0;
+                    if (v > 1.0) v = 1.0;
+                    pop[i].var[j] = v;
+                } else {
+                    pop[i].var[j] = randval(0.0, 1.0);
+                }
+            }
+
+            std::vector<int> order;
+            BuildRandomFeasibleOrder(order);
+            EncodeOrderAndMapping(pop[i].var, order, std::vector<int>());
+            BuildMappingGreedyETRM(pop[i].var, order);
+            pop[i].fit = EvalVarSafe(pop[i].var.data());
+        }
+
+        // Reset exploration parameters
+        p_c = 0.8;
+        p_greedy = 0.8;
+        no_improve_count = 0;
+        last_best = gbest_fit;
+
+        // Update gbest
+        for (int i = 0; i < P; i++) {
+            if (pop[i].fit < gbest_fit) {
+                gbest_fit = pop[i].fit;
+                gbest = pop[i].var;
+            }
+        }
+
+        std::cout << "[QPHH] Restart complete. New best: " << gbest_fit << std::endl;
+        std::cout.flush();
+    }
 }
 
 // ---------------------- decoding / encoding ----------------------
@@ -609,7 +738,6 @@ void QPHH_Solver::BuildMappingGreedyETRM(std::vector<double>& var, const std::ve
 {
     // Initialize CE task mapping (cloud/edge) + device mapping for ops
     // Greedy with probability p_greedy, ETRM otherwise
-    double p_greedy_local = 1.0;
     std::vector<int> freq_cloud(solver->Cnum, 0);
     std::vector<int> freq_edge(solver->Enum, 0);
     std::vector<int> cloud_load(solver->Cnum, 0);
@@ -617,6 +745,11 @@ void QPHH_Solver::BuildMappingGreedyETRM(std::vector<double>& var, const std::ve
 
     // CE task mapping
     for (int t = 0; t < CE_Tnum; t++) {
+        double iter_ratio = (current_iter > 0 && max_iterations > 0)
+            ? ((double)current_iter / (double)max_iterations) : 0.0;
+        if (iter_ratio < 0.0) iter_ratio = 0.0;
+        if (iter_ratio > 1.0) iter_ratio = 1.0;
+        double p_greedy_local = p_greedy * (0.3 + 0.7 * (1.0 - iter_ratio));
         bool use_greedy = (randval(0.0, 1.0) < p_greedy_local);
         const std::vector<int>& edge_list = solver->CETask_Property[t].AvailEdgeServerList;
 
@@ -698,9 +831,6 @@ void QPHH_Solver::BuildMappingGreedyETRM(std::vector<double>& var, const std::ve
             freq_cloud[best_idx]++;
             cloud_load[best_idx]++;
         }
-
-        p_greedy_local *= greedy_decay;
-        if (p_greedy_local < 0.0) p_greedy_local = 0.0;
     }
 
     // Device mapping for ops
@@ -712,6 +842,11 @@ void QPHH_Solver::BuildMappingGreedyETRM(std::vector<double>& var, const std::ve
         const std::vector<int>& dev_list = solver->AvailDeviceList[op];
         if (dev_list.empty()) continue;
 
+        double iter_ratio = (current_iter > 0 && max_iterations > 0)
+            ? ((double)current_iter / (double)max_iterations) : 0.0;
+        if (iter_ratio < 0.0) iter_ratio = 0.0;
+        if (iter_ratio > 1.0) iter_ratio = 1.0;
+        double p_greedy_local = p_greedy * (0.3 + 0.7 * (1.0 - iter_ratio));
         bool use_greedy = (randval(0.0, 1.0) < p_greedy_local);
         double best_fit = std::numeric_limits<double>::infinity();
         int best_idx = 0;
@@ -761,9 +896,6 @@ void QPHH_Solver::BuildMappingGreedyETRM(std::vector<double>& var, const std::ve
         int dev = dev_list[best_idx];
         freq_dev[dev]++;
         dev_load[dev]++;
-
-        p_greedy_local *= greedy_decay;
-        if (p_greedy_local < 0.0) p_greedy_local = 0.0;
     }
 }
 
@@ -840,8 +972,14 @@ void QPHH_Solver::GreedyInsertTask(std::vector<int>& order, int task, const std:
 // ---------------------- Q-learning helpers ----------------------
 int QPHH_Solver::SelectAction(int state) const
 {
+    double iter_ratio = (current_iter > 0 && max_iterations > 0)
+        ? ((double)current_iter / (double)max_iterations) : 0.0;
+    if (iter_ratio < 0.0) iter_ratio = 0.0;
+    if (iter_ratio > 1.0) iter_ratio = 1.0;
+    double adaptive_epsilon = std::max(0.05, epsilon * std::exp(-3.0 * iter_ratio));
+
     double r = randval(0.0, 1.0);
-    if (r < epsilon) {
+    if (r < adaptive_epsilon) {
         return randint(0, 6);
     }
     int best = 0;

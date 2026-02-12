@@ -1,4 +1,5 @@
-Command: 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\build_ablation\Release\CED_Schedule.exe' --solver CCHIHH --stable --resample_gate 15 --seed 10 --generations 10000 --log_every 50 --data_dir 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\data' --data_file data_matrix_T500_E200_D800.txt --cnum 200 --enum 200 --dnum 800 --tnum 500 --mopt 5
+Command: 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\build_ablation\Release\CED_Schedule.exe' --solver CCHIHH --stable --resample_gate 15 --migration --seed 10 --generations 10000 --log_every 50 --data_dir 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\data' --data_file data_matrix_T500_E200_D800.txt --cnum 200 --enum 200 --dnum 800 --tnum 500 --mopt 5 --cchihh_op_stats 'C:\Users\Hu\Desktop\璁烘枃\CED_schedule_Final\results\cchihh_full_canonical_multiscale\T500\CCHIHH_full_opstats_seed10.csv' --cchihh_op_stats_every 50
+Command: 'C:\Users\Hu\Desktop\论文\CED_schedule_Final\build_ablation\Release\CED_Schedule.exe' '--solver' 'CCHIHH' '--stable' '--resample_gate' '15' '--migration' '--seed' '10' '--generations' '10000' '--log_every' '50' '--data_dir' 'C:\Users\Hu\Desktop\论文\CED_schedule_Final\data' '--data_file' 'data_matrix_T500_E200_D800.txt' '--cnum' '200' '--enum' '200' '--dnum' '800' '--tnum' '500' '--mopt' '5' '--cchihh_op_stats' 'C:\Users\Hu\Desktop\论文\CED_schedule_Final\results\cchihh_full_canonical_multiscale\T500\CCHIHH_full_opstats_seed10.csv' '--cchihh_op_stats_every' '50'
 === CED_Schedule Configuration ===
 Data directory: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data"
 Data file: data_matrix_T500_E200_D800.txt
@@ -9,7 +10,8 @@ Pini (heuristic prob): 0.4
 Objective alpha: 0.5
 Solver: CCHIHH
 Cnum/Enum/Dnum/Tnum/Mopt: 200/200/800/500/5
-Migration: disabled
+Migration: enabled
+  Subpopulations: 8
 Stable mode: enabled
   resample_gate=15 reward_clip=0.2 eps0=0.2 eps_min=0.02 eps_k=0.01 lr0=0.05 lr_k=0.002
 CCHIHH gate: enabled
@@ -17,11 +19,13 @@ CCHIHH blocks: enabled
 CCHIHH migration: enabled
 CCHIHH bandit: enabled
 CCHIHH fixed ops: disabled
+CCHIHH op stats: C:\Users\Hu\Desktop\论文\CED_schedule_Final\results\cchihh_full_canonical_multiscale\T500\CCHIHH_full_opstats_seed10.csv
 =================================
 [Initial] Loading data from: "C:\\Users\\Hu\\Desktop\\论文\\CED_schedule_Final\\data\\data_matrix_T500_E200_D800.txt"
 [Normalization] f1_ref (makespan) = 47082.4
 [Normalization] f2_ref (energy) = 5811.96
 [Normalization] alpha = 0.5
+[Migration] Initialized: 8 subpops, interval=5, pElitist=0.8
 
 === Running CC-HIHH-UCB Solver ===
 [CC-HIHH] Initializing solver...
@@ -240,6 +244,6 @@ Generations = 10000
 The best solution = 0.0273569
 CCHIHH gate_blocked_total = 19062
 CCHIHH gate_fallback_total = 19062
-Time = 292.822 s
+Time = 284.177 s
 
 exit code 0

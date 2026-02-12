@@ -11,6 +11,8 @@ set(SOURCES
     src/CC_HIHH_singleisland.cpp
     src/GA_SLHH.cpp
     src/QPHH.cpp
+    src/IMOMA.cpp
+    src/CGA.cpp
 )
 
 set(HEADERS
@@ -21,6 +23,8 @@ set(HEADERS
     include/CC_HIHH.h
     include/GA_SLHH.h
     include/QPHH.h
+    include/IMOMA.h
+    include/CGA.h
     include/Rng.h
 )
 

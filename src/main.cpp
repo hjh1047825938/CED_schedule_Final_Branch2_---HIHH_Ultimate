@@ -2,6 +2,8 @@
 #include "CC_HIHH.h"
 #include "GA_SLHH.h"
 #include "QPHH.h"
+#include "IMOMA.h"
+#include "CGA.h"
 #include "Rng.h"
 #include <iostream>
 #include <fstream>
@@ -13,9 +15,11 @@
 #include <vector>
 #include <limits>
 #include <cstdint>
+#include <sstream>
 #include <algorithm>
 #include <cmath>
 #include <cctype>
+#include <utility>
 using namespace std;
 
 // Default parameters
@@ -24,10 +28,11 @@ using namespace std;
 #define DEFAULT_DNUM 300
 #define DEFAULT_TNUM 100
 #define DEFAULT_MOPT_NUM 5
-#define DEFAULT_MAXGEN 500
+#define DEFAULT_MAXGEN 10000
 #define DEFAULT_POPSIZE 40
 #define DEFAULT_PINI 0.4
 #define DEFAULT_SEED 42
+#define DEFAULT_CGA_VM_RATIO 0.35
 
 void print_usage(const char* prog_name) {
     cout << "Usage: " << prog_name << " [OPTIONS]\n";
@@ -39,7 +44,7 @@ void print_usage(const char* prog_name) {
     cout << "  --seed <n>           Random seed (default: " << DEFAULT_SEED << ")\n";
     cout << "  --pini <f>           Heuristic init probability 0-1 (default: " << DEFAULT_PINI << ")\n";
     cout << "  --alpha <f>          Weight for makespan vs energy (default: 0.5, range: [0,1])\n";
-    cout << "  --solver <name>      Solver: GA, DE, GDE, CCHIHH, QHH, GA-SLHH (default: GA)\n";
+    cout << "  --solver <name>      Solver: GA, DE, GDE, CCHIHH, QHH, GA-SLHH, IMOMA, CGA (default: GA)\n";
     cout << "  --cnum <n>           Number of cloud servers (default: " << DEFAULT_CNUM << ")\n";
     cout << "  --enum <n>           Number of edge servers (default: " << DEFAULT_ENUM << ")\n";
     cout << "  --dnum <n>           Number of devices (default: " << DEFAULT_DNUM << ")\n";
@@ -49,15 +54,22 @@ void print_usage(const char* prog_name) {
     cout << "  --nsubpop <n>        Number of subpopulations for migration (default: 8)\n";
     cout << "  --log_every <n>      Log best_fit every n generations (or evals if --max_evals is set, default: 50)\n";
     cout << "  --max_evals <n>      Stop after N evaluation calls (0 = disabled)\n";
-    cout << "  --qphh_p0_factor <n> QPHH init pool multiplier P0 = P * n (default: 5)\n";
+    cout << "  --qphh_p0_factor <n> QPHH init pool multiplier P0 = P * n (default: 3)\n";
     cout << "  --qphh_tasksn <n>    QPHH greedy-insert tasks per LS (default: 1)\n";
-    cout << "  --qphh_gi_cap <n>    QPHH greedy-insert position cap (0=all, default: 20)\n";
-    cout << "  --qphh_map_cap <n>   QPHH mapping candidate cap (0=all, default: 30)\n";
-    cout << "  --qphh_threads <n>   QPHH OpenMP thread count (default: 8)\n";
+    cout << "  --qphh_gi_cap <n>    QPHH greedy-insert position cap (0=all, default: 30)\n";
+    cout << "  --qphh_map_cap <n>   QPHH mapping candidate cap (0=all, default: 40)\n";
+    cout << "  --qphh_threads <n>   QPHH OpenMP thread count (default: 1)\n";
+    cout << "  --imoma_arc_ratio <f> IMOMA archive ratio (default: 0.5)\n";
+    cout << "  --cga_input <path>   CGA input file path (task/vm/rate format)\n";
+    cout << "  --cga_rate <f>       CGA fixed transmission rate override (>0)\n";
+    cout << "  --cga_vm_count <n>   Raw-mode VM count (default: round(0.35 * Tnum))\n";
+    cout << "  --cga_comm_scale <f> Raw-mode communication scale (default: 0.01)\n";
+    cout << "  --cga_edge_ratio <f> Raw-mode edge mips ratio to avg VM (default: 0.6)\n";
+    cout << "  --cga_deadline_factor <f>  Raw-mode deadline factor (default: 1.5)\n";
     cout << "  --stable             Enable CCHIHH-Stable mode\n";
     cout << "  --cchihh_no_migration  Disable CCHIHH intra-block migration\n";
     cout << "  --cchihh_random_ops    Disable contextual bandit, random operators\n";
-    cout << "  --cchihh_fixed_ops     Fixed operators per block: offload=DE, seq=SWAP, dev=GDE\n";
+    cout << "  --cchihh_fixed_ops     Fixed operators per block: offload=GA, seq=GA, dev=DE\n";
     cout << "  --cchihh_no_blocks     Disable CC blocks, run on full variable space\n";
     cout << "  --no_blocks            Alias of --cchihh_no_blocks\n";
     cout << "  --use_blocks <bool>    Enable/disable CC blocks (true/false, default: true)\n";
@@ -148,22 +160,297 @@ static void RunSynthetic(unsigned int seed)
     cout << "Best synthetic fitness (1 round): " << best << endl;
 }
 
+static bool LoadCGAInputFile(const std::string& file_path,
+                             std::vector<CGATask>& tasks,
+                             std::vector<CGAVM>& vms,
+                             double& rate)
+{
+    std::ifstream ifs(file_path);
+    if (!ifs.is_open()) {
+        std::cerr << "Error: failed to open CGA input file: " << file_path << std::endl;
+        return false;
+    }
+
+    int n_tasks = 0;
+    int n_vms = 0;
+    if (!(ifs >> n_tasks >> n_vms) || n_tasks <= 0 || n_vms <= 0) {
+        std::cerr << "Error: invalid CGA header. Expected: <num_tasks> <num_vms>" << std::endl;
+        return false;
+    }
+
+    tasks.assign(n_tasks, CGATask{});
+    for (int i = 0; i < n_tasks; ++i) {
+        if (!(ifs >> tasks[i].data_length >> tasks[i].input_data_size >> tasks[i].deadline)) {
+            std::cerr << "Error: invalid task row at index " << i
+                      << ". Expected: <data_length> <input_data_size> <deadline>" << std::endl;
+            return false;
+        }
+        if (tasks[i].data_length <= 0.0 || tasks[i].input_data_size < 0.0 || tasks[i].deadline <= 0.0) {
+            std::cerr << "Error: task values out of range at index " << i << std::endl;
+            return false;
+        }
+    }
+
+    vms.assign(n_vms, CGAVM{});
+    for (int i = 0; i < n_vms; ++i) {
+        if (!(ifs >> vms[i].mips)) {
+            std::cerr << "Error: invalid VM MIPS value at index " << i << std::endl;
+            return false;
+        }
+        if (vms[i].mips <= 0.0) {
+            std::cerr << "Error: VM MIPS must be > 0 at index " << i << std::endl;
+            return false;
+        }
+    }
+
+    // Optional trailing rate in file. If present and valid, it overrides default rate.
+    double file_rate = 0.0;
+    if (ifs >> file_rate) {
+        if (file_rate <= 0.0) {
+            std::cerr << "Error: CGA rate in input file must be > 0." << std::endl;
+            return false;
+        }
+        rate = file_rate;
+    }
+
+    return true;
+}
+
+static bool SkipTokens(std::ifstream& ifs, int n)
+{
+    double tmp = 0.0;
+    for (int i = 0; i < n; ++i) {
+        if (!(ifs >> tmp)) return false;
+    }
+    return true;
+}
+
+static bool LoadCGAFromCEDRaw(const std::filesystem::path& data_dir,
+                              const std::string& data_file,
+                              int enum_num,
+                              int dnum,
+                              int ce_tnum,
+                              int m_jnum,
+                              int m_optnum,
+                              int vm_count_override,
+                              double rate,
+                              double comm_scale,
+                              double edge_mips_ratio,
+                              double deadline_factor,
+                              std::vector<CGATask>& tasks,
+                              std::vector<CGAVM>& vms)
+{
+    if (enum_num <= 0 || dnum <= 0 || ce_tnum <= 0 || m_jnum <= 0 || m_optnum <= 0) {
+        std::cerr << "Error: invalid dimensions for raw CED parsing." << std::endl;
+        return false;
+    }
+
+    const std::filesystem::path matrix_path = data_dir / data_file;
+    std::ifstream ifs(matrix_path);
+    if (!ifs.is_open()) {
+        std::cerr << "Error: failed to open raw CED matrix file: " << matrix_path << std::endl;
+        return false;
+    }
+
+    // Section A: EtoD [Enum][Dnum]
+    if (!SkipTokens(ifs, enum_num * dnum)) {
+        std::cerr << "Error: malformed EtoD section in " << matrix_path << std::endl;
+        return false;
+    }
+    // Section B: DtoD [Dnum][Dnum]
+    if (!SkipTokens(ifs, dnum * dnum)) {
+        std::cerr << "Error: malformed DtoD section in " << matrix_path << std::endl;
+        return false;
+    }
+    // Section C: MTask_Time [M_Jnum*M_OPTnum]
+    if (!SkipTokens(ifs, m_jnum * m_optnum)) {
+        std::cerr << "Error: malformed MTask_Time section in " << matrix_path << std::endl;
+        return false;
+    }
+
+    // Section D: CETask_Property
+    tasks.clear();
+    tasks.reserve(ce_tnum);
+    for (int i = 0; i < ce_tnum; ++i) {
+        double comp = 0.0;
+        double comm = 0.0;
+        if (!(ifs >> comp >> comm)) {
+            std::cerr << "Error: malformed CETask_Property at task " << i << std::endl;
+            return false;
+        }
+
+        for (int g = 0; g < 4; ++g) {
+            int k = 0;
+            if (!(ifs >> k) || k < 0) {
+                std::cerr << "Error: malformed dependency length in task " << i << std::endl;
+                return false;
+            }
+            if (!SkipTokens(ifs, k)) {
+                std::cerr << "Error: malformed dependency list in task " << i << std::endl;
+                return false;
+            }
+        }
+
+        int job_constraints = 0;
+        if (!(ifs >> job_constraints)) {
+            std::cerr << "Error: malformed Job_Constraints in task " << i << std::endl;
+            return false;
+        }
+        (void)job_constraints;
+
+        CGATask t;
+        t.data_length = std::max(1e-9, comp);
+        // Keep communication in a compatible scale with existing CED timing model.
+        t.input_data_size = std::max(0.0, comm * comm_scale);
+        t.deadline = 0.0;  // filled after VM loading
+        tasks.push_back(t);
+    }
+
+    // Section E: AvailDeviceList for all operations
+    for (int i = 0; i < m_jnum; ++i) {
+        for (int j = 0; j < m_optnum; ++j) {
+            int k = 0;
+            if (!(ifs >> k) || k < 0) {
+                std::cerr << "Error: malformed AvailDeviceList length at op (" << i << "," << j << ")" << std::endl;
+                return false;
+            }
+            if (!SkipTokens(ifs, k)) {
+                std::cerr << "Error: malformed AvailDeviceList values at op (" << i << "," << j << ")" << std::endl;
+                return false;
+            }
+        }
+    }
+
+    // Section F: AvailEdgeServerList for each task
+    for (int i = 0; i < ce_tnum; ++i) {
+        int k = 0;
+        if (!(ifs >> k) || k < 0) {
+            std::cerr << "Error: malformed AvailEdgeServerList length at task " << i << std::endl;
+            return false;
+        }
+        if (!SkipTokens(ifs, k)) {
+            std::cerr << "Error: malformed AvailEdgeServerList values at task " << i << std::endl;
+            return false;
+        }
+    }
+
+    // Section G: EnergyList[11]
+    if (!SkipTokens(ifs, 11)) {
+        std::cerr << "Error: malformed EnergyList section in " << matrix_path << std::endl;
+        return false;
+    }
+
+    // VM MIPS source: Machines_3000.txt.
+    // Accept only plausible MIPS values; otherwise use deterministic fallback.
+    int vm_target = vm_count_override > 0 ? vm_count_override : (int)std::lround(DEFAULT_CGA_VM_RATIO * (double)ce_tnum);
+    if (vm_target < 1) vm_target = 1;
+    if (vm_target > enum_num) vm_target = enum_num;
+
+    std::vector<double> mips_values;
+    mips_values.reserve(vm_target);
+    const std::filesystem::path machine_path = data_dir / "Machines_3000.txt";
+    std::ifstream mfs(machine_path);
+    if (mfs.is_open()) {
+        std::string line;
+        while (std::getline(mfs, line) && (int)mips_values.size() < vm_target) {
+            if (line.empty()) continue;
+            std::istringstream iss(line);
+            std::vector<double> cols;
+            double v = 0.0;
+            while (iss >> v) cols.push_back(v);
+            if (cols.empty()) continue;
+
+            // Prefer values in a practical VM-MIPS range.
+            // Avoid accidentally using IDs or non-performance fields.
+            double picked = -1.0;
+            for (double c : cols) {
+                if (c >= 100.0 && c <= 10000.0) {
+                    picked = c;
+                    break;
+                }
+            }
+            if (picked > 0.0) {
+                mips_values.push_back(picked);
+            }
+        }
+    }
+    if (mips_values.empty()) {
+        // Fallback deterministic VM capacities (roughly 1000~2000 MIPS scale).
+        for (int i = 0; i < vm_target; ++i) {
+            mips_values.push_back(1000.0 + 10.0 * i);
+        }
+    } else if ((int)mips_values.size() < vm_target) {
+        const int cur = (int)mips_values.size();
+        for (int i = cur; i < vm_target; ++i) {
+            mips_values.push_back(mips_values[i % cur]);
+        }
+    }
+
+    vms.assign(vm_target, CGAVM{});
+    double mips_sum = 0.0;
+    for (int i = 0; i < vm_target; ++i) {
+        vms[i].mips = std::max(1e-9, mips_values[i]);
+        mips_sum += vms[i].mips;
+    }
+    const double avg_mips = mips_sum / (double)vm_target;
+
+    // Derive deadline from raw fields so CGA can run on original format directly.
+    for (CGATask& t : tasks) {
+        const double base = (t.data_length / std::max(1e-9, avg_mips)) + (t.input_data_size / std::max(1e-9, rate));
+        t.deadline = std::max(1e-9, base * deadline_factor);
+    }
+
+    // Paper-consistent task classification: only tasks that violate local deadline are offloaded.
+    const double edge_mips = std::max(1e-9, avg_mips * edge_mips_ratio);
+    std::vector<CGATask> cloud_tasks;
+    cloud_tasks.reserve(tasks.size());
+    for (const CGATask& t : tasks) {
+        const double local_exec = t.data_length / edge_mips;
+        if (local_exec > t.deadline) {
+            cloud_tasks.push_back(t);
+        }
+    }
+    // Keep solver stable when classification yields empty cloud set.
+    if (!cloud_tasks.empty()) {
+        tasks.swap(cloud_tasks);
+    }
+
+    return true;
+}
+
 int main(int argc, char* argv[])
 {
+    std::ostringstream cmd_oss;
+    cmd_oss << "Command:";
+    for (int i = 0; i < argc; ++i) {
+        cmd_oss << " '" << argv[i] << "'";
+    }
+    std::cout << cmd_oss.str() << std::endl;
+
     // Parse command-line arguments
     filesystem::path data_dir = "data";  // Default: ./data
     string data_file = "data_matrix_100.txt";
     int max_generations = DEFAULT_MAXGEN;
     int popsize = DEFAULT_POPSIZE;
+    bool generations_set = false;
+    bool popsize_set = false;
     unsigned int seed = DEFAULT_SEED;
     double pini = DEFAULT_PINI;
     double objective_alpha = 0.5;
     string solver_name = "GA";
-    int qphh_p0_factor = 5;
+    int qphh_p0_factor = 3;
     int qphh_tasksn = 1;
-    int qphh_gi_cap = 20;
-    int qphh_map_cap = 30;
-    int qphh_threads = 8;
+    int qphh_gi_cap = 30;
+    int qphh_map_cap = 40;
+    int qphh_threads = 1;
+    double imoma_arc_ratio = 0.5;
+    string cga_input_file;
+    double cga_rate = 10.0;
+    bool cga_rate_set = false;
+    int cga_vm_count = 0;
+    double cga_comm_scale = 0.01;
+    double cga_edge_ratio = 0.6;
+    double cga_deadline_factor = 1.5;
     int bench_eval = 0;
     bool migration_enabled = false;
     int nsubpop = 8;
@@ -198,8 +485,10 @@ int main(int argc, char* argv[])
             data_file = argv[++i];
         } else if (strcmp(argv[i], "--generations") == 0 && i + 1 < argc) {
             max_generations = atoi(argv[++i]);
+            generations_set = true;
         } else if (strcmp(argv[i], "--popsize") == 0 && i + 1 < argc) {
             popsize = atoi(argv[++i]);
+            popsize_set = true;
         } else if (strcmp(argv[i], "--seed") == 0 && i + 1 < argc) {
             seed = (unsigned int)atoi(argv[++i]);
         } else if (strcmp(argv[i], "--pini") == 0 && i + 1 < argc) {
@@ -237,6 +526,43 @@ int main(int argc, char* argv[])
         } else if (strcmp(argv[i], "--qphh_threads") == 0 && i + 1 < argc) {
             qphh_threads = atoi(argv[++i]);
             if (qphh_threads < 1) qphh_threads = 1;
+        } else if (strcmp(argv[i], "--imoma_arc_ratio") == 0 && i + 1 < argc) {
+            imoma_arc_ratio = atof(argv[++i]);
+            if (imoma_arc_ratio <= 0.0) imoma_arc_ratio = 0.5;
+            if (imoma_arc_ratio > 1.0) imoma_arc_ratio = 1.0;
+        } else if (strcmp(argv[i], "--cga_input") == 0 && i + 1 < argc) {
+            cga_input_file = argv[++i];
+        } else if (strcmp(argv[i], "--cga_rate") == 0 && i + 1 < argc) {
+            cga_rate = atof(argv[++i]);
+            cga_rate_set = true;
+            if (cga_rate <= 0.0) {
+                cerr << "Error: --cga_rate must be > 0" << endl;
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--cga_vm_count") == 0 && i + 1 < argc) {
+            cga_vm_count = atoi(argv[++i]);
+            if (cga_vm_count < 0) {
+                cerr << "Error: --cga_vm_count must be >= 0" << endl;
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--cga_comm_scale") == 0 && i + 1 < argc) {
+            cga_comm_scale = atof(argv[++i]);
+            if (cga_comm_scale <= 0.0) {
+                cerr << "Error: --cga_comm_scale must be > 0" << endl;
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--cga_edge_ratio") == 0 && i + 1 < argc) {
+            cga_edge_ratio = atof(argv[++i]);
+            if (cga_edge_ratio <= 0.0) {
+                cerr << "Error: --cga_edge_ratio must be > 0" << endl;
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--cga_deadline_factor") == 0 && i + 1 < argc) {
+            cga_deadline_factor = atof(argv[++i]);
+            if (cga_deadline_factor <= 0.0) {
+                cerr << "Error: --cga_deadline_factor must be > 0" << endl;
+                return 1;
+            }
         } else if (strcmp(argv[i], "--bench_eval") == 0 && i + 1 < argc) {
             bench_eval = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--migration") == 0) {
@@ -343,6 +669,24 @@ int main(int argc, char* argv[])
              << " map_cap=" << qphh_map_cap
              << " threads=" << qphh_threads << endl;
     }
+    if (solver_name == "IMOMA") {
+        cout << "IMOMA params: pop=" << popsize
+             << " arc_ratio=" << imoma_arc_ratio
+             << " generations=" << max_generations << endl;
+    }
+    if (solver_name == "CGA") {
+        int cga_vm_default = (int)std::lround(DEFAULT_CGA_VM_RATIO * (double)Tnum);
+        if (cga_vm_default < 1) cga_vm_default = 1;
+        if (cga_vm_default > Enum) cga_vm_default = Enum;
+        cout << "CGA input: " << (cga_input_file.empty() ? "(raw data mode via --data_dir/--data_file)" : cga_input_file) << endl;
+        if (cga_rate_set) {
+            cout << "CGA rate override: " << cga_rate << endl;
+        }
+        cout << "CGA VM count (raw mode): " << (cga_vm_count > 0 ? cga_vm_count : cga_vm_default) << endl;
+        cout << "CGA communication scale (raw mode): " << cga_comm_scale << endl;
+        cout << "CGA edge ratio (raw mode): " << cga_edge_ratio << endl;
+        cout << "CGA deadline factor (raw mode): " << cga_deadline_factor << endl;
+    }
     cout << "=================================" << endl;
 
     if (Cnum <= 0 || Enum <= 0 || Dnum <= 0 || Tnum <= 0 || Mopt_num <= 0) {
@@ -379,6 +723,234 @@ int main(int argc, char* argv[])
 
             cout << "Seed " << s << ": Pini=1.0 best=" << best_a << ", Pini=" << DEFAULT_PINI << " best=" << best_b << endl;
         }
+        return 0;
+    }
+
+    if (solver_name == "CGA") {
+        // Path A: legacy standalone CGA input file mode.
+        if (!cga_input_file.empty()) {
+            std::vector<CGATask> cga_tasks;
+            std::vector<CGAVM> cga_vms;
+            double final_rate = cga_rate;
+            if (!LoadCGAInputFile(cga_input_file, cga_tasks, cga_vms, final_rate)) {
+                return 1;
+            }
+            if (cga_rate_set) final_rate = cga_rate;
+
+            CGAConfig cfg;
+            cfg.population_size = popsize_set ? popsize : 100;
+            cfg.max_generations = generations_set ? max_generations : 10000;
+            cfg.crossover_prob = 0.75;
+            cfg.crossover_similarity_threshold = 0.8;
+            cfg.mutation_prob_early = 0.03;
+            cfg.mutation_prob_late = 0.01;
+            cfg.mutation_switch_generation = 6667;
+            cfg.catastrophe_threshold = 150;
+            cfg.catastrophe_apply_generations = 5000;
+
+            cout << "\n=== Running CGA Solver ===" << endl;
+            cout << "Tasks: " << cga_tasks.size() << ", VMs: " << cga_vms.size() << ", Rate: " << final_rate << endl;
+            cout << "CGA params: pop=" << cfg.population_size
+                 << ", gen=" << cfg.max_generations
+                 << ", pc=" << cfg.crossover_prob
+                 << ", pm(early/late)=" << cfg.mutation_prob_early << "/" << cfg.mutation_prob_late
+                 << ", cat=" << cfg.catastrophe_threshold
+                 << ", cat_apply_gen<=" << cfg.catastrophe_apply_generations << endl;
+
+            clock_t cga_t1 = clock();
+            CGA cga(std::move(cga_tasks), std::move(cga_vms), final_rate, cfg, seed);
+            CGAResult cga_result = cga.Run(log_every);
+            clock_t cga_t2 = clock();
+
+            cout << "\n=== Final Results (CGA) ===" << endl;
+            cout << "Solver: CGA" << endl;
+            cout << "Generations = " << cfg.max_generations << endl;
+            cout << "Best generation = " << cga_result.best_generation << endl;
+            cout << "Catastrophe triggers = " << cga_result.catastrophe_count << endl;
+            cout << "Best fitness = " << cga_result.best_fitness << endl;
+            cout << "The best solution = " << cga_result.best_fitness << endl;
+            cout << "Minimum completion time = " << cga_result.min_completion_time << endl;
+            cout << "Total punish = " << cga_result.total_punish << endl;
+            cout << "Delay satisfaction rate = " << cga_result.delay_satisfaction_rate
+                 << " (" << cga_result.satisfied_tasks << "/" << cga_result.total_tasks << ")" << endl;
+            cout << "Time = " << (double)(cga_t2 - cga_t1) / CLOCKS_PER_SEC << " s" << endl;
+            cout << "\nexit code 0" << endl;
+            return 0;
+        }
+
+        // Path B: default raw mode uses the same objective as other solvers (MultiMet::Eval).
+        srand(seed);
+        Rng::getInstance().setSeed(seed);
+        const int cga_pop = popsize_set ? popsize : 300;
+        const int cga_gen = generations_set ? max_generations : 10000;
+
+        MultiMet cga_solver(cga_pop, Tnum * 2 + Tnum * Mopt_num * 2, 0, 1,
+                            Cnum, Enum, Dnum, Tnum, Tnum, Mopt_num, CED_Schedule, data_dir, data_file);
+        cga_solver.SetSeed(seed);
+        cga_solver.SetPini(pini);
+        cga_solver.workspace.set_alpha(objective_alpha);
+        cga_solver.Initial();
+        cga_solver.ResetEvalCount();
+
+        struct CGA_MM_Ind {
+            std::vector<double> var;
+            double fit = std::numeric_limits<double>::infinity();
+            double score = 0.0;
+        };
+
+        std::mt19937 rng_local(seed + 7919u);
+        std::uniform_real_distribution<double> u01(0.0, 1.0);
+        std::uniform_real_distribution<double> gene_rand(0.0, 1.0);
+
+        auto eval_ind = [&](CGA_MM_Ind& ind) {
+            ind.fit = cga_solver.Eval(ind.var.data());
+            const double safe = ind.fit > 1e-15 ? ind.fit : 1e-15;
+            ind.score = 1.0 / safe;
+        };
+
+        auto similarity = [&](const CGA_MM_Ind& a, const CGA_MM_Ind& b) {
+            int same = 0;
+            for (int i = 0; i < (int)a.var.size(); ++i) {
+                if (std::fabs(a.var[i] - b.var[i]) <= 1e-12) ++same;
+            }
+            return (double)same / (double)a.var.size();
+        };
+
+        auto mutate_once = [&](CGA_MM_Ind& ind) {
+            const int n = (int)ind.var.size();
+            if (n <= 1) return;
+            std::uniform_int_distribution<int> p_pick(0, n - 1);
+            int p1 = p_pick(rng_local);
+            int p2 = p_pick(rng_local);
+            if (std::fabs(ind.var[p1] - ind.var[p2]) <= 1e-12) {
+                int tries = 0;
+                while (tries < n && std::fabs(ind.var[p1] - ind.var[p2]) <= 1e-12) {
+                    p2 = (p2 + 1) % n;
+                    ++tries;
+                }
+            }
+            if (std::fabs(ind.var[p1] - ind.var[p2]) > 1e-12) {
+                std::swap(ind.var[p1], ind.var[p2]);
+            } else {
+                ind.var[p1] = gene_rand(rng_local);
+            }
+        };
+
+        std::vector<CGA_MM_Ind> pop(cga_pop);
+        for (int i = 0; i < cga_pop; ++i) {
+            pop[i].var.assign(cga_solver.pop[i], cga_solver.pop[i] + cga_solver.Nvar);
+            eval_ind(pop[i]);
+        }
+
+        auto best_it = std::min_element(pop.begin(), pop.end(),
+                                        [](const CGA_MM_Ind& a, const CGA_MM_Ind& b) { return a.fit < b.fit; });
+        CGA_MM_Ind gbest = *best_it;
+        int best_gen = 0;
+        int stagnation = 0;
+        int cat_count = 0;
+
+        cout << "\n=== Running CGA Solver ===" << endl;
+        cout << "CGA mode: objective-compatible with CED_Schedule (best_fit smaller is better)" << endl;
+        cout << "CGA params: pop=" << cga_pop
+             << ", gen=" << cga_gen
+             << ", pc=0.75, pm(early/late)=0.03/0.01, cat=150, cat_apply_gen<=5000" << endl;
+
+        clock_t cga_t1 = clock();
+        for (int gen = 1; gen <= cga_gen; ++gen) {
+            std::vector<CGA_MM_Ind> next;
+            next.reserve(cga_pop);
+            next.push_back(gbest);  // elitism
+
+            double total_score = 0.0;
+            for (const auto& ind : pop) total_score += ind.score;
+            auto roulette_pick = [&]() {
+                if (total_score <= 0.0) {
+                    std::uniform_int_distribution<int> pick(0, cga_pop - 1);
+                    return pick(rng_local);
+                }
+                const double tgt = u01(rng_local) * total_score;
+                double acc = 0.0;
+                for (int i = 0; i < cga_pop; ++i) {
+                    acc += pop[i].score;
+                    if (acc >= tgt) return i;
+                }
+                return cga_pop - 1;
+            };
+
+            while ((int)next.size() < cga_pop) {
+                next.push_back(pop[roulette_pick()]);
+            }
+
+            // Crossover with similarity gate.
+            if (cga_solver.Nvar > 1) {
+                std::uniform_int_distribution<int> cpick(1, cga_solver.Nvar - 1);
+                for (int i = 1; i + 1 < cga_pop; i += 2) {
+                    if (u01(rng_local) > 0.75) continue;
+                    if (similarity(next[i], next[i + 1]) >= 0.8) continue;
+                    int cp = cpick(rng_local);
+                    for (int p = cp; p < cga_solver.Nvar; ++p) {
+                        std::swap(next[i].var[p], next[i + 1].var[p]);
+                    }
+                }
+            }
+
+            // Mutation (two-stage probability).
+            const double pm = (gen < 6667) ? 0.03 : 0.01;
+            for (int i = 1; i < cga_pop; ++i) {
+                if (u01(rng_local) < pm) mutate_once(next[i]);
+            }
+
+            for (auto& ind : next) eval_ind(ind);
+
+            // Catastrophe in early generations.
+            auto cur_best_it = std::min_element(next.begin(), next.end(),
+                                                [](const CGA_MM_Ind& a, const CGA_MM_Ind& b) { return a.fit < b.fit; });
+            if (cur_best_it->fit + 1e-12 < gbest.fit) {
+                gbest = *cur_best_it;
+                best_gen = gen;
+                stagnation = 0;
+            } else {
+                ++stagnation;
+            }
+
+            if (gen <= 5000 && stagnation >= 150) {
+                std::vector<int> idx(cga_pop);
+                for (int i = 0; i < cga_pop; ++i) idx[i] = i;
+                std::sort(idx.begin(), idx.end(), [&](int a, int b) { return next[a].fit < next[b].fit; });
+                int ntop = std::max(1, cga_pop / 3);
+                for (int k = 0; k < ntop; ++k) {
+                    int id = idx[k];
+                    if (u01(rng_local) < 0.8) {
+                        mutate_once(next[id]);
+                        eval_ind(next[id]);
+                    }
+                }
+                ++cat_count;
+                stagnation = 0;
+                cur_best_it = std::min_element(next.begin(), next.end(),
+                                               [](const CGA_MM_Ind& a, const CGA_MM_Ind& b) { return a.fit < b.fit; });
+                if (cur_best_it->fit + 1e-12 < gbest.fit) {
+                    gbest = *cur_best_it;
+                    best_gen = gen;
+                }
+            }
+
+            pop.swap(next);
+            if (log_every > 0 && (gen % log_every == 0 || gen == cga_gen)) {
+                cout << "Gen " << gen << ": best_fit = " << gbest.fit << endl;
+            }
+        }
+        clock_t cga_t2 = clock();
+
+        cout << "\n=== Final Results (CGA) ===" << endl;
+        cout << "Solver: CGA" << endl;
+        cout << "Generations = " << cga_gen << endl;
+        cout << "Best generation = " << best_gen << endl;
+        cout << "Catastrophe triggers = " << cat_count << endl;
+        cout << "Best fitness = " << gbest.fit << endl;
+        cout << "The best solution = " << gbest.fit << endl;
+        cout << "Time = " << (double)(cga_t2 - cga_t1) / CLOCKS_PER_SEC << " s" << endl;
+        cout << "\nexit code 0" << endl;
         return 0;
     }
 
@@ -566,6 +1138,42 @@ int main(int argc, char* argv[])
         cout << "Solver: " << solver_name << endl;
         cout << "Generation = " << max_generations << endl;
         cout << "The best solution = " << qphh.GetBestFit() << endl;
+        cout << "Time = " << (double)(t2 - t1) / CLOCKS_PER_SEC << " s" << endl;
+#ifdef PROFILE_EVAL
+        PrintEvalProfile(solver);
+#endif
+        return 0;
+    }
+
+    if (solver_name == "IMOMA") {
+        cout << "\n=== Running IMOMA Solver ===" << endl;
+        IMOMA_Solver imoma(&solver, popsize, imoma_arc_ratio, max_generations);
+        imoma.Init();
+        solver.ResetEvalCount();
+        uint64_t next_log_eval = (uint64_t)log_every;
+
+        for (int gen = 0; gen < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals); gen++) {
+            imoma.RunGeneration(gen);
+            if (max_evals > 0) {
+                while (solver.GetEvalCount() >= next_log_eval) {
+                    cout << "Eval " << next_log_eval
+                         << ": best_fit = " << imoma.GetBestScalarFit()
+                         << " archive = " << imoma.GetArchiveSize() << endl;
+                    next_log_eval += (uint64_t)log_every;
+                }
+            } else if ((gen + 1) % log_every == 0 || gen == max_generations - 1) {
+                cout << "Gen " << (gen + 1)
+                     << ": best_fit = " << imoma.GetBestScalarFit()
+                     << " archive = " << imoma.GetArchiveSize() << endl;
+            }
+        }
+
+        clock_t t2 = clock();
+        cout << "\n=== Final Results (IMOMA) ===" << endl;
+        cout << "Solver: " << solver_name << endl;
+        cout << "Generation = " << max_generations << endl;
+        cout << "Archive size = " << imoma.GetArchiveSize() << endl;
+        cout << "The best scalar solution = " << imoma.GetBestScalarFit() << endl;
         cout << "Time = " << (double)(t2 - t1) / CLOCKS_PER_SEC << " s" << endl;
 #ifdef PROFILE_EVAL
         PrintEvalProfile(solver);

@@ -31,7 +31,7 @@ CC_HIHH_Solver::CC_HIHH_Solver(MultiMet* s, int psize, int nsub, int ncircle, do
     epsilon0 = 0.2;
     epsilon_decay = 0.995;
     epsilon_min = 0.02;
-    epsilon_k = 0.01;
+    epsilon_k = 2.0;
     lr_k = 0.002;
     reward_clip = 2.0;
     stable_reward_clip = 0.2;
@@ -431,7 +431,7 @@ double CC_HIHH_Solver::ComputeEpsilon(int gen) const
         if (eps < epsilon_min) eps = epsilon_min;
         return eps;
     }
-    double eps = epsilon0 * std::exp(-epsilon_k * gen);
+    double eps = epsilon0 * std::exp(-epsilon_k * gen / max_generations);
     if (eps < epsilon_min) eps = epsilon_min;
     return eps;
 }

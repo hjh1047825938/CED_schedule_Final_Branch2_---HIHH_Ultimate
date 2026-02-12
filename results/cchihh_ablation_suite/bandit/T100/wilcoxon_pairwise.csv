@@ -1,0 +1,4 @@
+A,B,n,wilcoxon_stat,p_value,sig
+bandit_adaptive,random_ops,10,25.0,0.845703125,
+bandit_adaptive,fixed_ops,10,9.0,0.064453125,
+random_ops,fixed_ops,10,12.0,0.130859375,

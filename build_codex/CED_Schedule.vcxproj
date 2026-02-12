@@ -386,6 +386,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\src\CC_HIHH_singleisland.cpp" />
     <ClCompile Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\src\GA_SLHH.cpp" />
     <ClCompile Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\src\QPHH.cpp" />
+    <ClCompile Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\src\IMOMA.cpp" />
+    <ClCompile Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\src\CGA.cpp" />
     <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\Multimethod.h" />
     <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\Population.h" />
     <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\Problems.h" />
@@ -393,6 +395,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\CC_HIHH.h" />
     <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\GA_SLHH.h" />
     <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\QPHH.h" />
+    <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\IMOMA.h" />
+    <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\CGA.h" />
     <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\Rng.h" />
   </ItemGroup>
   <ItemGroup />

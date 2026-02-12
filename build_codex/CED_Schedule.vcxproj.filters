@@ -19,6 +19,12 @@
     <ClCompile Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\src\QPHH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\src\IMOMA.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\src\CGA.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\Multimethod.h">
@@ -40,6 +46,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\QPHH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\IMOMA.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\CGA.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\Hu\Desktop\论文\CED_schedule_Final\include\Rng.h">

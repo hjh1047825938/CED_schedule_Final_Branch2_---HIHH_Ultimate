@@ -1,0 +1,954 @@
+Research Article
+ATaskSchedulingStrategyinEdge-CloudCollaborativeScenario
+Based on Deadline
+Shudong Wang
+ ,1 YanqingLi
+ ,1 Shanchen Pang
+ ,1 Qinghua Lu,2 ShuyuWang, 1
+and Jianli Zhao3
+1College of Computer Science and Technology, China University of Petroleum, Qingdao 266000, China
+2Data61, Eveleigh, NSW, Australia
+3College of Computer Science and Engineering, Shandong University of Science and Technology, Qingdao 266000, China
+Correspondence should be addressed to Shanchen Pang; pangsc@upc.edu.cn
+Received 24 October 2019; Accepted 27 December 2019; Published 18 March 2020
+Guest Editor:
+Jinghui Zhang
+Copyright© 2020 Shudong Wang et al. +is is an open access article distributed under the Creative Commons Attribution
+License, which permits unrestricted use, distribution, and reproduction in any medium, provided the original work is
+properly cited.
+Task schedulingplaysacritical rolein theperformance ofthe edge-cloudcollaborative.Whetherthe taskisexecuted in thecloud
+andhowitisscheduledinthecloudisanimportantissue.Onthebasisofsatisfyingthedelay,thispaperwillscheduletasksonedge
+devices or cloud and present a task scheduling algorithm for tasks that need to be transferred to the cloud based on the cat-
+astrophic genetic algorithm (CGA) to achieve global optimum. +e algorithm quantiﬁes the total task completion time and the
+penaltyfactorasaﬁtnessfunction.Byimprovingtherouletteselectionstrategy,optimizingmutationandcrossoveroperator,and
+introducingcataclysmstrategy,thesearchscopeisexpanded.Furthermore,theprematureproblemoftheevolutionaryalgorithm
+is eﬀectively alleviated. +e experimental results show that the algorithm can address the optimal local issue while signiﬁcantly
+shortening the task completion time on the basis of satisfying tasks delays.
+1.Introduction
+With the rise of edge computing, the convergence of cloud
+computing and edge computing has become a major focus
+[1–3]. Especially when we make great strides towards the
+digital era of the Internet of Everything, edge-cloud col-
+laboration has become an important application in many
+scenes such as CDN, industrial Internet, energy, intelligent
+transportation, and security monitoring. Cloud computing
+and edge computing need to work closely together to better
+match the various demand scenarios, thus maximizing the
+value of edge computing and cloud computing collabora-
+tion. Taketheexample of an IoTscenario. +e devicesin the
+Internet of +ings generate a large amount of data, and the
+data are uploaded to the cloud for processing, which will
+cause great pressure on the cloud. To share the pressure of
+the central cloud node, the edge computing node can
+be responsible for data calculation and storage within
+its own scope [4–6]. Cloud computing excels in global,
+non-real-time, long-cycle big data processing and analysis
+and can play an advantage in long-term maintenance,
+business decision support, etc. Edge computing is more
+suitable for local, real-time, short-cycle data processing and
+analysis. Edge computing can better support real-time in-
+telligent decision making and execution of local business.
++ere are some high real-time performance applications,
+such as industrial system detection applications, control
+applications, executive applications, and emerging VR/AR
+applications. Some scenarios require real-time performance
+within 10ms or even lower [7, 8]. If data analysis and
+processing are all implemented in the cloud, it is sometimes
+diﬃcult to meet the real-time requirements of the service. It
+seriously aﬀects the business experience of end customers.
+But, usually more studies usually consider the process of
+unloading,ignoringtheassignment oftasks afterunloading.
+Taskscanbescheduledtotheedgeorthefarcloudbased
+onenergyconsumptionandtimedelay.Fortheproblemthat
+needs to be processed in the cloud center, how to perform
+Hindawi
+Scientiﬁc Programming
+Volume 2020, Article ID 3967847, 9 pages
+https://doi.org/10.1155/2020/3967847
+
+properschedulingtoachievethegoalisworthwhileresearch
+question.
+Task scheduling methods in the cloud center can be di-
+vided into heuristic algorithms (such as RR and SJF), met-
+aheuristic algorithms (based on biological incentives and
+swarm intelligence), and hybrid task scheduling algorithms
+[9]. In the scheduling process, various performance-based
+performance indicators such as system utilization, execution
+time, load balance, network communication cost, delay, and
+the like are used [10]. +e heuristic task scheduling algorithm
+can easily schedule tasks and provide the best solution.
+However, it does not guarantee the best results and is easy to
+fall into partial selection. +e metaheuristic algorithm is an
+improvedalgorithmbasedonaheuristicalgorithm,whichisa
+combination of random algorithms and local search algo-
+rithm[11–13]. It enables the exploration and development of
+search space and handles a large amount of search space
+information. In addition, it can use learning strategies to
+acquire and master information to eﬀectively ﬁnd approxi-
+mate optimal solutions. Among them, genetic algorithm
+(GA), particle swarm optimization (PSO), and ant colony
+algorithm (ACO) are the most widely used evolutionary al-
+gorithmsinthetaskschedulinginrecentyears[14].However,
+these algorithms usually converge prematurely and are prone
+toﬁniteoptimally.Whenapproachingtheoptimalsolution,it
+may also swing left and right, making the convergence slower
+[15]. In genetic algorithms, the crossover operators become
+the main operators because of its global search ability and
+mutationoperatoristobecometheauxiliaryoperatorbecause
+ofitslocalsearchability.Geneticalgorithmshavetheabilityto
+balance the global search space with the local search space.
+Genetic algorithms always search for global and local spaces
+through crossover and mutation operators. +ey cooperate
+with each other and monitor each other. How to eﬀectively
+cooperate with the intersection and mutation operations,
+make the convergence faster, and jump out of the local op-
+timuminthesolutionprocessisavaluableresearchcontentof
+the current genetic algorithm.
++is paper proposes a task scheduling strategy for edge-
+cloud collaborative computing based on disaster genetic
+algorithm. Considering the meaning of the cross operation,
+the individual optimal retention, and the magnitude of the
+mutation probability in the evolutionary process, the ability
+to optimize convergence and the three genetic operators of
+the genetic algorithm are improved. A penalty factor de-
+termines the execution time objective function based on the
+time delay. At the same time, a catastrophic strategy was
+introduced to simulate the phenomenon of disasters in
+biological evolution. During the ﬁrst 1/2 iterations, pre-
+mature aging may occur and the best chromosomes of
+successive generations will not develop at all. +erefore, we
+increase the probability of mutation, break the monopoly of
+theoriginalgene,maketheindividualawayfromthecurrent
+optimal solution into the group, increase the diversity of
+genes,andcreatenewsurvivalindividuals.+ealgorithmwe
+proposed can jump out of the local optimum and eﬀectively
+alleviate the problem of premature convergence.
++e rest of this article is organized as follows. Section 2
+introduces the related work. Section 3 introduces the task
+classiﬁcation strategy. Section 4 introduces the task sched-
+uling model in the cloud center. Section 5 introduces the
+CGA algorithm. Section 6 introduces the experimental and
+comparison results. Finally, Section 7 summarizes this
+paper.
+2.RelevantWork
+Research on edge-cloud collaboration is still in the initial
+stage,butmanydomesticandforeignscholarshavecarried
+out related research and achieved research results on the
+task scheduling problem at the edge or cloud. Ke et al. [16]
+proposed classifying tasks according to whether they meet
+the delay and energy consumption. In the scheduling of
+tasksinthecloud,geneticalgorithmsarewidelystudiedfor
+their adaptability to various task scheduling problems. +e
+geneticalgorithmisappropriateforvarioustaskscheduling
+problems. +e improvement of the genetic algorithm is
+mainly to improve the genetic operator and to achieve the
+purpose of improving the convergence speed and the
+performance of the classical genetic algorithm. At present,
+many corking algorithms have been proposed successively
+after experimentation and demonstration by scholars.
+Keshanchietal.[17]proposedanimprovedheuristic-based
+genetic algorithm, called N-GA. +e N-GA is used for the
+static task scheduling in the cloud. Akbari et al. [18] im-
+proved the performance of genetic algorithm by signiﬁ-
+cantly changing genetic operators to ensure the sample
+diversityandreliablecoverageoftheentirespace.In[19],a
+hybrid metaheuristic algorithm is oﬀered, which uses the
+HEFT (Heterogeneous Earliest Completion Time) algo-
+rithm combined with PSO and GA to improve perfor-
+mance. Johnson proposed a rule-based genetic algorithm
+(JRGA)[20]foratwo-stagetaskschedulingindatacenters.
+In [11], the authors proposed a task scheduling scheme for
+heterogeneous computing systems built on a genetic al-
+gorithm, which maps each task to the processor according
+to the assigned priority to shorten the manufacturing time
+as much as possible. Goyal and Agrawal [21] proposed a
+model for scheduling a group of independent tasks on
+multiple machines and solved the question by combined
+the GA and the electoral heuristic algorithm. +e goal of
+thismodelisalsointendedtominimizethemaximumtime.
+Kumar et al. [22] put forward a new task scheduling
+method, which integrated min-min algorithm and min-
+max algorithm in a genetic algorithm. +e goal of the
+research is to shorten the generation time and execution
+time to the greatest extent [23].
+However, the methods mentioned above may still fall
+into a local optimum when solving a multimode problem
+[10].+erefore,thealgorithmneedssomestrategiestoavoid
+this limitation. Literature [24–28] mentioned an integer
+genetic algorithm using a “catastrophe” operator. It is
+designedtohelptojumpoutofthelocalextremepoints.+e
+bionic signiﬁcance of “catastrophe” operator and the im-
+provementofdisastergeneticalgorithminsolvingtheabove
+problemsareemphaticallyintroduced.+eseoperationscan
+mitigate the phenomenon of falling into a local optimum
+and premature convergence.
+2 Scientiﬁc Programming
+ 5192, 2020, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1155/2020/3967847, Wiley Online Library on [11/02/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+In addition, there are few studies that achieve the least
+totaltimebasedonthedelayofmeetingeachtask.+erefore,
+basedontheresearchofgeneticalgorithms,thispaperraises
+a task scheduling algorithm called CGA based on cataclysm
+strategy [29], which mainly considers the time delay to
+achieve the minimum total execution time. And the eﬀec-
+tiveness of the proposed algorithm is checked by
+experiments.
+3.Task Classification
+In the system, we consider a set of tasks to be performed,
+each of which comes from an edge device which is denoted
+asN � 1, 2, 3, . . ., N{ }.+etasksincludeinteractivegaming,
+natural language processing, image location, etc [16]. Each
+taskshouldbecompletedwithinthedeadline.Eachtaskwith
+three attributes is deﬁned as Task
+i � [datai, di,
+expTi], i ∈N. For Taski,di is the size of the input data for
+the computation, which may include program codes, input
+ﬁles, etc [16].expT
+i is the deadline for completion of a task.
+datai isthelengthofthetask.+erefore,wemustﬁrstclassify
+the tasks that need to be processed to determine whether to
+execute in the cloud. According to the ratio of the delay of
+thetaskandthelengthofthetask,thesensitivityofthetaskis
+determined. And ﬁnally, the tasks in the cloud will be
+scheduled to reduce total execution time.
+Let f
+c
+i represent the computing power assigned to the
+Taski by the edge device. +us, we can get the time of the
+local execution of Taski as
+Ti
+local� datai
+fc
+l
+. (1)
++e time transferred to the cloud is deﬁned as
+Ti
+tran � di
+Rate. (2)
+Rate is the upload rate of tasks transferred to the cloud;
+here the upload rate is a ﬁxed value.
+In order to facilitate subsequent task scheduling in the
+cloud, tasks need to be sorted according to sensitivity. +e
+task sensitivity can be deﬁned as
+senTi � datai
+expTi
+. (3)
++e complete task classiﬁcation process is illustrated in
+Algorithm 1.
+4.Task Scheduling Modelin theCloudCenter
++e task scheduling problem in the cloud is how to rea-
+sonably arrange each task to multiple virtual machines so
+that all tasks can be completed in a shorter execution time
+and meet the delay as much as possible [10]. Here, the
+following assumptions are made:
+(1) +ereis nointerdependence betweentasks andtasks
+(2) +e size of the task and the computing speed of the
+virtual machine are known
+Deﬁnition 1.Virtual machines on physical machines:
+PM
+i � VM1 ,VM2 , . . .,VMNVM􏼂 􏼃, (4)
+wherePM i representsthehostmachine,Nvmrepresentsthe
+number of virtual machines, and VMk represents thekth
+virtual machine resource in the cloud environment.
+Deﬁnition 2.Virtual machine resources:
+VMK � IDVk,MIPSk􏼂 􏼃, (5)
+where IDVk is the serial number of the virtual machine and
+MIPSk represents the computing power of thekth virtual
+machine.
+Deﬁnition 3.Task sequence:
+T � TAsk 1 ,TAsk 2 , . . .,TAsk i, . . .,TAsk Ntsk􏼂 􏼃, i ∈GC,
+(6)
+where Ntsk represents the number of tasks that need to be
+performed in the cloud and Taski represents theith task in
+the task sequence.
+Deﬁnition 4.Task expected completion time.
++eECTmatrixisusedtorepresentthecompletiontime
+of all tasks on each virtual machine resource.
+ECT �
+ECT 1,1 ECT 1,2 . . . ECT 1,Nvm
+ECT 2,1 ECT 2,2 . . . ECT 2,Nvm
+. . . . . . . . . . . .
+ECT Ntsk,1 ECT Ntsk,2 . . . ECT Ntsk,Nvm
+⎡⎢⎢⎢⎢
+⎢⎢⎢⎢
+⎢⎢⎢
+⎢⎢⎢⎢
+⎢⎢⎢⎢⎢⎢⎢⎢⎢⎢⎢⎢⎢⎣
+⎤⎥⎥⎥⎥
+⎥⎥⎥⎥
+⎥⎥⎥
+⎥⎥⎥⎥
+⎥⎥⎥⎥⎥⎥⎥⎥⎥⎥⎥⎥⎥⎦
+. (7)
++e execution time required for each task to run on a
+computing resource (virtual machine) is calculated as
+follows:
+ECT
+i,k � datai
+MIPSk
+, k � 1, 2, . . .,Nvm; i � 1, 2, . . .,Ntsk.
+(8)
+Let the task set be assigned to thekth virtual machine;
+then, the task completion time RT(k)on the kth virtual
+machine is
+RT(k) � 􏽘
+l∈Nl
+ECT(l, k), k � 1, 2, . . .,Nvm,
+∀l∈[1, Ntsk]mappedto kthVM, k � 1, 2, 3, . . .,Nvm.
+(9)
+AllNTime is the maximum completion time for each
+computing resource:
+AllNTime � max(RT(K)), k � 1, 2, . . .,Nvm. (10)
+Deﬁnition 5.Matching matrix A.
+We can get the matrix A:
+ScientiﬁcProgramming 3
+ 5192, 2020, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1155/2020/3967847, Wiley Online Library on [11/02/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+A �
+a1,1 a1,2 . . . a1,Nvm
+a2,1 . . . . . . . . .
+. . . ai,j . . . . . .
+aNtsk,1 . . . . . . aNtsk,Nvm
+⎡⎢⎢⎢⎢⎢⎢⎢⎢
+⎢⎢⎢⎢
+⎢⎢⎢
+⎢⎢⎢⎢
+⎢⎢⎢
+⎢⎢⎢⎢⎢⎢⎣
+⎤⎥⎥⎥⎥⎥⎥⎥⎥
+⎥⎥⎥⎥
+⎥⎥⎥
+⎥⎥⎥⎥
+⎥⎥⎥
+⎥⎥⎥⎥⎥⎥⎦
+. (11)
+Among them, a
+i,j � 0,1{ } . And the value ofai,j indicates
+whether the task numberedi is executed on the virtual
+machine numbered j, and if it is 1, it is executed.
+5.CGA Algorithm
+5.1.Algorithmic*ought.+ethreegeneticoperationsofthe
+genetic algorithm aﬀect the convergence speed of the al-
+gorithm. +is paper mainly considers satisfying the delay
+and minimizing the total execution time, and improves the
+selectionoperationandthecrossoveroperationaswellasthe
+mutation operation of the genetic algorithm to generate a
+newgenerationofthepopulationwhilesimulatingbiological
+evolution in the iterative process. +e catastrophic phe-
+nomenon in the process makes the algorithm increase in-
+dividual diversity without expanding the population size,
+and it is easier to get rid of the optimal local trap. +e al-
+gorithm ﬂow chart is shown in Figure 1:
+5.2. Basic Operations of the Algorithm
+5.2.1. Encoding.In cloud computing scheduling problem,
+the encoding of solutions usually uses binary coded and real
+coded, where real coded is multi-to-one mapping pairing
+encoding. +e task of this paper and the virtual machine are
+coded by the mapping pairing method [2]. For example, if
+there areM vms, that is, {v
+1 , v2 , v3, . . ., vM}, andN tasks,
+that is, {Tak1 ,Task2 ,Task3, . . .,Taskn}, the length of the
+codewillbeNandthevalueofeachgenewillcomefrom1to
+M, as shown in Figure 2:
+5.2.2. Fitness Function.+e ﬁtness function represents the
+degree of an individual’s ﬁtness in the evolutionary process.
++e greater the ﬁtness is, the easier it is to be retained in the
+evolutionary process. +e ﬁtness function will directly aﬀect
+theperformanceofthealgorithmandwhetheritcanachieve
+the goal.In thispaper, weneed toconsider theeﬀect of time
+delay and execution time on individual ﬁtness.
++e diﬀerence between execution time and deadline for
+each task:
+(1) Initialization
+(2) Task set:Ν� 1, 2, 3, . . ., N{ };
+(3) Categorized task sets: GC� GL � ϕ;
+(4) For each taski ∈ Νdo
+(5) Calculate senTi by datai/expTi, respectively;
+(6) If (Tlocal>expTi) then
+(7) i ⟹GC;
+(8) Else if (Tlocal≤expTi) then
+(9) i ⟹GL;
+(10) End if;
+(11) End for;
+(12) Output: GC (Sort by sensitivity in ascending order), GL.
+A LGORITHM 1:+e algorithm for classifying the tasks.
+Start
+Variation
+Optimal solution
+t = G
+End
+t. Bestfitness = (t − 1). Bestfitness
+t >= 1/2 and Cat = 0
+Crossover
+Choice 
+t = t +1
+Computational fitness
+Chromosome coding and initialization of parameters
+Cataclysmic processing
+Cat = Cat – 1
+Number of iterations and population size
+Generating new 
+populations
+Y
+N
+Y
+N
+YN
+Figure 1: Algorithmic ﬂow.
+Code
+Task
+Vm
+t1 t2 t3 t4 t6t5
+v1 v3 v2 v4 v5v5
+132455
+Figure 2: Encoding.
+4 Scientiﬁc Programming
+ 5192, 2020, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1155/2020/3967847, Wiley Online Library on [11/02/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+􏽘
+i∈[1,i]
+ai,jECT i,j + Ti
+tran− expTi. (12) Penalty factor based on whether delay is satisﬁed:
+punish�
+0, if 􏽘
+i∈[1,i]
+ai,jECT i,j + Ti
+tran− expTi ≤0,
+􏽘
+i∈[1,i]
+bai,jECT i,j + Ti
+tran− expTi
+􏼌􏼌􏼌􏼌
+􏼌
+􏼌
+􏼌􏼌􏼌
+􏼌
+􏼌
+􏼌􏼌􏼌
+􏼌
+􏼌
+􏼌􏼌􏼌
+􏼌
+, if 􏽘
+i∈[1,i]
+ai,jECT i,j + Ti
+tran− expTi >0.
+⎧⎪⎪⎪
+⎪
+⎪⎨
+⎪⎪⎪
+⎪
+⎪⎩
+(13)
+Because the goal is to minimize the total execution time
+of the task scheduling while meeting the deadline of tasks,
+the ﬁtness function of this paper is designed as
+fitness�
+1
+AllNTime + 􏽐Ntsk
+i�1 punish
+. (14)
+5.2.3. Improve Roulette Choice.+e roulette selection
+methodisalsocalledtheproportionalselectionmethod.+e
+basicideaisthatthelargertheindividual'sadaptabilityis,the
+easieritistobeselected.+etraditionalroulettemethodcan
+select the best individual, but it cannot guarantee that the
+best individual will remain to the next generation, and the
+subsequent crossover operation may destroy the best indi-
+vidual. +erefore, this paper combines roulette with the best
+individuals to save individuals with the greatest ﬁtness in
+each generation directly to the next generation and does not
+participateinthecrossoveroperationormutationoperation.
++e remaining individuals use traditional roulette to select
+the progeny population. +e probabilityPs(j) of individual
+selection in traditional roulette is
+Ps(j) �
+fitness(j)
+􏽐N
+i�1 fitness(i)
+. (15)
+5.2.4. Crossover.+e crossover operation of the traditional
+genetic algorithm is to select the number of individuals to
+crossaccordingtothecrossoverrate,togenerateacrossover
+operation for each of the intersecting individuals using the
+random function rand(1, n), and to map the two chromo-
+somes to the segments after the location point are ex-
+changed. Traditional crossover operations are prone to the
+situation of the high similarity of crossover fragments, at
+which time the crossover meaning becomes smaller. To this
+end, this paper sets a cross threshold, and only if the
+threshold is exceeded, the cross is considered meaningful.
+Otherwise, no crossover occurs. +e threshold size repre-
+sents the proportion of similar genes in the total gene. +is
+operation is mainly based on the principle of preventing
+inbreedingandoptimizingoﬀspringintheprocessofhuman
+evolution. In this paper, we set the threshold to 0.8 and the
+crossover probability higher than 0.7 to avoid slowing down
+the speed of convergence rate caused by abandoning the
+cross operation because the similarity is too high. +e
+speciﬁc crossover operation is shown in Figure 3:
+5.2.5. Variation.A mutation operator is a very important
+operation. +ere are two purposes for introducing muta-
+tions into genetic algorithms: one is to make the genetic
+algorithm have local random search ability. When the
+genetic algorithm is close to the optimal solution neigh-
+borhood through the crossover operator, the local random
+searchabilityusingthemutationoperatorcanacceleratethe
+convergence to the optimal solution [30]. In this case, the
+mutation probability should take a smaller value. +e
+second is toenable the genetic algorithm tomaintaingroup
+diversitytopreventimmatureconvergence.Atthistime,the
+mutation probability should take a larger value. +e
+probability of variation usually takes a small value and
+generally does not exceed 0.1.
+In this paper, two variability values are set. When the
+numberofiterationsreaches2/3,themutationprobabilityis
+reduced by 0.02. Determine the number of individuals that
+need to be mutated based on the probability of mutation,
+randomly select two locations on the chromosome, and
+exchange the values of the genes. +e genic value may have
+not changed after the mutation operation was executed,
+which is equivalent to no mutation operation, and the
+variation operation is improved in order to ensure that the
+variation operation can be executed even if it is already a
+small probability event. If two genic values of mutation are
+the same, add the ﬁrst random number to 1 and let it
+perform mutation operation with another gene point. If the
+ﬁrstrandomnumberisstillthesame,incrementthevalueby
+one until the value is diﬀerent to ensure the mutation op-
+eration (see Figure 4).
+5.2.6.Catastrophe.Aftermanygenerationsofevolution,the
+groupmayobtainalocallyoptimalsolution.Atthistime,the
+group implies a large amount of information related to the
+local optimum, tending to premature convergence and the
+possibility of jumping out by operators such as crossover
+operationandmutationoperation.Itispossibletointroduce
+“catastrophe” strategy, obtain some useful global informa-
+tion,andobtainasolutionfarawayfromtheoriginallocality
+with a large probability so that a larger diversity can be
+obtained at smaller group size. It can provide more op-
+portunities to get rid of the original local optimal solution.
+However, the catastrophe cannot go through evolution all
+the time. We should consider avoiding the problem of
+destroyingtheoptimalsolutionandreoptimizinginthelater
+stage.
+ScientiﬁcProgramming 5
+ 5192, 2020, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1155/2020/3967847, Wiley Online Library on [11/02/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
++e genetic algorithm has the disadvantages of easy to
+fall into local optimum and premature convergence [31].
+Once it falls into local optimum, it will be diﬃcult to jump
+out. For this reason, we add the catastrophic strategy
+mentioned in the literature [28] to this paper. By increasing
+the mutation probability to stay away from the current
+optimal, the solution that is far from the current optimal
+solution is included in the population to jump out of the
+optimal local solution. Catastrophic operation is shown in
+Algorithm 2.
+5.3. Task Classiﬁcation and Scheduling Description
+Step1:classifyalltasksfromdiﬀerentdevicesaccording
+to Algorithm 1.
+Step2:fortasksthatneedtobeuninstalledtothecloud,
+sort by sensitivity. +e initial coding is optimized
+according to the computing power of virtual machine.
+Step 3: chromosome coding and initialization of
+parameters.
+Step 4: calculate ﬁtness.
+Step 5: superposition algebras plus one.
+Step 6: judge whether the optimal individual ﬁtness of
+(t − 1)th generation is equal to that of thetth gener-
+ation,andifso,thecatastrophethresholdis reducedby
+one; otherwise, it will continue.
+Step 7: perform selection operation, cross operation,
+and mutation operation.
+Step 8: generate the descendant population and de-
+termine whether the catastrophe threshold cat is equal
+to 0 (before t/2 iterations). If equal to 0, carry on the
+catastrophe operation.
+Step 9: if the number of iterations reaches the maxi-
+mum, output; otherwise, turn to step 4.
+6.Evaluation
+Inthisexperiment,for tasks thatneed tobeprocessedinthe
+cloud, we used CloudSim 3.0 to implement the algorithms,
+by adding the bindCloudletToVM method in the DAta-
+centerBroker class; the CGA algorithm based on the ca-
+tastrophe genetic algorithm is added to carry out the
+simulation experiment. Data such as resource computing
+powerand taskcalculations arederived from datarandomly
+generated in MATLAB. We choose the diﬀerent number of
+tasks, and the experimental data of diﬀerent iteration times
+are analyzed and compared with the time-based diﬀerential
+evolution algorithm (TDE) and simple genetic algorithm
+underthesamedataconditions.+eTDEalgorithmisbased
+ondiﬀerentialevolution(DE)taskschedulingalgorithmthat
+minimizes the completion time. +e diﬀerential evolution
+algorithm is also a population-based heuristic search algo-
+rithm. +ere is a great similarity between diﬀerential evo-
+lution algorithm and genetic algorithm. +ey all include
+mutation, crossover, and selection operations, but the
+speciﬁc deﬁnition of these operations is diﬀerent from the
+genetic algorithm. +e experimental results are shown in
+Figures 5–9.
+Parameter setting: crossover probability crossover=0.8,
+maximumevolutionalgebra=200,andmutationprobability
+is 0.03, andin orderto avoiderrors as much as possible,this
+paper will perform ten times for each group of experiments
+and ﬁnally get the total task completion time. +e experi-
+mental values are taken as the average of ten experiments.
+When the number of tasks is small, the optimal eﬀect is
+not obvious. However, the optimization of the algorithm is
+more obvious when the number of tasks is large. But the
+more tasks there are, the fewer tasks that are unloaded into
+the cloud, because as the number of tasks increases, the task
+takes longer to execute. With the increase of evolutionary
+algebra, the proposed algorithm can converge more quickly
+and save more time. Figures 5 and 6 show the changes of
+total task execution time and adaptive value of CGA algo-
+rithm,classicalgeneticalgorithm,andTDEalgorithmunder
+diﬀerent iterations. It can be seen that the eﬀect of the
+classical genetic algorithm is the worst. +e CGA algorithm
+uses less evolutionary algebra than other algorithms to get
+Chromosome1′
+Chromosome2′
+1252
+1 2 5 2
+1 5 4 2
+2345
+2345
+2243
+22431542
+Chromosome1
+Chromosome2
+Figure 3: Crossover.
+Chromosome1:
+Chromosome1′:3 2 1 6
+4
+4
+3
+3
+1 2 3 6
+Figure 4: Variation.
+(1) Input: Catastrophe threshold cat;
+(2) cat �a;
+(3) For (t�0;t<G/2;t++)
+(4) {
+(5) If (t. Bestﬁtness �(t−1). Bestﬁtness)
+(6) {
+(7) cat�cat− −;
+(8) }
+(9) If (cat �0)
+(10) +e ﬁrst third variation;
+(11) Else
+(12) Continue circulation;
+(13) }
+A LGORITHM 2:Catastrophic operation.
+6 Scientiﬁc Programming
+ 5192, 2020, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1155/2020/3967847, Wiley Online Library on [11/02/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+better average ﬁtness. Among them, this paper also opti-
+mizestheinitialpopulation,andCGAalgorithmcanﬁndthe
+optimal solution faster. As we all know, the solution found
+by genetic algorithm may not be optimal, but the experi-
+mental results show that the CGA algorithm is better than
+the other two algorithms, and it is easier to jump out of the
+localoptimumandﬁndtheoptimalsolution.Figures7and8
+are comparisons between CGA algorithm and TDE algo-
+rithm. We can see that CGA algorithm can achieve the goal
+of this paper better.
+Accordingtotheexperimentalresults,itcanbeseenfrom
+Figure 9 that the delay satisfaction rate of the experiment is
+above 95%, which can meet the demand. And the perfor-
+manceofCGAalgorithmisbetterthantheTDEalgorithm.In
+addition,theCGAalgorithmissuperiortotheTDEalgorithm
+in the task completion time and convergence speed of the
+evolutionary process, and its convergence speed is signiﬁ-
+cantly better than the TDE algorithm and the traditional
+genetic algorithm. As the number of iterations increases, the
+CGAalgorithmcanﬁndtheoptimalsolutionbetterandmake
+the convergence rate faster. +e mutation strategy called
+cataclysm policy is designed to help the population jump out
+of the local extreme points [27]. It can be seen that the
+catastrophic strategy in this paper does not slow down the
+convergencerateanddestroytheoptimaldirection.Instead,it
+can help the operation to continuously optimize the pop-
+ulation and is not easy to fall into the local optimum.
+7.ConclusionandFuture Work
++e task scheduling in edge-cloud collaborative scenario is
+considered to be one of the critical challenges. Whether the
+0
+10
+Evolutionary records of fitness value
+20 30 50 100 120 150 180 200
+0.005
+0.01
+0.015
+0.02
+0.025
+0.03
+Fitness value
+Iteration times
+CGA
+TDE
+GA
+Figure 5: Evolution—200 iterations.
+15
+20
+25
+30
+35
+40
+45
+50
+55
+10 20 30 50 100 120 150 180 190 200
+Execution time
+Iteration times
+GA
+TDE
+CGA
+Figure 6: Execution time—50 tasks.
+70
+80
+90
+100
+110
+120
+130
+140
+150
+15 40 65 90 115 140 165 190
+Total task completion time
+Iteration times
+Time constraint
+CGA
+TDE
+Figure 7: Execution time—200 iterations.
+0
+0.002
+0.004
+0.006
+0.008
+0.01
+0.012
+15 40 60 90 115 140 165 180 190 200
+Iteration times
+Fitness values
+CGA
+TDE
+Figure 8: Evolution—200 iterations.
+40 45 50 55 60 65 70
+65.00
+70.00
+75.00
+80.00
+85.00
+90.00
+95.00
+100.00
+Number of tasks
+Delay satisfaction rate
+Ours
+TDE
+(%)
+Figure 9: Delay satisfaction rate.
+ScientiﬁcProgramming 7
+ 5192, 2020, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1155/2020/3967847, Wiley Online Library on [11/02/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+task is executed in the cloud and how it is scheduled in the
+cloud is an important issue. Inthe past, many heuristics and
+metaheuristic task scheduling strategies have been used in
+cloud computing or edge computing. Genetic algorithms
+have unique advantages that traditional methods do not
+have in solving complex problems such as big space, non-
+linearity, and global optimization. +ey have been widely
+used in more and more ﬁelds. In this paper, we proposed a
+task scheduling strategy under deadline constraint, where
+tasks on edge devices could select the execution place in-
+cluding cloud and local devices. And the goal is to minimize
+the execution time of all tasks. +e CGA algorithm as an
+alternativemethodtosolvethetaskschedulingproblem;this
+algorithmaddscataclysmstrategytoit.Wehave considered
+theconstraintoftime[5]andoptimizedthetaskscheduling.
++e algorithm CGA was inspired by the behavior of the
+extinction in the Ice Age, and it is used as a global opti-
+mization algorithm [10].
++e CGA algorithm we proposed was simulated in the
+CloudSim environment, and the main objective was to
+minimize the execution time and meet delay. +e results are
+comparedwiththeresultsofexistingheuristicmethodssuch
+asthetraditionalgeneticalgorithm(GA)andthetime-based
+diﬀerential evolution algorithm (TDE). From the experi-
+mental results, we can also get the conclusion that the
+proposed CGA can eﬃciently schedule the tasks to the VM
+and achieve our goals.
+In the future, we will consider improving the algorithm
+underconditionsthatareclosertotheactualenvironmentso
+that the algorithm can be applied to dynamic and real-time
+task scheduling in edge-cloud collaboration. Besides, we
+want to build a multi-objective version of CGA for opti-
+mizing the task scheduling problem in the cloud. Study of
+workﬂow scheduling using CGA is another future investi-
+gation. And we can also mine or forecast its potential re-
+lationships [32–34]. In addition, the method of task
+scheduling can consider many otherparameters, such as the
+use of memory, peak of the demand, and overloads [10].
+Besides, we can combine the Markov chain with the parallel
+computing framework and apply it in our model [35, 36].
+DataAvailability
+Because this paper only deals with time and static tasks, we
+usedrandomlygenerateddatatoexportitasadatasetforthe
+length of tasks.
+ConflictsofInterest
++e authors declare that there are no conﬂicts of interest
+regarding the publication of this paper.
+Acknowledgments
++e authors would like to thank International Networks
+Service and Bio-Computing Innovation Team from the
+college of Computer Science and Technology in China
+University of Petroleum (East China) for their discussion
+and technical support. +is study was supported by the
+National Natural Science Foundation of China (nos.
+61572522, 61873281, and 61572523).
+References
+[1] M. Satyanarayanan, “Edge computing,”Computer, vol. 50,
+no. 10, pp. 36–38, 2017.
+[2] Y. Mao, C. You, J. Zhang et al., “Mobile edge computing:
+survey andresearchoutlook,”2017, http://arxiv.org/abs/1701.
+01090.
+[3] Y. Yu, “Mobile edge computing towards 5G: vision, recent
+progress, and open challenges,”China Communications,
+vol. 13, no. 2, pp. 89–99, 2017.
+[4] G. Ananthanarayanan, P. Bahl, P. Bodik et al., “Real-time
+videoanalytics:thekillerappforedgecomputing,”Computer,
+vol. 50, no. 10, pp. 58–67, 2017.
+[5] J. Liu, Y. Mao, J. Zhang et al., “Delay-optimal computation
+task scheduling for mobile-edge computing systems,” in
+Proceedings of the 2016 IEEE International Symposium on
+Information *eory (ISIT), Barcelona, Spain, July 2016.
+[6] Z. Ke, Y. Mao, S. Leng et al., “Optimal delay constrained
+oﬄoading for vehicular edge computing networks,” inPro-
+ceedings of the 2017 IEEE International Conference on Com-
+munications (ICC), Paris, France, May 2017.
+[7] Y. Yin, W. Xu, Y. Xu, Li He, and L. Yu, “Collaborative qos
+prediction for mobile service with data ﬁltering and slopeone
+model,”Mobile Information Systems, vol. 2017, Article ID
+7356213, 14 pages, 2017.
+[8] Y. Yin, F. Yu, Y. Xu, L. Yu, and J. Mu, “Network location-
+aware service recommendation with random walk in cyber-
+physical systems,”Sensors, vol. 17, no. 9, p. 2059, 2017.
+[9] T. Jena and J. R. Mohanty, “Disaster recovery services in
+intercloud using genetic algorithm load balancer,”Interna-
+tional Journal of Electrical and Computer Engineering, vol. 6,
+no. 4, p. 1828, 2016.
+[10] M. A. Elaziz, S. Xiong, K. P. N. Jayasena, and L. Li, “Task
+scheduling in cloud computing based on hybrid moth search
+algorithm and diﬀerential evolution,”Knowledge-Based Sys-
+tems, vol. 169, pp. 39–52, 2019.
+[11] Y. Xu, J. K. Li, and K. Li, “A genetic algorithm for task
+scheduling on heterogeneous computing systems using
+multiple priority queues,”Information Sciences, vol. 270,
+pp. 255–287, 2014.
+[12] Y.Gao,H.Guan,Z.Qi,Y.Hou,andL.Liu,“Amulti-objective
+antcolonysystemalgorithmforvirtualmachineplacementin
+cloud computing,”Journal of Computer and System Sciences,
+vol. 79, no. 8, pp. 1230–1242, 2013.
+[13] J.-F. Li and J. Peng, “Task scheduling algorithm based on
+improved genetic algorithm in cloud computing environ-
+ment,”Jisuanji Yingyong/Journal of Computer Applications,
+vol. 31, no. 1, p. 184186, 2011.
+[14] J. Xue, L. Li, S. Zhao, and L. Jiao, “A study of task scheduling
+based on diﬀerential evolution algorithm in cloud comput-
+ing,” inProceedings of the International Conference on
+Computational Intelligence Communication Networks, Bho-
+pal, India, November 2014.
+[15] C. Zhu and J. Ni, “Cloud model-based diﬀerential evolution
+algorithm for optimization problems,” inProceedings of the
+Sixth International Conference on Internet Computing for
+Science Engineering, Henan, China, April 2012.
+[16] Z. Ke, Y. Mao, S. Leng et al., “Energy-eﬃcient oﬄoading for
+mobileedgecomputingin5Gheterogeneousnetworks,”IEEE
+Access, vol. 4, no. 99, pp. 5896–5907, 2016.
+8 Scientiﬁc Programming
+ 5192, 2020, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1155/2020/3967847, Wiley Online Library on [11/02/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License
+
+[17] B. Keshanchi, A. Souri, and N. J. Navimipour, “An improved
+genetic algorithm for task scheduling in the cloud environ-
+ments using the priority queues: formal veriﬁcation, simu-
+lation,andstatisticaltesting,”JournalofSystemsandSoftware,
+vol. 124, pp. 1–21, 2017.
+[18] M. Akbari, R. Hassan, and S. H. Alizadeh, “An enhanced
+genetic algorithm with new operators for task scheduling in
+heterogeneous computing systems,”Engineering Applications
+of Artiﬁcial Intelligence, vol. 61, pp. 35–46, 2017.
+[19] K.AminandA.Ghaﬀari,“Hybridtaskschedulingmethodfor
+cloud computing by genetic and de algorithms,”Wireless
+PersonalCommunications, vol.97, no.4,pp. 6301–6323,2017.
+[20] Y. Xiong,S.Huang, M.Wu, J.She, and K. Jiang, “Ajohnson’-
+rule- based genetic algorithm for two-stage-task scheduling
+problem in data-centers of cloud computing,”IEEE Trans-
+actions on Cloud Computing, vol. 7, no. 3, pp. 597–610, 2017.
+[21] T. Goyal and A. Agrawal, “Host scheduling algorithm using
+genetic algorithm in cloud computing environment,”Inter-
+national Journal of Advances in Engineering & Technology,
+vol. 1, no. 1, pp. 7–12, 2013.
+[22] P. Kumar and A. Verma, “Independent task scheduling in
+cloud computing by improved genetic algorithm,”Interna-
+tional Journal of Advanced Research in Computer Science and
+Software Engineering, vol. 2, no. 5, pp. 111–114, 2012.
+[23] H. Aziza and S. Krichen, “Bi-objective decision support
+system for task-scheduling based on genetic algorithm in
+cloudcomputing,”Computing,vol.100,no.2,pp.65–91,2018.
+[24] L. Xin-Rong and G. Yang, “Application of catastrophic
+adaptive genetic algorithm to reactive power optimization of
+power system,” inProceedings of the 2010 International
+Conference on Artiﬁcial Intelligence and Computational In-
+telligence, vol. 2, pp. 450–454, IEEE, Sanya, China, October
+2010.
+[25] M. Wang, B. Li, Z. Wang, and X. Xie, “An optimization
+strategy for evolutionary testing based on cataclysm,” in
+ProceedingsoftheComputerSoftwareApplicationsCoirference
+Workshops, Seoul, South Korea, July 2010.
+[26] Z. X. Cai, “Application of grey theory in forecasting the
+diaphania pyloalis cataclysm,”Science of Sericulture, vol. 35,
+pp. 869–871, 2009.
+[27] S. X. Lv, Yu R. Zeng, and L. Wang, “An eﬀective fruit ﬂy
+optimization algorithm with hybrid information exchange
+and its applications,”International Journal of Machine
+Learning Cybernetics, vol. 9, no. 10, p. 16231648, 2018.
+[28] S. C. Xiao, S. D. Sun, and H. Guo, “Cataclysm genetic al-
+gorithm for solving vechicle scheduling problem with time
+windows,”Application Research of Computers, vol. 31, no.12,
+2014.
+[29] Z. Wang and Y. Chen, “Binary decision diagram variable
+ordering based on catastrophe genetic algorithm,”Computer
+Engineering Applications, vol. 51, no. 3, pp. 55–60, 2015.
+[30] A. W. Mohamed, H. Z. Sabry, and T. Abd-Elaziz, “Real pa-
+rameter optimization by an eﬀective diﬀerential evolution
+algorithm,”Egyptian Informatics Journal, vol. 14, no. 1,
+pp. 37–53, 2013.
+[31] K. Chandrasekaran and U. Divakarla,Load Balancing of
+Virtual Machine Resources in Cloud Using Genetic Algorithm,
+National Institute of Technology Karnataka, Surath Ned,
+Mangalore, Karnataka, 2013.
+[32] H. Gao, W. Huang, X. Yang, Y. Duan, and Y. Yin, “Toward
+service selection for workﬂow reconﬁguration: an interface-
+based computing solution,”Future Generation Computer
+Systems, vol. 87, pp. 298–311, 2018.
+[33] H. Gao, D. Chu, Y. Duan, and Y. Yin, “Probabilistic model
+checking-based service selection method for business process
+modeling,”International Journal of Software Engineering and
+Knowledge Engineering, vol. 27, no. 06, pp. 897–923, 2017.
+[34] Y. Yin, L. Chen, y. xu, and J. Wan, “Location-aware service
+recommendation with enhanced probabilistic matrix factor-
+ization,”IEEE Access, vol. 6, pp. 62815–62825, 2018.
+[35] S. Pang, T. Ding, A. Rodrfguez-Patdn, T. Song, and Z. Phen,
+“A parallel bioinspired framework for numerical calculations
+using enzymatic p system with an enzymatic environment,”
+IEEE Access, vol. 6, pp. 65548–65556, 2018.
+[36] H. Gao, S. Mao, W. Huang, and X. Yang, “applying proba-
+bilisticmodelcheckingtoﬁnancialproductionriskevaluation
+and control: a case study of Alibaba’s Yu’e Bao,”IEEE
+Transactions on Computational Social Systems, vol. 5, no. 3,
+pp. 785–795, 2018.
+ScientiﬁcProgramming 9
+ 5192, 2020, 1, Downloaded from https://onlinelibrary.wiley.com/doi/10.1155/2020/3967847, Wiley Online Library on [11/02/2026]. See the Terms and Conditions (https://onlinelibrary.wiley.com/terms-and-conditions) on Wiley Online Library for rules of use; OA articles are governed by the applicable Creative Commons License

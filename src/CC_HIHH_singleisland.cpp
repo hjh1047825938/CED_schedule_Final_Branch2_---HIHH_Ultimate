@@ -294,9 +294,9 @@ void CC_HIHH_Solver::RunGeneration(int gen)
             int op_sel = 0;
             bool allow_bandit = use_bandit && !fixed_ops_per_block;
             if (fixed_ops_per_block) {
-                if (bp.block_id == 0) op_sel = OFF_OP_DE;
-                else if (bp.block_id == 1) op_sel = SEQ_OP_SWAP;
-                else op_sel = DEV_OP_GDE;
+                if (bp.block_id == 0) op_sel = OFF_OP_GA;
+                else if (bp.block_id == 1) op_sel = SEQ_OP_GA;
+                else op_sel = DEV_OP_DE;
             } else if (allow_bandit) {
                 state = ComputeState(bp, isl, gen, old_diversity);
                 double eps = ComputeEpsilon(gen);

@@ -50,6 +50,9 @@ private:
     double immigrant_rate;
     int elitism;
     int ls_trials;
+    int ls_interval;
+    int diversity_interval;
+    int learning_interval;
     int stagnation;
     int stagnation_trigger;
     double diversity_threshold;
@@ -82,6 +85,28 @@ private:
     std::vector<double> probs_his;
     std::vector<double> probs_mix;
 
+    // Decode caches (performance)
+    std::vector<int> nearest_edge_for_device;
+    std::vector<double> job_total_cache;
+    mutable std::vector<int> cloud_load_buf;
+    mutable std::vector<int> edge_load_buf;
+    mutable std::vector<int> device_load_buf;
+    mutable std::vector<int> last_device_per_job_buf;
+    mutable std::vector<double> op_score_buf;
+    mutable std::vector<int> op_order_buf;
+    mutable std::vector<int> rank_buf;
+    mutable std::vector<int> seen_stamp_buf;
+    mutable int seen_epoch = 1;
+    mutable std::vector<int> task_devices_buf;
+    std::vector<std::vector<int>> task_devices_per_task_cache;
+    std::vector<int> task_central_device_cache;
+    std::vector<int> nearest_edge_for_task_cache;
+    std::vector<unsigned char> task_edge_allowed_cache;
+    std::vector<int> task_edge_pos_cache;
+    std::vector<double> rem_time_cache;
+    std::vector<int> rem_ops_cache;
+    std::vector<int> op_device_pos_cache;
+
 private:
     double randval(double low, double high) const {
         return low + (double)rand() / RAND_MAX * (high - low);
@@ -92,6 +117,7 @@ private:
     }
 
     void InitializePopulation();
+    void BuildStaticCaches();
     void EvaluatePopulation();
     void UpdateArchive();
     void BuildLearningProbabilities(int iter);

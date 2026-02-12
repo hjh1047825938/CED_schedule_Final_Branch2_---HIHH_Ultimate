@@ -9,11 +9,11 @@
 
 struct QPHHConfig {
     // Parallel
-    int num_threads = 8;
+    int num_threads = 1;
 
     // Evaluation caps
-    int gi_cap = 20;
-    int map_cap = 30;
+    int gi_cap = 30;
+    int map_cap = 40;
 
     // Q-learning
     double epsilon_init = 0.2;
@@ -27,7 +27,7 @@ struct QPHHConfig {
 
     // Early stop placeholders
     bool use_early_stop = true;
-    int patience = 50;
+    int patience = 500;
     double min_improvement = 1e-6;
 };
 
@@ -100,6 +100,9 @@ private:
     std::vector<double> gbest;
     double gbest_fit;
     double prev_best_fit;
+    int current_iter;
+    int no_improve_count;
+    double last_best;
     std::vector<double> tmp_var;
     std::vector<double> trial_var;
     std::vector<int> reusable_order;
