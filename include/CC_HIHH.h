@@ -418,6 +418,12 @@ enum FullOps {
     FULL_OP_BLOCK_RESAMPLE = 4
 };
 
+enum OperatorSelectionMode {
+    MODE_CONTEXTUAL_BANDIT = 0,
+    MODE_RANDOM = 1,
+    MODE_ROUND_ROBIN = 2
+};
+
 //=============================================================================
 // CC_HIHH_Solver - Main solver class for CC-HIHH-UCB algorithm
 //=============================================================================
@@ -486,6 +492,8 @@ public:
     bool enable_intra_migration;
     bool use_bandit;
     bool fixed_ops_per_block;
+    OperatorSelectionMode op_selection_mode;
+    std::vector<int> round_robin_counters;
 
     // Operator stats logging
     bool op_stats_enabled;
@@ -498,6 +506,27 @@ public:
     std::vector<long long> op_counts_dev;
     std::vector<long long> op_counts_overall;
     std::vector<long long> op_counts_full;
+
+    // Weight logging
+    bool weight_log_enabled;
+    int weight_log_every;
+    std::string weight_log_path_offload;
+    std::string weight_log_path_seq;
+    std::string weight_log_path_dev;
+    std::ofstream weight_log_out_offload;
+    std::ofstream weight_log_out_seq;
+    std::ofstream weight_log_out_dev;
+
+    // Reward logging
+    bool reward_log_enabled;
+    std::string reward_log_path;
+    std::ofstream reward_log_out;
+
+    // Global stats logging
+    bool global_stats_enabled;
+    int global_stats_every;
+    std::string global_stats_path;
+    std::ofstream global_stats_out;
     
     CC_HIHH_Solver(MultiMet* s, int psize, int nsub, int ncircle, double pelite = 0.8);
     ~CC_HIHH_Solver();
@@ -519,12 +548,21 @@ public:
     void SetMigrationEnabled(bool v) { enable_intra_migration = v; }
     void SetUseBandit(bool v) { use_bandit = v; }
     void SetFixedOpsPerBlock(bool v) { fixed_ops_per_block = v; }
+    void SetSelectionMode(OperatorSelectionMode mode) { op_selection_mode = mode; }
     void SetOpStats(const std::string& path, int every);
+    void SetWeightLogging(const std::string& offload_path, const std::string& seq_path, const std::string& dev_path, int every);
+    void SetRewardLogging(const std::string& path);
+    void SetGlobalStatsLogging(const std::string& path, int every);
     
     void Init();
     void RunGeneration(int gen);
     void LogOpStatsIfNeeded(int gen, bool is_last);
+    void LogWeightsIfNeeded(int gen, bool is_last);
+    void LogGlobalStatsIfNeeded(int gen, bool is_last);
     void CloseOpStats();
+    void CloseWeightLogging();
+    void CloseRewardLogging();
+    void CloseGlobalStatsLogging();
     void MigrationWithinBlock(BlockPopulation& bp, int dispara);
     
     // Operator application
@@ -578,6 +616,14 @@ private:
     void InitOpStats();
     void ResetOpStatsInterval();
     void RecordOpSelection(int block_id, int op_id);
+    void InitWeightLogging();
+    void InitRewardLogging();
+    void InitGlobalStatsLogging();
+    void LogReward(int gen, int block_id, int island_id, int op_id, double reward, double improvement, double div_change);
+    int SelectOperatorRandom(int block_id) const;
+    int SelectOperatorRoundRobin(int block_id);
+    double ComputeGlobalAvgFitness() const;
+    double ComputeGlobalDiversity() const;
 };
 
 #endif // CC_HIHH_H

@@ -1,0 +1,10 @@
+PPO seeds=5-5 final_best=0.6750622841 +- 0.0000000000
+PPO seeds=1-1 final_best=0.6711103194 +- 0.0000000000
+PPO seeds=8-8 final_best=0.6787539628 +- 0.0000000000
+PPO seeds=6-6 final_best=0.6586629794 +- 0.0000000000
+PPO seeds=2-2 final_best=0.6857911519 +- 0.0000000000
+PPO seeds=9-9 final_best=0.6741966058 +- 0.0000000000
+PPO seeds=7-7 final_best=0.6771330256 +- 0.0000000000
+PPO seeds=4-4 final_best=0.6788821790 +- 0.0000000000
+PPO seeds=3-3 final_best=0.6924260110 +- 0.0000000000
+PPO seeds=10-10 final_best=0.6863262318 +- 0.0000000000

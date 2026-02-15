@@ -1,0 +1,3 @@
+T100_tuned seeds=1-1 final_best=0.4186252774 +- 0.0000000000
+T100_tuned2 seeds=1-1 final_best=0.4186252774 +- 0.0000000000
+T100_tuned3 seeds=1-1 final_best=0.3873770469 +- 0.0000000000

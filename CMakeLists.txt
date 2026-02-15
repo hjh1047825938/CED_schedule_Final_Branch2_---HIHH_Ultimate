@@ -15,6 +15,11 @@ set(SOURCES
     src/CGA.cpp
 )
 
+set(CORE_SOURCES
+    src/Multimethod.cpp
+    src/Problems.cpp
+)
+
 set(HEADERS
     include/Multimethod.h
     include/Population.h
@@ -29,12 +34,20 @@ set(HEADERS
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+add_executable(ppo_scheduler
+    src/ppo_scheduler_main.cpp
+    src/PPO.cpp
+    ${CORE_SOURCES}
+    include/PPO.h
+)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(ppo_scheduler PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
+    target_link_libraries(ppo_scheduler PRIVATE OpenMP::OpenMP_CXX)
     message(STATUS "OpenMP enabled for ${PROJECT_NAME}")
 else()
     message(STATUS "OpenMP not found; building without parallel pragmas")
@@ -44,12 +57,14 @@ endif()
 option(DEBUG_NEAREST "Enable nearest-device debug output" OFF)
 if (DEBUG_NEAREST)
     target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG_NEAREST)
+    target_compile_definitions(ppo_scheduler PRIVATE DEBUG_NEAREST)
 endif()
 
 # Profiling option for evaluation stages
 option(PROFILE_EVAL "Enable detailed eval profiling" OFF)
 if (PROFILE_EVAL)
     target_compile_definitions(${PROJECT_NAME} PRIVATE PROFILE_EVAL)
+    target_compile_definitions(ppo_scheduler PRIVATE PROFILE_EVAL)
 endif()
 
 # MSVC-specific settings
@@ -65,8 +80,24 @@ if(MSVC)
         NOMINMAX
         _CRT_SECURE_NO_WARNINGS
     )
+    target_compile_options(ppo_scheduler PRIVATE
+        /O2
+        /EHsc
+        /W3
+        /utf-8
+    )
+    target_compile_definitions(ppo_scheduler PRIVATE
+        _USE_MATH_DEFINES
+        NOMINMAX
+        _CRT_SECURE_NO_WARNINGS
+    )
 else()
     target_compile_options(${PROJECT_NAME} PRIVATE
+        -O2
+        -Wall
+        -Wextra
+    )
+    target_compile_options(ppo_scheduler PRIVATE
         -O2
         -Wall
         -Wextra

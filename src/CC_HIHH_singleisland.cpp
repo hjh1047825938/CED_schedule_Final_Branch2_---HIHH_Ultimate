@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <filesystem>
+#include <iomanip>
 #include <utility>
 
 //=============================================================================
@@ -63,10 +65,18 @@ CC_HIHH_Solver::CC_HIHH_Solver(MultiMet* s, int psize, int nsub, int ncircle, do
     enable_intra_migration = true;
     use_bandit = true;
     fixed_ops_per_block = false;
+    op_selection_mode = MODE_CONTEXTUAL_BANDIT;
+    round_robin_counters.assign(4, 0);
 
     op_stats_enabled = false;
     op_stats_every = 50;
     op_stats_interval_gens = 0;
+
+    weight_log_enabled = false;
+    weight_log_every = 50;
+    reward_log_enabled = false;
+    global_stats_enabled = false;
+    global_stats_every = 50;
     
     var_full.resize(Nvar);
     gbest.resize(Nvar);
@@ -75,6 +85,9 @@ CC_HIHH_Solver::CC_HIHH_Solver(MultiMet* s, int psize, int nsub, int ncircle, do
 CC_HIHH_Solver::~CC_HIHH_Solver()
 {
     CloseOpStats();
+    CloseWeightLogging();
+    CloseRewardLogging();
+    CloseGlobalStatsLogging();
     P_offload.destroy();
     P_seq.destroy();
     P_dev.destroy();
@@ -83,6 +96,7 @@ CC_HIHH_Solver::~CC_HIHH_Solver()
 
 void CC_HIHH_Solver::Init()
 {
+    std::fill(round_robin_counters.begin(), round_robin_counters.end(), 0);
     if (nSubpop < 1) {
         std::cerr << "[CC-HIHH] Error: nSubpop must be >= 1" << std::endl;
         std::exit(1);
@@ -121,6 +135,9 @@ void CC_HIHH_Solver::Init()
         std::cout << "[CC-HIHH] Initial gbest_fit = " << gbest_fit << std::endl;
 
         if (op_stats_enabled) InitOpStats();
+        if (weight_log_enabled) InitWeightLogging();
+        if (reward_log_enabled) InitRewardLogging();
+        if (global_stats_enabled) InitGlobalStatsLogging();
         return;
     }
     
@@ -186,6 +203,9 @@ void CC_HIHH_Solver::Init()
     std::cout << "[CC-HIHH] Initial gbest_fit = " << gbest_fit << std::endl;
 
     if (op_stats_enabled) InitOpStats();
+    if (weight_log_enabled) InitWeightLogging();
+    if (reward_log_enabled) InitRewardLogging();
+    if (global_stats_enabled) InitGlobalStatsLogging();
 }
 
 void CC_HIHH_Solver::RunGeneration(int gen)
@@ -201,12 +221,14 @@ void CC_HIHH_Solver::RunGeneration(int gen)
 
             int op_sel = 0;
             std::vector<double> state;
-            if (use_bandit) {
+            if (op_selection_mode == MODE_CONTEXTUAL_BANDIT && use_bandit) {
                 state = ComputeState(bp, isl, gen, old_diversity);
                 double eps = ComputeEpsilon(gen);
                 op_sel = bp.cb_selectors[isl].select(state, eps);
+            } else if (op_selection_mode == MODE_ROUND_ROBIN) {
+                op_sel = SelectOperatorRoundRobin(-1);
             } else {
-                op_sel = rand() % num_ops_full;
+                op_sel = SelectOperatorRandom(-1);
             }
             int op_exec = op_sel;
             if (gate_enabled && op_sel == FULL_OP_BLOCK_RESAMPLE &&
@@ -231,10 +253,11 @@ void CC_HIHH_Solver::RunGeneration(int gen)
             if (reward > clip_val) reward = clip_val;
             if (reward < -clip_val) reward = -clip_val;
 
-            if (use_bandit) {
+            if (op_selection_mode == MODE_CONTEXTUAL_BANDIT && use_bandit) {
                 double lr = ComputeLearningRate(bp.cb_selectors[isl]);
                 bp.cb_selectors[isl].update(state, op_exec, reward, lr);
             }
+            LogReward(gen + 1, -1, isl, op_exec, reward, improvement_ratio, (new_diversity - old_diversity));
 
             int success = (new_best_fit + 1e-12 < old_best_fit) ? 1 : 0;
             double improve_norm = improvement_ratio;
@@ -292,7 +315,7 @@ void CC_HIHH_Solver::RunGeneration(int gen)
             // Build contextual state and select operator
             std::vector<double> state;
             int op_sel = 0;
-            bool allow_bandit = use_bandit && !fixed_ops_per_block;
+            bool allow_bandit = (op_selection_mode == MODE_CONTEXTUAL_BANDIT) && use_bandit && !fixed_ops_per_block;
             if (fixed_ops_per_block) {
                 if (bp.block_id == 0) op_sel = OFF_OP_GA;
                 else if (bp.block_id == 1) op_sel = SEQ_OP_GA;
@@ -301,10 +324,10 @@ void CC_HIHH_Solver::RunGeneration(int gen)
                 state = ComputeState(bp, isl, gen, old_diversity);
                 double eps = ComputeEpsilon(gen);
                 op_sel = bp.cb_selectors[isl].select(state, eps);
+            } else if (op_selection_mode == MODE_ROUND_ROBIN) {
+                op_sel = SelectOperatorRoundRobin(bp.block_id);
             } else {
-                int op_count = (bp.block_id == 0) ? num_ops_offload :
-                               (bp.block_id == 1) ? num_ops_seq : num_ops_dev;
-                op_sel = rand() % op_count;
+                op_sel = SelectOperatorRandom(bp.block_id);
             }
             int op_exec = op_sel;
             if (gate_enabled && IsResampleOp(op_sel, bp.block_id) &&
@@ -350,6 +373,7 @@ void CC_HIHH_Solver::RunGeneration(int gen)
                 double lr = ComputeLearningRate(bp.cb_selectors[isl]);
                 bp.cb_selectors[isl].update(state, op_exec, reward, lr);
             }
+            LogReward(gen + 1, bp.block_id, isl, op_exec, reward, improvement_ratio, (new_diversity - old_diversity));
 
             int success = (new_best_fit + 1e-12 < old_best_fit) ? 1 : 0;
             double improve_norm = improvement_ratio;
@@ -420,7 +444,7 @@ void CC_HIHH_Solver::RunGeneration(int gen)
     } else {
         stagnation_count++;
     }
-    
+
     prev_gbest_fit = gbest_fit;
 }
 
@@ -869,6 +893,28 @@ void CC_HIHH_Solver::SetOpStats(const std::string& path, int every)
     op_stats_enabled = !op_stats_path.empty();
 }
 
+void CC_HIHH_Solver::SetWeightLogging(const std::string& offload_path, const std::string& seq_path, const std::string& dev_path, int every)
+{
+    weight_log_path_offload = offload_path;
+    weight_log_path_seq = seq_path;
+    weight_log_path_dev = dev_path;
+    weight_log_every = every > 0 ? every : 1;
+    weight_log_enabled = !(weight_log_path_offload.empty() || weight_log_path_seq.empty() || weight_log_path_dev.empty());
+}
+
+void CC_HIHH_Solver::SetRewardLogging(const std::string& path)
+{
+    reward_log_path = path;
+    reward_log_enabled = !reward_log_path.empty();
+}
+
+void CC_HIHH_Solver::SetGlobalStatsLogging(const std::string& path, int every)
+{
+    global_stats_path = path;
+    global_stats_every = every > 0 ? every : 1;
+    global_stats_enabled = !global_stats_path.empty();
+}
+
 void CC_HIHH_Solver::InitOpStats()
 {
     op_stats_out.open(op_stats_path, std::ios::out | std::ios::trunc);
@@ -907,6 +953,100 @@ void CC_HIHH_Solver::CloseOpStats()
     if (op_stats_out.is_open()) {
         op_stats_out.close();
     }
+}
+
+void CC_HIHH_Solver::InitWeightLogging()
+{
+    namespace fs = std::filesystem;
+    auto open_one = [](std::ofstream& out, const std::string& path) -> bool {
+        if (path.empty()) return false;
+        out.open(path, std::ios::out | std::ios::trunc);
+        return out.is_open();
+    };
+    if (!weight_log_path_offload.empty()) {
+        fs::path p = fs::path(weight_log_path_offload).parent_path();
+        if (!p.empty()) fs::create_directories(p);
+    }
+    if (!weight_log_path_seq.empty()) {
+        fs::path p = fs::path(weight_log_path_seq).parent_path();
+        if (!p.empty()) fs::create_directories(p);
+    }
+    if (!weight_log_path_dev.empty()) {
+        fs::path p = fs::path(weight_log_path_dev).parent_path();
+        if (!p.empty()) fs::create_directories(p);
+    }
+    bool ok = open_one(weight_log_out_offload, weight_log_path_offload) &&
+              open_one(weight_log_out_seq, weight_log_path_seq) &&
+              open_one(weight_log_out_dev, weight_log_path_dev);
+    if (!ok) {
+        std::cerr << "[CC-HIHH] Warning: failed to open one or more weight log files." << std::endl;
+        weight_log_enabled = false;
+        CloseWeightLogging();
+        return;
+    }
+    const char* header = "gen,op_id,w0,w1,w2,w3,w4,w5,w6,norm\n";
+    weight_log_out_offload << header;
+    weight_log_out_seq << header;
+    weight_log_out_dev << header;
+}
+
+void CC_HIHH_Solver::CloseWeightLogging()
+{
+    if (weight_log_out_offload.is_open()) weight_log_out_offload.close();
+    if (weight_log_out_seq.is_open()) weight_log_out_seq.close();
+    if (weight_log_out_dev.is_open()) weight_log_out_dev.close();
+}
+
+void CC_HIHH_Solver::InitRewardLogging()
+{
+    if (reward_log_path.empty()) return;
+    namespace fs = std::filesystem;
+    fs::path p = fs::path(reward_log_path).parent_path();
+    if (!p.empty()) fs::create_directories(p);
+    reward_log_out.open(reward_log_path, std::ios::out | std::ios::trunc);
+    if (!reward_log_out.is_open()) {
+        std::cerr << "[CC-HIHH] Warning: failed to open reward log file: " << reward_log_path << std::endl;
+        reward_log_enabled = false;
+        return;
+    }
+    reward_log_out << "gen,block_id,island_id,op_id,reward,improvement,diversity_change\n";
+}
+
+void CC_HIHH_Solver::CloseRewardLogging()
+{
+    if (reward_log_out.is_open()) reward_log_out.close();
+}
+
+void CC_HIHH_Solver::InitGlobalStatsLogging()
+{
+    if (global_stats_path.empty()) return;
+    namespace fs = std::filesystem;
+    fs::path p = fs::path(global_stats_path).parent_path();
+    if (!p.empty()) fs::create_directories(p);
+    global_stats_out.open(global_stats_path, std::ios::out | std::ios::trunc);
+    if (!global_stats_out.is_open()) {
+        std::cerr << "[CC-HIHH] Warning: failed to open global stats file: " << global_stats_path << std::endl;
+        global_stats_enabled = false;
+        return;
+    }
+    global_stats_out << "gen,best_fitness,avg_fitness,diversity,epsilon,stagnation,gate_blocked_count,gate_fallback_count\n";
+}
+
+void CC_HIHH_Solver::CloseGlobalStatsLogging()
+{
+    if (global_stats_out.is_open()) global_stats_out.close();
+}
+
+void CC_HIHH_Solver::LogReward(int gen, int block_id, int island_id, int op_id, double reward, double improvement, double div_change)
+{
+    if (!reward_log_enabled || !reward_log_out.is_open()) return;
+    reward_log_out << gen << ","
+                   << block_id << ","
+                   << island_id << ","
+                   << op_id << ","
+                   << std::setprecision(16) << reward << ","
+                   << std::setprecision(16) << improvement << ","
+                   << std::setprecision(16) << div_change << "\n";
 }
 
 void CC_HIHH_Solver::RecordOpSelection(int block_id, int op_id)
@@ -1008,4 +1148,114 @@ void CC_HIHH_Solver::LogOpStatsIfNeeded(int gen, bool is_last)
     } else {
         std::fill(op_counts_full.begin(), op_counts_full.end(), 0);
     }
+}
+
+int CC_HIHH_Solver::SelectOperatorRandom(int block_id) const
+{
+    if (!use_blocks || block_id < 0) {
+        return rand() % std::max(1, num_ops_full);
+    }
+    if (block_id == 0) return rand() % std::max(1, num_ops_offload);
+    if (block_id == 1) return rand() % std::max(1, num_ops_seq);
+    return rand() % std::max(1, num_ops_dev);
+}
+
+int CC_HIHH_Solver::SelectOperatorRoundRobin(int block_id)
+{
+    int idx = (block_id < 0) ? 3 : block_id;
+    if (idx < 0 || idx >= (int)round_robin_counters.size()) {
+        idx = 0;
+    }
+    int op_count = num_ops_full;
+    if (block_id == 0) op_count = num_ops_offload;
+    else if (block_id == 1) op_count = num_ops_seq;
+    else if (block_id == 2) op_count = num_ops_dev;
+    if (op_count <= 0) op_count = 1;
+    int op = round_robin_counters[idx] % op_count;
+    round_robin_counters[idx] = (round_robin_counters[idx] + 1) % op_count;
+    return op;
+}
+
+double CC_HIHH_Solver::ComputeGlobalAvgFitness() const
+{
+    auto avg_fit = [](const BlockPopulation& bp) {
+        if (!bp.pop_fit || bp.popsize <= 0) return 0.0;
+        double sum = 0.0;
+        for (int i = 0; i < bp.popsize; ++i) sum += bp.pop_fit[i];
+        return sum / (double)bp.popsize;
+    };
+    if (!use_blocks) return avg_fit(P_full);
+    return (avg_fit(P_offload) + avg_fit(P_seq) + avg_fit(P_dev)) / 3.0;
+}
+
+double CC_HIHH_Solver::ComputeGlobalDiversity() const
+{
+    if (!use_blocks) {
+        return P_full.compute_diversity(0, P_full.popsize);
+    }
+    double d0 = P_offload.compute_diversity(0, P_offload.popsize);
+    double d1 = P_seq.compute_diversity(0, P_seq.popsize);
+    double d2 = P_dev.compute_diversity(0, P_dev.popsize);
+    return (d0 + d1 + d2) / 3.0;
+}
+
+void CC_HIHH_Solver::LogWeightsIfNeeded(int gen, bool is_last)
+{
+    if (!weight_log_enabled) return;
+    bool flush = ((gen + 1) % weight_log_every == 0) || is_last;
+    if (!flush) return;
+    if (!(weight_log_out_offload.is_open() && weight_log_out_seq.is_open() && weight_log_out_dev.is_open())) return;
+
+    auto log_block = [&](std::ofstream& out, const BlockPopulation& bp, int num_ops) {
+        if (bp.cb_selectors.empty()) return;
+        for (int op = 0; op < num_ops; ++op) {
+            std::vector<double> avg_w(state_dim, 0.0);
+            for (int isl = 0; isl < (int)bp.cb_selectors.size(); ++isl) {
+                const auto& sel = bp.cb_selectors[isl];
+                int base = op * sel.feat_dim;
+                for (int k = 0; k < state_dim && k < sel.feat_dim; ++k) {
+                    avg_w[k] += sel.weights[base + k];
+                }
+            }
+            for (int k = 0; k < state_dim; ++k) {
+                avg_w[k] /= (double)bp.cb_selectors.size();
+            }
+            double norm = 0.0;
+            for (int k = 0; k < state_dim; ++k) norm += avg_w[k] * avg_w[k];
+            norm = std::sqrt(norm);
+
+            out << (gen + 1) << "," << op;
+            for (int k = 0; k < state_dim; ++k) {
+                out << "," << std::setprecision(16) << avg_w[k];
+            }
+            out << "," << std::setprecision(16) << norm << "\n";
+        }
+    };
+
+    if (use_blocks) {
+        log_block(weight_log_out_offload, P_offload, num_ops_offload);
+        log_block(weight_log_out_seq, P_seq, num_ops_seq);
+        log_block(weight_log_out_dev, P_dev, num_ops_dev);
+    } else {
+        log_block(weight_log_out_offload, P_full, num_ops_full);
+    }
+}
+
+void CC_HIHH_Solver::LogGlobalStatsIfNeeded(int gen, bool is_last)
+{
+    if (!global_stats_enabled || !global_stats_out.is_open()) return;
+    bool flush = ((gen + 1) % global_stats_every == 0) || is_last;
+    if (!flush) return;
+    const double best = GetGlobalBestFit();
+    const double avg = ComputeGlobalAvgFitness();
+    const double div = ComputeGlobalDiversity();
+    const double eps = (op_selection_mode == MODE_CONTEXTUAL_BANDIT && use_bandit) ? ComputeEpsilon(gen) : 0.0;
+    global_stats_out << (gen + 1) << ","
+                     << std::setprecision(16) << best << ","
+                     << std::setprecision(16) << avg << ","
+                     << std::setprecision(16) << div << ","
+                     << std::setprecision(16) << eps << ","
+                     << stagnation_count << ","
+                     << gate_blocked_total << ","
+                     << gate_fallback_total << "\n";
 }

@@ -70,11 +70,19 @@ void print_usage(const char* prog_name) {
     cout << "  --cchihh_no_migration  Disable CCHIHH intra-block migration\n";
     cout << "  --cchihh_random_ops    Disable contextual bandit, random operators\n";
     cout << "  --cchihh_fixed_ops     Fixed operators per block: offload=GA, seq=GA, dev=DE\n";
+    cout << "  --op_mode <m>          Operator selection: bandit|random|roundrobin (default: bandit)\n";
     cout << "  --cchihh_no_blocks     Disable CC blocks, run on full variable space\n";
     cout << "  --no_blocks            Alias of --cchihh_no_blocks\n";
     cout << "  --use_blocks <bool>    Enable/disable CC blocks (true/false, default: true)\n";
     cout << "  --cchihh_op_stats <p>  Write operator frequency CSV to path\n";
     cout << "  --cchihh_op_stats_every <n>  Operator stats logging interval (default: log_every)\n";
+    cout << "  --cchihh_weight_log_offload <p>  Write offload operator weights CSV\n";
+    cout << "  --cchihh_weight_log_seq <p>      Write sequence operator weights CSV\n";
+    cout << "  --cchihh_weight_log_dev <p>      Write device operator weights CSV\n";
+    cout << "  --cchihh_weight_log_every <n>    Weight logging interval (default: log_every)\n";
+    cout << "  --cchihh_reward_log <p>          Write operator rewards CSV\n";
+    cout << "  --cchihh_global_stats <p>        Write global stats CSV\n";
+    cout << "  --cchihh_global_stats_every <n>  Global stats interval (default: log_every)\n";
     cout << "  --resample_gate <n>  Stagnation gate for block resample (default: 15, 0=disable gate)\n";
     cout << "  --reward_clip <f>    Stable reward clip (default: 0.2)\n";
     cout << "  --eps0 <f>           Stable epsilon start (default: 0.2)\n";
@@ -463,8 +471,16 @@ int main(int argc, char* argv[])
     bool cchihh_random_ops = false;
     bool cchihh_fixed_ops = false;
     bool cchihh_no_blocks = false;
+    string cchihh_op_mode = "bandit";
     string cchihh_op_stats_path;
     int cchihh_op_stats_every = 0;
+    string cchihh_weight_log_offload_path;
+    string cchihh_weight_log_seq_path;
+    string cchihh_weight_log_dev_path;
+    int cchihh_weight_log_every = 0;
+    string cchihh_reward_log_path;
+    string cchihh_global_stats_path;
+    int cchihh_global_stats_every = 0;
     int resample_gate = 15;
     double stable_reward_clip = 0.2;
     double eps0 = 0.2;
@@ -586,6 +602,14 @@ int main(int argc, char* argv[])
             cchihh_random_ops = true;
         } else if (strcmp(argv[i], "--cchihh_fixed_ops") == 0) {
             cchihh_fixed_ops = true;
+        } else if (strcmp(argv[i], "--op_mode") == 0 && i + 1 < argc) {
+            cchihh_op_mode = argv[++i];
+            std::transform(cchihh_op_mode.begin(), cchihh_op_mode.end(), cchihh_op_mode.begin(),
+                           [](unsigned char ch) { return (char)std::tolower(ch); });
+            if (cchihh_op_mode != "bandit" && cchihh_op_mode != "random" && cchihh_op_mode != "roundrobin") {
+                cerr << "Error: --op_mode must be one of: bandit, random, roundrobin" << endl;
+                return 1;
+            }
         } else if (strcmp(argv[i], "--cchihh_no_blocks") == 0 || strcmp(argv[i], "--no_blocks") == 0) {
             cchihh_no_blocks = true;
         } else if (strcmp(argv[i], "--use_blocks") == 0 && i + 1 < argc) {
@@ -604,6 +628,20 @@ int main(int argc, char* argv[])
             cchihh_op_stats_path = argv[++i];
         } else if (strcmp(argv[i], "--cchihh_op_stats_every") == 0 && i + 1 < argc) {
             cchihh_op_stats_every = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--cchihh_weight_log_offload") == 0 && i + 1 < argc) {
+            cchihh_weight_log_offload_path = argv[++i];
+        } else if (strcmp(argv[i], "--cchihh_weight_log_seq") == 0 && i + 1 < argc) {
+            cchihh_weight_log_seq_path = argv[++i];
+        } else if (strcmp(argv[i], "--cchihh_weight_log_dev") == 0 && i + 1 < argc) {
+            cchihh_weight_log_dev_path = argv[++i];
+        } else if (strcmp(argv[i], "--cchihh_weight_log_every") == 0 && i + 1 < argc) {
+            cchihh_weight_log_every = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--cchihh_reward_log") == 0 && i + 1 < argc) {
+            cchihh_reward_log_path = argv[++i];
+        } else if (strcmp(argv[i], "--cchihh_global_stats") == 0 && i + 1 < argc) {
+            cchihh_global_stats_path = argv[++i];
+        } else if (strcmp(argv[i], "--cchihh_global_stats_every") == 0 && i + 1 < argc) {
+            cchihh_global_stats_every = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--resample_gate") == 0 && i + 1 < argc) {
             resample_gate = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--reward_clip") == 0 && i + 1 < argc) {
@@ -653,13 +691,24 @@ int main(int argc, char* argv[])
              << " lr_k=" << lr_k << endl;
     }
     if (solver_name == "CCHIHH") {
+        if (cchihh_random_ops) cchihh_op_mode = "random";
         cout << "CCHIHH gate: " << (resample_gate > 0 ? "enabled" : "disabled") << endl;
         cout << "CCHIHH blocks: " << (cchihh_no_blocks ? "disabled" : "enabled") << endl;
         cout << "CCHIHH migration: " << (cchihh_migration ? "enabled" : "disabled") << endl;
-        cout << "CCHIHH bandit: " << (cchihh_random_ops ? "random" : "enabled") << endl;
+        cout << "CCHIHH op mode: " << cchihh_op_mode << endl;
         cout << "CCHIHH fixed ops: " << (cchihh_fixed_ops ? "enabled" : "disabled") << endl;
         if (!cchihh_op_stats_path.empty()) {
             cout << "CCHIHH op stats: " << cchihh_op_stats_path << endl;
+        }
+        if (!cchihh_weight_log_offload_path.empty() || !cchihh_weight_log_seq_path.empty() || !cchihh_weight_log_dev_path.empty()) {
+            cout << "CCHIHH weight logs: " << cchihh_weight_log_offload_path << " | "
+                 << cchihh_weight_log_seq_path << " | " << cchihh_weight_log_dev_path << endl;
+        }
+        if (!cchihh_reward_log_path.empty()) {
+            cout << "CCHIHH reward log: " << cchihh_reward_log_path << endl;
+        }
+        if (!cchihh_global_stats_path.empty()) {
+            cout << "CCHIHH global stats: " << cchihh_global_stats_path << endl;
         }
     }
     if (solver_name == "QHH" || solver_name == "QPHH") {
@@ -1009,18 +1058,35 @@ int main(int argc, char* argv[])
     // CC-HIHH-UCB Solver (Cooperative Coevolution + Heterogeneous Island Hyper-Heuristic + UCB1)
     if (solver_name == "CCHIHH") {
         cout << "\n=== Running CC-HIHH-UCB Solver ===" << endl;
+        if (cchihh_random_ops) cchihh_op_mode = "random";
         
         // Create CC-HIHH solver with nsubpop islands per block
         CC_HIHH_Solver cc_solver(&solver, popsize, nsubpop, 5 /*nCircle*/, 0.8 /*pElitist*/);
         cc_solver.SetMaxGenerations(max_generations);
         cc_solver.SetUseBlocks(!cchihh_no_blocks);
         cc_solver.SetMigrationEnabled(cchihh_migration);
-        cc_solver.SetUseBandit(!cchihh_random_ops);
+        cc_solver.SetUseBandit(cchihh_op_mode == "bandit");
+        if (cchihh_op_mode == "roundrobin") cc_solver.SetSelectionMode(MODE_ROUND_ROBIN);
+        else if (cchihh_op_mode == "random") cc_solver.SetSelectionMode(MODE_RANDOM);
+        else cc_solver.SetSelectionMode(MODE_CONTEXTUAL_BANDIT);
         cc_solver.SetFixedOpsPerBlock(cchihh_fixed_ops);
         cc_solver.SetResampleGate(resample_gate);
         if (!cchihh_op_stats_path.empty()) {
             int stats_every = cchihh_op_stats_every > 0 ? cchihh_op_stats_every : log_every;
             cc_solver.SetOpStats(cchihh_op_stats_path, stats_every);
+        }
+        if (!cchihh_weight_log_offload_path.empty() &&
+            !cchihh_weight_log_seq_path.empty() &&
+            !cchihh_weight_log_dev_path.empty()) {
+            int weight_every = cchihh_weight_log_every > 0 ? cchihh_weight_log_every : log_every;
+            cc_solver.SetWeightLogging(cchihh_weight_log_offload_path, cchihh_weight_log_seq_path, cchihh_weight_log_dev_path, weight_every);
+        }
+        if (!cchihh_reward_log_path.empty()) {
+            cc_solver.SetRewardLogging(cchihh_reward_log_path);
+        }
+        if (!cchihh_global_stats_path.empty()) {
+            int global_every = cchihh_global_stats_every > 0 ? cchihh_global_stats_every : log_every;
+            cc_solver.SetGlobalStatsLogging(cchihh_global_stats_path, global_every);
         }
         if (stable_mode) {
             cc_solver.SetStableMode(true);
@@ -1035,6 +1101,8 @@ int main(int argc, char* argv[])
         for (int gen = 0; gen < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals); gen++) {
             cc_solver.RunGeneration(gen);
             cc_solver.LogOpStatsIfNeeded(gen, gen == max_generations - 1);
+            cc_solver.LogWeightsIfNeeded(gen, gen == max_generations - 1);
+            cc_solver.LogGlobalStatsIfNeeded(gen, gen == max_generations - 1);
             
             if (max_evals > 0) {
                 while (solver.GetEvalCount() >= next_log_eval) {
