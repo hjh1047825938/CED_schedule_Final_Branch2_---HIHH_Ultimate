@@ -220,7 +220,7 @@ void CC_HIHH_Solver::RunGeneration(int gen)
             double old_diversity = bp.compute_diversity(p_start, p_end);
 
             int op_sel = 0;
-            std::vector<double> state;
+            std::array<double, 7> state{};
             if (op_selection_mode == MODE_CONTEXTUAL_BANDIT && use_bandit) {
                 state = ComputeState(bp, isl, gen, old_diversity);
                 double eps = ComputeEpsilon(gen);
@@ -313,7 +313,7 @@ void CC_HIHH_Solver::RunGeneration(int gen)
             double old_diversity = bp.compute_diversity(p_start, p_end);
             
             // Build contextual state and select operator
-            std::vector<double> state;
+            std::array<double, 7> state{};
             int op_sel = 0;
             bool allow_bandit = (op_selection_mode == MODE_CONTEXTUAL_BANDIT) && use_bandit && !fixed_ops_per_block;
             if (fixed_ops_per_block) {
@@ -399,7 +399,7 @@ void CC_HIHH_Solver::RunGeneration(int gen)
                 int p_start, p_end;
                 bp.get_island_range(isl, p_start, p_end);
                 double div_now = bp.compute_diversity(p_start, p_end);
-                std::vector<double> state_dbg = ComputeState(bp, isl, gen, div_now);
+                std::array<double, 7> state_dbg = ComputeState(bp, isl, gen, div_now);
                 double lr_dbg = ComputeLearningRate(bp.cb_selectors[isl]);
                 std::cout << "[CB][Gen " << (gen + 1) << "][Block " << b << "][Island " << isl
                           << "] stag=" << bp.island_stagnation[isl]
@@ -476,9 +476,9 @@ bool CC_HIHH_Solver::IsResampleOp(int op, int block_id) const
     return op == DEV_OP_BLOCK_RESAMPLE;
 }
 
-std::vector<double> CC_HIHH_Solver::ComputeState(const BlockPopulation& bp, int isl, int gen, double diversity) const
+std::array<double, 7> CC_HIHH_Solver::ComputeState(const BlockPopulation& bp, int isl, int gen, double diversity) const
 {
-    std::vector<double> s(state_dim, 0.0);
+    std::array<double, 7> s{};
     double gen_ratio = (max_generations > 0) ? (double)gen / (double)max_generations : 0.0;
     if (gen_ratio < 0.0) gen_ratio = 0.0;
     if (gen_ratio > 1.0) gen_ratio = 1.0;
@@ -527,24 +527,25 @@ void CC_HIHH_Solver::MigrationWithinBlock(BlockPopulation& bp, int dispara)
     }
 
     // Ring migration: island k receives from (k - dispara + nSubpop) mod nSubpop
-    std::vector<double*> migrants(nSubpop);
-    std::vector<double> migrant_fit(nSubpop);
+    const size_t needed = (size_t)nSubpop * (size_t)bp.block_len;
+    if (migration_buffer.size() < needed) migration_buffer.resize(needed);
+    if ((int)migration_fit_buffer.size() < nSubpop) migration_fit_buffer.resize(nSubpop);
     
     // Prepare migrants
     for (int k = 0; k < nSubpop; k++) {
-        migrants[k] = new double[bp.block_len];
+        double* migrant = migration_buffer.data() + (size_t)k * (size_t)bp.block_len;
         
         if (randval(0, 1) < pElitist) {
             // Send island gbest
-            std::copy(bp.island_gbest[k], bp.island_gbest[k] + bp.block_len, migrants[k]);
-            migrant_fit[k] = bp.island_gbest_fit[k];
+            std::copy(bp.island_gbest[k], bp.island_gbest[k] + bp.block_len, migrant);
+            migration_fit_buffer[k] = bp.island_gbest_fit[k];
         } else {
             // Send random individual from island
             int p_start, p_end;
             bp.get_island_range(k, p_start, p_end);
             int rand_idx = p_start + rand() % (p_end - p_start);
-            std::copy(bp.pop[rand_idx], bp.pop[rand_idx] + bp.block_len, migrants[k]);
-            migrant_fit[k] = bp.pop_fit[rand_idx];
+            std::copy(bp.pop[rand_idx], bp.pop[rand_idx] + bp.block_len, migrant);
+            migration_fit_buffer[k] = bp.pop_fit[rand_idx];
         }
     }
     
@@ -556,13 +557,9 @@ void CC_HIHH_Solver::MigrationWithinBlock(BlockPopulation& bp, int dispara)
         int worst_idx = bp.get_island_worst_idx(p_start, p_end);
         
         // Replace worst with migrant
-        std::copy(migrants[source], migrants[source] + bp.block_len, bp.pop[worst_idx]);
-        bp.pop_fit[worst_idx] = migrant_fit[source];
-    }
-    
-    // Cleanup
-    for (int k = 0; k < nSubpop; k++) {
-        delete[] migrants[k];
+        const double* migrant = migration_buffer.data() + (size_t)source * (size_t)bp.block_len;
+        std::copy(migrant, migrant + bp.block_len, bp.pop[worst_idx]);
+        bp.pop_fit[worst_idx] = migration_fit_buffer[source];
     }
 }
 

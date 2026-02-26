@@ -1,0 +1,92 @@
+{
+  "report": [
+    {
+      "name": "GA",
+      "ok": true,
+      "rc": 0,
+      "expected_final": 0.390441,
+      "actual_final": 0.390441,
+      "series_len_expected": 6,
+      "series_len_actual": 6,
+      "same_series": true,
+      "same_final": true
+    },
+    {
+      "name": "DE",
+      "ok": true,
+      "rc": 0,
+      "expected_final": 0.391491,
+      "actual_final": 0.391491,
+      "series_len_expected": 6,
+      "series_len_actual": 6,
+      "same_series": true,
+      "same_final": true
+    },
+    {
+      "name": "GDE",
+      "ok": true,
+      "rc": 0,
+      "expected_final": 0.363012,
+      "actual_final": 0.363012,
+      "series_len_expected": 6,
+      "series_len_actual": 6,
+      "same_series": true,
+      "same_final": true
+    },
+    {
+      "name": "CCHIHH",
+      "ok": true,
+      "rc": 0,
+      "expected_final": 0.349614,
+      "actual_final": 0.349614,
+      "series_len_expected": 20,
+      "series_len_actual": 20,
+      "same_series": true,
+      "same_final": true
+    },
+    {
+      "name": "GA-SLHH",
+      "ok": true,
+      "rc": 0,
+      "expected_final": 0.40625,
+      "actual_final": 0.40625,
+      "series_len_expected": 6,
+      "series_len_actual": 6,
+      "same_series": true,
+      "same_final": true
+    },
+    {
+      "name": "QHH",
+      "ok": true,
+      "rc": 0,
+      "expected_final": 0.344712,
+      "actual_final": 0.344712,
+      "series_len_expected": 6,
+      "series_len_actual": 6,
+      "same_series": true,
+      "same_final": true
+    },
+    {
+      "name": "IMOMA",
+      "ok": true,
+      "rc": 0,
+      "expected_final": 0.384354,
+      "actual_final": 0.384354,
+      "series_len_expected": 6,
+      "series_len_actual": 6,
+      "same_series": true,
+      "same_final": true
+    },
+    {
+      "name": "CGA",
+      "ok": true,
+      "rc": 0,
+      "expected_final": 0.385438,
+      "actual_final": 0.385438,
+      "series_len_expected": 6,
+      "series_len_actual": 6,
+      "same_series": true,
+      "same_final": true
+    }
+  ]
+}

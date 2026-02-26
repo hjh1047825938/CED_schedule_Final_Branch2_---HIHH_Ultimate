@@ -4,6 +4,9 @@
 #include <cmath>
 #include <iostream>
 #include <utility>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 //=============================================================================
 // CC_HIHH_Solver Implementation
@@ -570,24 +573,24 @@ void CC_HIHH_Solver::ApplyOperator(int op, BlockPopulation& bp, int p_start, int
 
 void CC_HIHH_Solver::ApplyGA(BlockPopulation& bp, int p_start, int p_end)
 {
-    double pc = 0.8;  // Crossover probability
-    double pm = 0.15; // Mutation probability
+    const double pc = 0.8;
+    const double pm = 0.15;
+    const int island_size = p_end - p_start;
+    const int block_len = bp.block_len;
     
-    // Selection (tournament)
     for (int i = p_start; i < p_end; i++) {
-        int t1 = p_start + rand() % (p_end - p_start);
-        int t2 = p_start + rand() % (p_end - p_start);
+        int t1 = p_start + rand() % island_size;
+        int t2 = p_start + rand() % island_size;
         int winner = (bp.pop_fit[t1] < bp.pop_fit[t2]) ? t1 : t2;
-        std::copy(bp.pop[winner], bp.pop[winner] + bp.block_len, bp.newpop[i]);
+        std::copy(bp.pop[winner], bp.pop[winner] + block_len, bp.newpop[i]);
     }
     
-    // Crossover (blend crossover)
     for (int i = p_start; i < p_end; i++) {
         if (randval(0, 1) < pc) {
-            int partner = p_start + rand() % (p_end - p_start);
+            int partner = p_start + rand() % island_size;
             if (partner == i) continue;
             
-            int point = rand() % bp.block_len;
+            int point = rand() % block_len;
             for (int j = 0; j < point; j++) {
                 double r = randval(0, 1);
                 double temp = bp.newpop[i][j] * r + (1 - r) * bp.newpop[partner][j];
@@ -596,10 +599,9 @@ void CC_HIHH_Solver::ApplyGA(BlockPopulation& bp, int p_start, int p_end)
         }
     }
     
-    // Mutation
     for (int i = p_start; i < p_end; i++) {
         if (randval(0, 1) < pm) {
-            int r = rand() % bp.block_len;
+            int r = rand() % block_len;
             bp.newpop[i][r] = randval(0, 1);
         }
     }
@@ -607,27 +609,25 @@ void CC_HIHH_Solver::ApplyGA(BlockPopulation& bp, int p_start, int p_end)
 
 void CC_HIHH_Solver::ApplyDE(BlockPopulation& bp, int p_start, int p_end)
 {
-    int island_size = p_end - p_start;
+    const int island_size = p_end - p_start;
     
-    // Safety check: DE requires at least 4 distinct individuals (target + 3 donors)
     if (island_size < 4) {
-        ApplyGA(bp, p_start, p_end);  // Fallback to GA
+        ApplyGA(bp, p_start, p_end);
         return;
     }
     
-    double F = 0.5;   // Scale factor
-    double CR = 0.5;  // Crossover rate
+    const double F = 0.5;
+    const double CR = 0.5;
+    const int block_len = bp.block_len;
     
     for (int i = p_start; i < p_end; i++) {
-        // Select three distinct individuals from island
         int r1, r2, r3;
         do { r1 = p_start + rand() % island_size; } while (r1 == i);
         do { r2 = p_start + rand() % island_size; } while (r2 == i || r2 == r1);
         do { r3 = p_start + rand() % island_size; } while (r3 == i || r3 == r1 || r3 == r2);
         
-        // Mutation and crossover
-        int jrand = rand() % bp.block_len;
-        for (int j = 0; j < bp.block_len; j++) {
+        int jrand = rand() % block_len;
+        for (int j = 0; j < block_len; j++) {
             if (randval(0, 1) < CR || j == jrand) {
                 double v = bp.pop[r1][j] + F * (bp.pop[r2][j] - bp.pop[r3][j]);
                 bp.newpop[i][j] = clip01(v);
@@ -640,28 +640,25 @@ void CC_HIHH_Solver::ApplyDE(BlockPopulation& bp, int p_start, int p_end)
 
 void CC_HIHH_Solver::ApplyGDE(BlockPopulation& bp, int p_start, int p_end)
 {
-    int island_size = p_end - p_start;
+    const int island_size = p_end - p_start;
     
-    // Safety check: GDE requires at least 3 distinct individuals (best + 2 donors)
     if (island_size < 3) {
-        ApplyGA(bp, p_start, p_end);  // Fallback to GA
+        ApplyGA(bp, p_start, p_end);
         return;
     }
     
-    double F = randval(0.2, 0.8);
-    double CR = randval(0.1, 0.6);
-    
-    // Find island best for gbest-centric mutation
-    int best_idx = bp.get_island_best_idx(p_start, p_end);
+    const double F = randval(0.2, 0.8);
+    const double CR = randval(0.1, 0.6);
+    const int block_len = bp.block_len;
+    const int best_idx = bp.get_island_best_idx(p_start, p_end);
     
     for (int i = p_start; i < p_end; i++) {
         int r1, r2;
         do { r1 = p_start + rand() % island_size; } while (r1 == i);
         do { r2 = p_start + rand() % island_size; } while (r2 == i || r2 == r1);
         
-        // Gbest-centric mutation
-        int jrand = rand() % bp.block_len;
-        for (int j = 0; j < bp.block_len; j++) {
+        int jrand = rand() % block_len;
+        for (int j = 0; j < block_len; j++) {
             if (randval(0, 1) < CR || j == jrand) {
                 double v = bp.pop[best_idx][j] + F * (bp.pop[r1][j] - bp.pop[r2][j]);
                 bp.newpop[i][j] = clip01(v);
@@ -674,26 +671,17 @@ void CC_HIHH_Solver::ApplyGDE(BlockPopulation& bp, int p_start, int p_end)
 
 void CC_HIHH_Solver::ApplyBitFlip(BlockPopulation& bp, int p_start, int p_end)
 {
-    // For offload block: flip cloud/edge decision
-    // Offload block structure: [cloud/edge selection (CE_Tnum)] + [server assignment (CE_Tnum)]
-    // First half of offload block is cloud/edge selection
-    double pm = 0.1;  // Flip probability
-    int half_len = bp.block_len / 2;  // == CE_Tnum
-    
-    // Safety assertion: offload block should have even length
-    if (half_len * 2 != bp.block_len) {
-        std::cerr << "[CC-HIHH] Warning: offload block_len is odd, half_len may be inaccurate" << std::endl;
-    }
+    const double pm = 0.1;
+    const int half_len = bp.block_len / 2;
+    const int block_len = bp.block_len;
     
     for (int i = p_start; i < p_end; i++) {
         for (int j = 0; j < half_len; j++) {
             if (randval(0, 1) < pm) {
-                // Flip: if < 0.5 (cloud), set to 0.75 (edge); else set to 0.25 (cloud)
                 bp.newpop[i][j] = (bp.newpop[i][j] < 0.5) ? 0.75 : 0.25;
             }
         }
-        // Small mutation on server selection (second half)
-        for (int j = half_len; j < bp.block_len; j++) {
+        for (int j = half_len; j < block_len; j++) {
             if (randval(0, 1) < pm) {
                 bp.newpop[i][j] = randval(0, 1);
             }
@@ -826,6 +814,9 @@ void CC_HIHH_Solver::ApplyBlockResample(BlockPopulation& bp, int p_start, int p_
 
 void CC_HIHH_Solver::EvaluateBlock(BlockPopulation& bp)
 {
+    #ifdef _OPENMP
+    #pragma omp parallel for schedule(dynamic, 4) if(bp.popsize > 16)
+    #endif
     for (int i = 0; i < bp.popsize; i++) {
         if (use_blocks) {
             context.assemble_full(bp.block_id, bp.pop[i], var_full.data());
@@ -838,6 +829,9 @@ void CC_HIHH_Solver::EvaluateBlock(BlockPopulation& bp)
 
 void CC_HIHH_Solver::EvaluateBlockIsland(BlockPopulation& bp, int p_start, int p_end)
 {
+    #ifdef _OPENMP
+    #pragma omp parallel for schedule(dynamic, 2) if((p_end - p_start) > 8)
+    #endif
     for (int i = p_start; i < p_end; i++) {
         if (use_blocks) {
             context.assemble_full(bp.block_id, bp.newpop[i], var_full.data());

@@ -49,7 +49,8 @@ void CGA::EvaluateIndividual(Individual& ind) const
     const int task_count = static_cast<int>(tasks_.size());
     const int vm_count = static_cast<int>(vms_.size());
 
-    std::vector<double> rt(vm_count, 0.0);
+    if ((int)rt_buf_.size() != vm_count) rt_buf_.assign(vm_count, 0.0);
+    else std::fill(rt_buf_.begin(), rt_buf_.end(), 0.0);
     double punish_sum = 0.0;
     int satisfied = 0;
 
@@ -62,7 +63,7 @@ void CGA::EvaluateIndividual(Individual& ind) const
         const double trans_time = tasks_[t].input_data_size / rate_;
         const double finish_time = exec_time + trans_time;
 
-        rt[vm] += exec_time;
+        rt_buf_[vm] += exec_time;
 
         if (finish_time > tasks_[t].deadline) {
             punish_sum += std::fabs(finish_time - tasks_[t].deadline);
@@ -71,7 +72,7 @@ void CGA::EvaluateIndividual(Individual& ind) const
         }
     }
 
-    const double all_ntime = *std::max_element(rt.begin(), rt.end());
+    const double all_ntime = *std::max_element(rt_buf_.begin(), rt_buf_.end());
     const double objective = all_ntime + punish_sum;
     const double safe_obj = (objective > 1e-15) ? objective : 1e-15;
     const double safe_ref = (fitness_ref_ > 1e-15) ? fitness_ref_ : 1.0;
@@ -214,12 +215,12 @@ void CGA::ApplyCatastrophe(std::vector<Individual>& pop)
     const int n = static_cast<int>(pop.size());
     const int top_n = std::max(1, n / 3);
 
-    std::vector<int> idx(n);
-    for (int i = 0; i < n; ++i) idx[i] = i;
-    std::sort(idx.begin(), idx.end(), [&](int a, int b) { return pop[a].fitness < pop[b].fitness; });
+    if ((int)catastrophe_idx_buf_.size() != n) catastrophe_idx_buf_.resize(n);
+    for (int i = 0; i < n; ++i) catastrophe_idx_buf_[i] = i;
+    std::sort(catastrophe_idx_buf_.begin(), catastrophe_idx_buf_.end(), [&](int a, int b) { return pop[a].fitness < pop[b].fitness; });
 
     for (int i = 0; i < top_n; ++i) {
-        int id = idx[i];
+        int id = catastrophe_idx_buf_[i];
         if (real01_(rng_) < cfg_.catastrophe_mutation_prob) {
             MutateIndividual(pop[id]);
             EvaluateIndividual(pop[id]);

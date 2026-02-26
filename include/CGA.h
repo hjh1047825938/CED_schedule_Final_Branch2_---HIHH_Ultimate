@@ -65,6 +65,9 @@ private:
 
     std::vector<Individual> population_;
     double fitness_ref_;
+    mutable std::vector<double> rt_buf_;
+    std::vector<int> select_idx_buf_;
+    std::vector<int> catastrophe_idx_buf_;
 
 private:
     void InitializePopulation();

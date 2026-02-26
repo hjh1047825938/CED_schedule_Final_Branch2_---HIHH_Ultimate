@@ -107,6 +107,15 @@ private:
     std::vector<double> trial_var;
     std::vector<int> reusable_order;
     std::vector<int> reusable_mapping;
+    std::vector<int> reusable_rank_idx;
+    std::vector<int> reusable_apply_ids;
+    std::vector<int> reusable_idx;
+    struct ThreadScratch {
+        std::vector<int> order;
+        std::vector<int> dev_idx_by_op;
+        std::vector<double> local_tmp_var;
+    };
+    std::vector<ThreadScratch> thread_scratch;
 
     // Logging
     bool log_llh;

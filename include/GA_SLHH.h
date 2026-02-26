@@ -84,6 +84,14 @@ private:
     std::vector<double> probs_cur;
     std::vector<double> probs_his;
     std::vector<double> probs_mix;
+    std::vector<int> work_idx;
+    std::vector<uint64_t> work_hashes;
+    std::vector<int> work_counts;
+    std::vector<int> work_trans_next;
+    std::vector<int> work_trans_prev;
+    std::vector<double> ls_best_chrom;
+    std::vector<double> ls_cand;
+    std::vector<int> ls_mut_positions;
 
     // Decode caches (performance)
     std::vector<int> nearest_edge_for_device;
@@ -133,7 +141,7 @@ private:
                    std::vector<int>& llh_out) const;
     void DecodeToSolution(const std::vector<int>& llh, std::vector<double>& var_out) const;
 
-    std::vector<double> ComputeProbabilities(const std::vector<std::vector<int>>& seqs) const;
+    std::vector<double> ComputeProbabilities(const std::vector<std::vector<int>>& seqs);
 
     double EvalLLH(const std::vector<int>& llh, std::vector<double>& var_buf) const;
     void LocalSearch();

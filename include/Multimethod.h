@@ -33,6 +33,7 @@ public:
     std::string DataFileName;       // Data file name
     double Pini;                    // Heuristic init probability
     Workspace workspace;             // Reusable workspace for fitness evaluation
+    WorkspacePool ws_pool;           // Per-thread evaluation workspaces
     uint64_t eval_count;             // Total evaluation calls since last reset
     
     //Prob
@@ -55,6 +56,12 @@ public:
     double** ET;
     double* CE_ST;
     double* CE_ET;
+    std::vector<double> sel_rfitness;
+    std::vector<double> sel_cfitness;
+    std::vector<double> subgrad_delta;
+    std::vector<double> subgrad_var;
+    std::vector<double> spso_subgrad;
+    std::vector<double> apso_d;
     
 
 	//PSO
@@ -152,6 +159,10 @@ public:
     double** subpop_gbest; // Best individual per subpopulation
     double* subpop_gbest_fit;
     bool migrationEnabled; // Whether migration is active
+    std::vector<double> migration_buffer;   // [nSubpop * Nvar]
+    std::vector<double> migration_fit_buffer; // [nSubpop]
+    std::vector<double> gde_trial_buffer;   // [Nvar]
+    std::vector<double> gde_v_buffer;       // [Nvar]
 
 public:
 	inline double randnorm(double miu, double score);
@@ -161,6 +172,8 @@ public:
     void ComputeReferenceValues();
     void Evaluation(bool s, int p_start, int p_end);             //s = 0: evalu pop, s = 1: evalu newpop
     double Eval(const double* var);
+    double EvalWithWorkspace(const double* var, Workspace& ws);
+    void IncrementEvalCount();
     void ResetEvalCount() {
         eval_count = 0;
 #ifdef PROFILE_EVAL

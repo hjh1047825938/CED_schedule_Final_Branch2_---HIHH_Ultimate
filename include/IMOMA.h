@@ -53,6 +53,12 @@ private:
 
     std::vector<int> tmp_front_indices;
     std::vector<std::vector<int>> fronts;
+    mutable std::vector<int> nd_dom_count_buf;
+    mutable std::vector<std::vector<int>> nd_dom_set_buf;
+    mutable std::vector<int> nd_cur_front_buf;
+    mutable std::vector<int> nd_next_front_buf;
+    mutable std::vector<int> crowd_order_buf;
+    mutable std::vector<int> select_order_buf;
 
     std::vector<int> task_order_buf;
 

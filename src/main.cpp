@@ -4,6 +4,7 @@
 #include "QPHH.h"
 #include "IMOMA.h"
 #include "CGA.h"
+#include "DSAC_DE.h"
 #include "Rng.h"
 #include <iostream>
 #include <fstream>
@@ -44,7 +45,7 @@ void print_usage(const char* prog_name) {
     cout << "  --seed <n>           Random seed (default: " << DEFAULT_SEED << ")\n";
     cout << "  --pini <f>           Heuristic init probability 0-1 (default: " << DEFAULT_PINI << ")\n";
     cout << "  --alpha <f>          Weight for makespan vs energy (default: 0.5, range: [0,1])\n";
-    cout << "  --solver <name>      Solver: GA, DE, GDE, CCHIHH, QHH, GA-SLHH, IMOMA, CGA (default: GA)\n";
+    cout << "  --solver <name>      Solver: GA, DE, GDE, DSAC-DE, CCHIHH, QHH, GA-SLHH, IMOMA, CGA (default: GA)\n";
     cout << "  --cnum <n>           Number of cloud servers (default: " << DEFAULT_CNUM << ")\n";
     cout << "  --enum <n>           Number of edge servers (default: " << DEFAULT_ENUM << ")\n";
     cout << "  --dnum <n>           Number of devices (default: " << DEFAULT_DNUM << ")\n";
@@ -1248,7 +1249,62 @@ int main(int argc, char* argv[])
 #endif
         return 0;
     }
-    
+
+    // DSAC-DE Solver (Discretized Soft Actor-Critic configured Differential Evolution)
+    if (solver_name == "DSAC-DE") {
+        cout << "\n=== Running DSAC-DE Solver ===" << endl;
+        DSAC_DE_Solver dsac_de(&solver, popsize);
+        dsac_de.SetMaxGenerations(max_generations);
+        dsac_de.SetScalingFactor(0.5);
+        dsac_de.SetCrossoverRate(0.5);
+        dsac_de.SetLearningRate(0.0001);
+        dsac_de.SetDiscountFactor(0.99);
+        dsac_de.SetTemperature(0.5);
+        dsac_de.SetBufferSize(40000);
+        dsac_de.SetBatchSize(64);
+        // Note: Training is disabled by default for efficiency
+        // Set to true for online learning (slower but adaptive)
+        dsac_de.SetTrainingEnabled(false);
+        dsac_de.Init();
+        solver.ResetEvalCount();
+        uint64_t next_log_eval = (uint64_t)log_every;
+
+        for (int gen = 0; gen < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals); gen++) {
+            dsac_de.RunGeneration(gen);
+            if (max_evals > 0) {
+                while (solver.GetEvalCount() >= next_log_eval) {
+                    cout << "Eval " << next_log_eval
+                         << ": best_fit = " << dsac_de.GetGlobalBestFit() << endl;
+                    next_log_eval += (uint64_t)log_every;
+                }
+            } else if ((gen + 1) % log_every == 0 || gen == max_generations - 1) {
+                cout << "Gen " << (gen + 1)
+                     << ": best_fit = " << dsac_de.GetGlobalBestFit() << endl;
+            }
+        }
+
+        clock_t t2 = clock();
+        cout << "\n=== Final Results (DSAC-DE) ===" << endl;
+        cout << "Solver: " << solver_name << endl;
+        cout << "Generation = " << max_generations << endl;
+        cout << "The best solution = " << dsac_de.GetGlobalBestFit() << endl;
+        cout << "Time = " << (double)(t2 - t1) / CLOCKS_PER_SEC << " s" << endl;
+
+        // Print operator statistics
+        cout << "\nOperator Statistics:" << endl;
+        const OpStats* stats = dsac_de.GetOpStats();
+        for (int i = 0; i < NUM_DE_OPS; i++) {
+            cout << "  Op" << (i+1) << ": uses=" << stats[i].total_uses
+                 << " success_parent=" << stats[i].success_parent
+                 << " success_gbest=" << stats[i].success_gbest
+                 << " success_avg=" << stats[i].success_avg << endl;
+        }
+#ifdef PROFILE_EVAL
+        PrintEvalProfile(solver);
+#endif
+        return 0;
+    }
+
     // Standard GA/DE/GDE solvers
     int Gen_count = 0;
     double best = solver.gbest_fit;

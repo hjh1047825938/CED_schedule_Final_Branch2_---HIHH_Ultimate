@@ -2,8 +2,10 @@
 #define CC_HIHH_H
 
 #include <vector>
+#include <array>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <algorithm>
 #include <numeric>
 #include <iostream>
@@ -37,16 +39,17 @@ struct ContextualBanditSelector {
         total_updates = 0;
     }
 
-    double score_op(int op_idx, const std::vector<double>& s) const {
+    double score_op(int op_idx, const std::array<double, 7>& s) const {
         double score = 0.0;
         const int base = op_idx * feat_dim;
-        for (int k = 0; k < feat_dim; k++) {
+        const int nfeat = std::min(feat_dim, 7);
+        for (int k = 0; k < nfeat; k++) {
             score += weights[base + k] * s[k];
         }
         return score;
     }
 
-    int select(const std::vector<double>& s, double epsilon) {
+    int select(const std::array<double, 7>& s, double epsilon) {
         if (num_ops == 0) return 0;
 
         // Initial exploration: try each operator once
@@ -71,12 +74,13 @@ struct ContextualBanditSelector {
         return best_op;
     }
 
-    void update(const std::vector<double>& s, int op_idx, double reward, double lr) {
+    void update(const std::array<double, 7>& s, int op_idx, double reward, double lr) {
         if (op_idx < 0 || op_idx >= num_ops) return;
         double pred = score_op(op_idx, s);
         double err = reward - pred;
         int base = op_idx * feat_dim;
-        for (int k = 0; k < feat_dim; k++) {
+        const int nfeat = std::min(feat_dim, 7);
+        for (int k = 0; k < nfeat; k++) {
             weights[base + k] += lr * err * s[k];
         }
         total_reward[op_idx] += reward;
@@ -122,45 +126,40 @@ struct BlockContext {
     
     void update_block(int block_id, const double* new_ctx) {
         if (block_id == 0) {
-            std::copy(new_ctx, new_ctx + 2 * CE_Tnum, offload_ctx.begin());
+            std::memcpy(offload_ctx.data(), new_ctx, 2 * CE_Tnum * sizeof(double));
         } else if (block_id == 1) {
-            std::copy(new_ctx, new_ctx + ops, seq_ctx.begin());
+            std::memcpy(seq_ctx.data(), new_ctx, ops * sizeof(double));
         } else {
-            std::copy(new_ctx, new_ctx + ops, dev_ctx.begin());
+            std::memcpy(dev_ctx.data(), new_ctx, ops * sizeof(double));
         }
     }
     
-    // Assemble full var from partial block and context
-    // block_id: which block is being optimized (0=offload, 1=seq, 2=dev)
-    // block_data: the partial individual being evaluated
     void assemble_full(int block_id, const double* block_data, double* var_full) const {
-        // Copy offload context/data
+        const int offload_len = 2 * CE_Tnum;
         if (block_id == 0) {
-            std::copy(block_data, block_data + 2 * CE_Tnum, var_full);
+            std::memcpy(var_full, block_data, offload_len * sizeof(double));
         } else {
-            std::copy(offload_ctx.begin(), offload_ctx.end(), var_full);
+            std::memcpy(var_full, offload_ctx.data(), offload_len * sizeof(double));
         }
         
-        // Copy seq context/data
         if (block_id == 1) {
-            std::copy(block_data, block_data + ops, var_full + 2 * CE_Tnum);
+            std::memcpy(var_full + offload_len, block_data, ops * sizeof(double));
         } else {
-            std::copy(seq_ctx.begin(), seq_ctx.end(), var_full + 2 * CE_Tnum);
+            std::memcpy(var_full + offload_len, seq_ctx.data(), ops * sizeof(double));
         }
         
-        // Copy dev context/data
         if (block_id == 2) {
-            std::copy(block_data, block_data + ops, var_full + 2 * CE_Tnum + ops);
+            std::memcpy(var_full + offload_len + ops, block_data, ops * sizeof(double));
         } else {
-            std::copy(dev_ctx.begin(), dev_ctx.end(), var_full + 2 * CE_Tnum + ops);
+            std::memcpy(var_full + offload_len + ops, dev_ctx.data(), ops * sizeof(double));
         }
     }
     
-    // Get full assembled vector from all contexts
     void get_full(double* var_full) const {
-        std::copy(offload_ctx.begin(), offload_ctx.end(), var_full);
-        std::copy(seq_ctx.begin(), seq_ctx.end(), var_full + 2 * CE_Tnum);
-        std::copy(dev_ctx.begin(), dev_ctx.end(), var_full + 2 * CE_Tnum + ops);
+        const int offload_len = 2 * CE_Tnum;
+        std::memcpy(var_full, offload_ctx.data(), offload_len * sizeof(double));
+        std::memcpy(var_full + offload_len, seq_ctx.data(), ops * sizeof(double));
+        std::memcpy(var_full + offload_len + ops, dev_ctx.data(), ops * sizeof(double));
     }
     
     int get_block_len(int block_id) const {
@@ -330,22 +329,24 @@ struct BlockPopulation {
     }
     
     void update_block_gbest() {
+        const size_t bytes = block_len * sizeof(double);
         for (int i = 0; i < popsize; i++) {
             if (pop_fit[i] < block_gbest_fit) {
-                std::copy(pop[i], pop[i] + block_len, block_gbest);
+                std::memcpy(block_gbest, pop[i], bytes);
                 block_gbest_fit = pop_fit[i];
             }
         }
     }
     
     void update_island_gbest() {
+        const size_t bytes = block_len * sizeof(double);
         for (int isl = 0; isl < nSubpop; isl++) {
             int p_start, p_end;
             get_island_range(isl, p_start, p_end);
-            
+
             for (int i = p_start; i < p_end; i++) {
                 if (pop_fit[i] < island_gbest_fit[isl]) {
-                    std::copy(pop[i], pop[i] + block_len, island_gbest[isl]);
+                    std::memcpy(island_gbest[isl], pop[i], bytes);
                     island_gbest_fit[isl] = pop_fit[i];
                 }
             }
@@ -360,10 +361,10 @@ struct BlockPopulation {
         return worst;
     }
     
-    // Copy population slice to newpop (for operators that modify newpop)
     void copy_pop_to_newpop(int p_start, int p_end) {
+        const size_t bytes = block_len * sizeof(double);
         for (int i = p_start; i < p_end; i++) {
-            std::copy(pop[i], pop[i] + block_len, newpop[i]);
+            std::memcpy(newpop[i], pop[i], bytes);
             newpop_fit[i] = pop_fit[i];
         }
     }
@@ -506,6 +507,8 @@ public:
     std::vector<long long> op_counts_dev;
     std::vector<long long> op_counts_overall;
     std::vector<long long> op_counts_full;
+    std::vector<double> migration_buffer;      // [nSubpop * block_len]
+    std::vector<double> migration_fit_buffer;  // [nSubpop]
 
     // Weight logging
     bool weight_log_enabled;
@@ -607,7 +610,7 @@ private:
         return v < 0.0 ? 0.0 : (v > 1.0 ? 1.0 : v);
     }
 
-    std::vector<double> ComputeState(const BlockPopulation& bp, int isl, int gen, double diversity) const;
+    std::array<double, 7> ComputeState(const BlockPopulation& bp, int isl, int gen, double diversity) const;
     double ComputeEpsilon(int gen) const;
     double ComputeLearningRate(const ContextualBanditSelector& sel) const;
     bool IsResampleOp(int op, int block_id) const;

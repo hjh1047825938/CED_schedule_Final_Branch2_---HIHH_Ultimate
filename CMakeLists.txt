@@ -13,6 +13,7 @@ set(SOURCES
     src/QPHH.cpp
     src/IMOMA.cpp
     src/CGA.cpp
+    src/DSAC_DE.cpp
 )
 
 set(CORE_SOURCES
@@ -31,6 +32,7 @@ set(HEADERS
     include/IMOMA.h
     include/CGA.h
     include/Rng.h
+    include/DSAC_DE.h
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
@@ -67,13 +69,28 @@ if (PROFILE_EVAL)
     target_compile_definitions(ppo_scheduler PRIVATE PROFILE_EVAL)
 endif()
 
+# Deterministic/reproducible floating-point mode (default ON)
+option(CED_STRICT_REPRO "Prefer reproducible floating-point behavior" ON)
+# Aggressive floating-point optimization (requires STRICT_REPRO=OFF)
+option(CED_FAST_MATH "Enable fast floating-point optimization" OFF)
+
 # MSVC-specific settings
 if(MSVC)
+    set(CED_FP_FLAG "/fp:precise")
+    if (NOT CED_STRICT_REPRO AND CED_FAST_MATH)
+        set(CED_FP_FLAG "/fp:fast")
+    endif()
+
     target_compile_options(${PROJECT_NAME} PRIVATE
-        /O2
+        /Ox
+        /GL
+        /arch:AVX2
+        ${CED_FP_FLAG}
         /EHsc
         /W3
         /utf-8
+        /Qpar
+        /Qpar-report:1
     )
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         _USE_MATH_DEFINES
@@ -81,11 +98,16 @@ if(MSVC)
         _CRT_SECURE_NO_WARNINGS
     )
     target_compile_options(ppo_scheduler PRIVATE
-        /O2
+        /Ox
+        /GL
+        /arch:AVX2
+        ${CED_FP_FLAG}
         /EHsc
         /W3
         /utf-8
     )
+    target_link_options(${PROJECT_NAME} PRIVATE /LTCG)
+    target_link_options(ppo_scheduler PRIVATE /LTCG)
     target_compile_definitions(ppo_scheduler PRIVATE
         _USE_MATH_DEFINES
         NOMINMAX
@@ -93,15 +115,21 @@ if(MSVC)
     )
 else()
     target_compile_options(${PROJECT_NAME} PRIVATE
-        -O2
+        -O3
+        -march=native
+        -flto
         -Wall
         -Wextra
     )
     target_compile_options(ppo_scheduler PRIVATE
-        -O2
+        -O3
+        -march=native
+        -flto
         -Wall
         -Wextra
     )
+    target_link_options(${PROJECT_NAME} PRIVATE -flto)
+    target_link_options(ppo_scheduler PRIVATE -flto)
 endif()
 
 # Copy data files to build directory for convenience

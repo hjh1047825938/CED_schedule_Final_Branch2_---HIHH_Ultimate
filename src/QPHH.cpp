@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <iostream>
 #include <random>
-#include <mutex>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -33,7 +32,6 @@ namespace {
         return eng;
     }
 
-    std::mutex g_eval_mutex;
 }
 
 QPHH_Solver::QPHH_Solver(MultiMet* s, int popsize, int n_tasks, double eps, double g)
@@ -121,8 +119,13 @@ void QPHH_Solver::Shuffle(std::vector<int>& data) const
 
 double QPHH_Solver::EvalVarSafe(const double* var) const
 {
-    std::lock_guard<std::mutex> lock(g_eval_mutex);
-    return solver->Eval(var);
+    int tid = 0;
+#ifdef _OPENMP
+    tid = omp_get_thread_num();
+#endif
+    Workspace& ws = solver->ws_pool.get(tid);
+    solver->IncrementEvalCount();
+    return solver->EvalWithWorkspace(var, ws);
 }
 
 double QPHH_Solver::ComputeEpsilon(int iter) const
@@ -215,6 +218,14 @@ void QPHH_Solver::Init()
 
 void QPHH_Solver::RunIteration(int iter)
 {
+    if ((int)thread_scratch.size() < std::max(1, num_threads)) {
+        thread_scratch.resize(std::max(1, num_threads));
+    }
+    for (auto& sc : thread_scratch) {
+        if ((int)sc.dev_idx_by_op.size() != ops) sc.dev_idx_by_op.assign(ops, 0);
+        if ((int)sc.local_tmp_var.size() != Nvar) sc.local_tmp_var.assign(Nvar, 0.0);
+    }
+
     current_iter = iter;
     double alpha = ComputeAlpha(iter);
     epsilon = ComputeEpsilon(iter);
@@ -234,27 +245,32 @@ void QPHH_Solver::RunIteration(int iter)
     }
 
     // Speed/quality balance: update mostly inferior individuals, keep elites stable.
-    std::vector<int> rank_idx(P);
-    std::iota(rank_idx.begin(), rank_idx.end(), 0);
-    std::sort(rank_idx.begin(), rank_idx.end(), [&](int a, int b) {
+    reusable_rank_idx.resize(P);
+    std::iota(reusable_rank_idx.begin(), reusable_rank_idx.end(), 0);
+    std::sort(reusable_rank_idx.begin(), reusable_rank_idx.end(), [&](int a, int b) {
         return pop[a].fit > pop[b].fit;
     });
     int apply_count = std::max(2, (int)(P * (0.45 + 0.2 * (1.0 - iter_ratio))));
     if (apply_count > P) apply_count = P;
-    std::vector<int> apply_ids;
-    apply_ids.reserve(apply_count);
+    reusable_apply_ids.clear();
+    reusable_apply_ids.reserve(apply_count);
     for (int k = 0; k < apply_count; k++) {
-        apply_ids.push_back(rank_idx[k]);
+        reusable_apply_ids.push_back(reusable_rank_idx[k]);
     }
 
 #ifdef _OPENMP
     #pragma omp parallel for schedule(static)
 #endif
-    for (int n = 0; n < (int)apply_ids.size(); n++) {
-        int i = apply_ids[n];
-        std::vector<int> order;
-        std::vector<int> dev_idx_by_op(ops, 0);
-        std::vector<double> local_tmp_var(Nvar, 0.0);
+    for (int n = 0; n < (int)reusable_apply_ids.size(); n++) {
+        int i = reusable_apply_ids[n];
+        int tid = 0;
+#ifdef _OPENMP
+        tid = omp_get_thread_num();
+#endif
+        ThreadScratch& sc = thread_scratch[tid];
+        std::vector<int>& order = sc.order;
+        std::vector<int>& dev_idx_by_op = sc.dev_idx_by_op;
+        std::vector<double>& local_tmp_var = sc.local_tmp_var;
 
         DecodeOrder(pop[i].var, order);
         DecodeDevIdxByOp(pop[i].var, order, dev_idx_by_op);
@@ -286,9 +302,9 @@ void QPHH_Solver::RunIteration(int iter)
     }
 
     // Adaptive local search on P/2 inferior individuals
-    std::vector<int> idx(P);
-    std::iota(idx.begin(), idx.end(), 0);
-    std::sort(idx.begin(), idx.end(), [&](int a, int b) {
+    reusable_idx.resize(P);
+    std::iota(reusable_idx.begin(), reusable_idx.end(), 0);
+    std::sort(reusable_idx.begin(), reusable_idx.end(), [&](int a, int b) {
         return pop[a].fit > pop[b].fit;
     });
 
@@ -296,7 +312,7 @@ void QPHH_Solver::RunIteration(int iter)
         int num_improve = std::max(1, (int)(P * (0.11 + 0.09 * (1.0 - iter_ratio))));
         if (num_improve > P) num_improve = P;
         for (int k = 0; k < num_improve; k++) {
-            int i = idx[k];
+            int i = reusable_idx[k];
             double r = randval(0.0, 1.0);
             if (r < p_c) {
                 TwoPointCrossover(pop[i]);
@@ -319,7 +335,7 @@ void QPHH_Solver::RunIteration(int iter)
         int elite_count = std::max(1, P / 10);
         if (elite_count > 2) elite_count = 2;
         for (int e = 0; e < elite_count; e++) {
-            int i = idx[P - 1 - e];
+            int i = reusable_idx[P - 1 - e];
             NTasksGreedyInsert(pop[i], tmp_var);
             if (pop[i].fit < gbest_fit) {
                 gbest_fit = pop[i].fit;
@@ -396,7 +412,7 @@ void QPHH_Solver::RunIteration(int iter)
         if (restart_count < 1) restart_count = 1;
 
         for (int k = 0; k < restart_count; k++) {
-            int i = idx[k];
+            int i = reusable_idx[k];
             // Half guided restart around gbest, half full random.
             const bool guided = (k < restart_count / 2);
             for (int j = 0; j < Nvar; j++) {

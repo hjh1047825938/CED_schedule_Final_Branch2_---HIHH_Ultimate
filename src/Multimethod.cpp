@@ -1,9 +1,12 @@
 #include "Multimethod.h"
 #include <limits>
 #include <numeric>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
-#define EVAL_COMPAT(var, Cnum_, Enum_, Dnum_, CE_Tnum_, M_Jnum_, M_OPTnum_, CETask_Property_, MTask_Time_, EtoD_Distance_, DtoD_Distance_, AvailDeviceList_, EnergyList_, CloudDevices_, EdgeDevices_, CloudLoad_, EdgeLoad_, DeviceLoad_, CETask_coDevice_, Edge_Device_comm_, ST_, ET_, CE_ST_, CE_ET_) \
-    EvaluFunc((var), workspace, Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET)
+#define EVAL_COMPAT(var, ...) EvalWithWorkspace((var), workspace)
+#define EVAL_COMPAT_WS(var, ws_obj, ...) EvalWithWorkspace((var), (ws_obj))
 
 double MultiMet::randnorm(double miu, double score)
 {
@@ -63,18 +66,43 @@ MultiMet::MultiMet(int psize, int nn, double lb, double ub, int c_num, int e_num
 
     CloudDevices = new vector<int>[Cnum];
     EdgeDevices = new vector<int>[Enum];
-    CloudLoad = new vector<int>[Cnum];
-    EdgeLoad = new vector<int>[Enum];
+    CloudLoad = nullptr;
+    EdgeLoad = nullptr;
     DeviceLoad = new vector<int>[Dnum];
     CETask_coDevice = new vector<int>[CE_Tnum];
-    ST = CreateMatrix(M_Jnum, M_OPTnum);
-    ET = CreateMatrix(M_Jnum, M_OPTnum);
-    CE_ST = new double[CE_Tnum];
-    CE_ET = new double[CE_Tnum];
+    ST = nullptr;
+    ET = nullptr;
+    CE_ST = nullptr;
+    CE_ET = nullptr;
 
     // Initialize workspace for reusable fitness evaluation buffers
-    workspace.resize(CE_Tnum, M_Jnum, M_OPTnum, Enum, Dnum);
+    workspace.resize(Cnum, CE_Tnum, M_Jnum, M_OPTnum, Enum, Dnum);
+    CloudLoad = workspace.cloud_load.data();
+    EdgeLoad = workspace.edge_load.data();
     Edge_Device_comm = workspace.edge_device_comm.data();
+    ST = workspace.st_rows.data();
+    ET = workspace.et_rows.data();
+    CE_ST = workspace.ce_st.data();
+    CE_ET = workspace.ce_et.data();
+#ifdef _OPENMP
+    int n_threads = omp_get_max_threads();
+#else
+    int n_threads = 1;
+#endif
+    ws_pool.init(n_threads, Cnum, CE_Tnum, M_Jnum, M_OPTnum, Enum, Dnum);
+    for (int t = 0; t < ws_pool.size(); ++t) {
+        Workspace& ws = ws_pool.get(t);
+        ws.f1_ref = workspace.f1_ref;
+        ws.f2_ref = workspace.f2_ref;
+        ws.alpha = workspace.alpha;
+    }
+
+    sel_rfitness.resize(Popsize);
+    sel_cfitness.resize(Popsize);
+    subgrad_delta.resize(Nvar);
+    subgrad_var.resize((size_t)2 * Nvar * Nvar);
+    spso_subgrad.resize(Nvar);
+    apso_d.resize(Popsize);
 
     //PSO
     ibest = CreateMatrix(Popsize, Nvar);
@@ -147,14 +175,8 @@ MultiMet::~MultiMet()
 
     delete [] CloudDevices;
     delete [] EdgeDevices;
-    delete [] CloudLoad;
-    delete [] EdgeLoad;
     delete [] DeviceLoad;
     delete [] CETask_coDevice;
-    DeleteMatrix(ST, M_Jnum);
-    DeleteMatrix(ET, M_Jnum);
-    delete [] CE_ST;
-    delete [] CE_ET;
 
     //PSO
     DeleteMatrix(ibest, Popsize);
@@ -234,29 +256,55 @@ void MultiMet::ComputeReferenceValues()
     double max_makespan = 0.0;
     double max_energy = 0.0;
 
-    for (int i = 0; i < Popsize; i++)
+#pragma omp parallel
     {
-        workspace.set_alpha(1.0);
-        double makespan = EVAL_COMPAT(pop[i], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum,
+        int tid = 0;
+#ifdef _OPENMP
+        tid = omp_get_thread_num();
+#endif
+        Workspace& ws = ws_pool.get(tid);
+        ws.set_normalization(1.0, 1.0);
+        double local_max_makespan = 0.0;
+        double local_max_energy = 0.0;
+
+        #pragma omp for schedule(static)
+        for (int i = 0; i < Popsize; i++)
+        {
+            ws.set_alpha(1.0);
+            double makespan = EvaluFunc(pop[i], ws, Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum,
+                                        CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance,
+                                        AvailDeviceList, EnergyList, CloudDevices, EdgeDevices,
+                                        ws.cloud_load.data(), ws.edge_load.data(), DeviceLoad, CETask_coDevice,
+                                        ws.edge_device_comm.data(), ws.st_rows.data(), ws.et_rows.data(),
+                                        ws.ce_st.data(), ws.ce_et.data());
+
+            ws.set_alpha(0.0);
+            double energy = EvaluFunc(pop[i], ws, Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum,
                                       CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance,
                                       AvailDeviceList, EnergyList, CloudDevices, EdgeDevices,
-                                      CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice,
-                                      Edge_Device_comm, ST, ET, CE_ST, CE_ET);
+                                      ws.cloud_load.data(), ws.edge_load.data(), DeviceLoad, CETask_coDevice,
+                                      ws.edge_device_comm.data(), ws.st_rows.data(), ws.et_rows.data(),
+                                      ws.ce_st.data(), ws.ce_et.data());
+            if (makespan > local_max_makespan) local_max_makespan = makespan;
+            if (energy > local_max_energy) local_max_energy = energy;
+        }
 
-        workspace.set_alpha(0.0);
-        double energy = EVAL_COMPAT(pop[i], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum,
-                                    CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance,
-                                    AvailDeviceList, EnergyList, CloudDevices, EdgeDevices,
-                                    CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice,
-                                    Edge_Device_comm, ST, ET, CE_ST, CE_ET);
-
-        if (makespan > max_makespan) max_makespan = makespan;
-        if (energy > max_energy) max_energy = energy;
+        #pragma omp critical
+        {
+            if (local_max_makespan > max_makespan) max_makespan = local_max_makespan;
+            if (local_max_energy > max_energy) max_energy = local_max_energy;
+        }
     }
 
     workspace.f1_ref = (max_makespan > 1e-6) ? max_makespan : 1.0;
     workspace.f2_ref = (max_energy > 1e-6) ? max_energy : 1.0;
     workspace.set_alpha(prev_alpha);
+    for (int t = 0; t < ws_pool.size(); ++t) {
+        Workspace& ws = ws_pool.get(t);
+        ws.f1_ref = workspace.f1_ref;
+        ws.f2_ref = workspace.f2_ref;
+        ws.alpha = workspace.alpha;
+    }
 
     cout << "[Normalization] f1_ref (makespan) = " << workspace.f1_ref << endl;
     cout << "[Normalization] f2_ref (energy) = " << workspace.f2_ref << endl;
@@ -813,26 +861,66 @@ void MultiMet::Evaluation(bool s, int p_start, int p_end)
 {
     if (s == 0)
     {
-        for (int i = p_start; i < p_end; i ++)
+        uint64_t local_total = 0;
+        #pragma omp parallel reduction(+:local_total)
         {
-            pop_fit[i] = EVAL_COMPAT(pop[i], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET);
-            eval_count++;
+            int tid = 0;
+#ifdef _OPENMP
+            tid = omp_get_thread_num();
+#endif
+            Workspace& ws = ws_pool.get(tid);
+            #pragma omp for schedule(static)
+            for (int i = p_start; i < p_end; i ++)
+            {
+                pop_fit[i] = EVAL_COMPAT_WS(pop[i], ws, Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET);
+                local_total++;
+            }
         }
+        eval_count += local_total;
     }
     else
     {
-        for (int i = p_start; i < p_end; i ++)
+        uint64_t local_total = 0;
+        #pragma omp parallel reduction(+:local_total)
         {
-            newpop_fit[i] = EVAL_COMPAT(newpop[i], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET);
-            eval_count++;
+            int tid = 0;
+#ifdef _OPENMP
+            tid = omp_get_thread_num();
+#endif
+            Workspace& ws = ws_pool.get(tid);
+            #pragma omp for schedule(static)
+            for (int i = p_start; i < p_end; i ++)
+            {
+                newpop_fit[i] = EVAL_COMPAT_WS(newpop[i], ws, Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET);
+                local_total++;
+            }
         }
+        eval_count += local_total;
     }
 }
 
 double MultiMet::Eval(const double* var)
 {
+    IncrementEvalCount();
+    return EvalWithWorkspace(var, workspace);
+}
+
+double MultiMet::EvalWithWorkspace(const double* var, Workspace& ws)
+{
+    ws.f1_ref = workspace.f1_ref;
+    ws.f2_ref = workspace.f2_ref;
+    ws.alpha = workspace.alpha;
+    return EvaluFunc(var, ws, Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, ws.cloud_load.data(), ws.edge_load.data(), DeviceLoad, CETask_coDevice, ws.edge_device_comm.data(), ws.st_rows.data(), ws.et_rows.data(), ws.ce_st.data(), ws.ce_et.data());
+}
+
+void MultiMet::IncrementEvalCount()
+{
+#ifdef _OPENMP
+    #pragma omp atomic
     eval_count++;
-    return EVAL_COMPAT(var, Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET);
+#else
+    eval_count++;
+#endif
 }
 
 void MultiMet::SetPini(double pini)
@@ -842,10 +930,9 @@ void MultiMet::SetPini(double pini)
 void MultiMet::select(int p_start, int p_end)
 {
 	int i, j;
-	double *rfitness, *cfitness;
 	double p, sum = 0;
-	rfitness = new double[Popsize];
-	cfitness = new double[Popsize];
+    auto& rfitness = sel_rfitness;
+    auto& cfitness = sel_cfitness;
 	for (i = 0; i < Popsize; i++)
 		sum += 1000.0 / pop_fit[i];                                //适应值总和
 	for (i = 0; i < Popsize; i++)
@@ -873,8 +960,6 @@ void MultiMet::select(int p_start, int p_end)
 				}
 		}
 	}
-	delete [] cfitness;
-	delete [] rfitness;
 }
 
 void MultiMet::crossover(double pc, int p_start, int p_end)
@@ -1030,45 +1115,47 @@ void MultiMet::CPSO(double w, double c1, double c2, double max_ve, int p_start, 
 
 void MultiMet::Subgradient(double *theta, int q, double c_step, double *subgrad)
 {
-	double *delta = new double[q];
-	double **var = new double *[2 * q];
-	for (int i = 0; i < 2 * q; i ++)
-		var[i] = new double[Nvar];
+    if ((int)subgrad_delta.size() < q)
+        subgrad_delta.resize(q);
+    size_t need = (size_t)2 * q * Nvar;
+    if (subgrad_var.size() < need)
+        subgrad_var.resize(need);
+    auto row_ptr = [&](int row) -> double* {
+        return subgrad_var.data() + (size_t)row * Nvar;
+    };
 
 	for(int i = 0; i < Nvar; i ++)
 	{
 		for (int j = 0; j < 2 * q; j += 2)
 		{
-			delta[j / 2] = randval(0, 1);
+            subgrad_delta[j / 2] = randval(0, 1);
+            double* v0 = row_ptr(j);
+            double* v1 = row_ptr(j + 1);
 			for (int k = 0; k < Nvar; k ++)
 			{
 				if (k == i)
 				{
-					var[j][k] = theta[k] + c_step * delta[j / 2];
-					var[j + 1][k] = theta[k] - c_step * delta[j / 2];
+                    v0[k] = theta[k] + c_step * subgrad_delta[j / 2];
+                    v1[k] = theta[k] - c_step * subgrad_delta[j / 2];
 				}
 				else
-					var[j + 1][k] = var[j][k] = theta[k];
+                    v1[k] = v0[k] = theta[k];
 			}
 		}
 		subgrad[i] = 0;
 		for (int j = 0; j < 2 * q; j += 2)
-            subgrad[i] += (EVAL_COMPAT(var[j], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET)
-                           - EVAL_COMPAT(var[j + 1], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET))
-                            / (2 * c_step * delta[j / 2] + 0.001);
+            subgrad[i] += (EVAL_COMPAT(row_ptr(j), Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET)
+                           - EVAL_COMPAT(row_ptr(j + 1), Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET))
+                            / (2 * c_step * subgrad_delta[j / 2] + 0.001);
 		subgrad[i] /= q;
 	}
-	delete [] delta;
-	for (int i = 0; i < 2 * q; i ++)
-		delete [] var[i];
-	delete [] var;
 }
 
 void MultiMet::SPSO(double w, double c1, double c2, double max_ve, int Gen, int MaxGen, int p_start, int p_end)
 {
 	int i, j;
 	double velnorm, subgnorm;
-	double *subgrad = new double[Nvar];
+	double *subgrad = spso_subgrad.data();
 	for (i = p_start; i < p_end; i ++)
 	{
 		velnorm = 0;
@@ -1101,7 +1188,6 @@ void MultiMet::SPSO(double w, double c1, double c2, double max_ve, int Gen, int 
 				newpop[i][j] = Lbound;
 		}
 	}
-	delete [] subgrad;
 }
 
 void MultiMet::Cauchy_mutation(double* pp, int Gen, int MaxGen)
@@ -1200,7 +1286,7 @@ void MultiMet::APSO_2(double c1, double c2, double max_ve, int p_start, int p_en
 void MultiMet::APSO_3(double max_ve, int p_start, int p_end)
 {
 	int i, j, k;
-	double *d = new double[Popsize];
+	double *d = apso_d.data();
 	double dg, dmin, dmax, tmp;
 	double f, w;
 	double S1, S2, S3, S4;
@@ -1319,7 +1405,6 @@ void MultiMet::APSO_3(double max_ve, int p_start, int p_end)
 				newpop[i][j] = Ubound;
 		}
 	}
-	delete [] d;
 }
 
 void MultiMet::APSO_4(double max_ve, int Gen, int MaxGen, int p_start, int p_end)
@@ -1958,10 +2043,12 @@ void MultiMet::DE(double F, int S, double cr, int p_start, int p_end)
  */
 void MultiMet::GDE(double Pmu, int n_centric, int p_start, int p_end)
 {
+    if ((int)gde_trial_buffer.size() < Nvar) gde_trial_buffer.resize(Nvar);
+    if ((int)gde_v_buffer.size() < Nvar) gde_v_buffer.resize(Nvar);
     for (int i = p_start; i < p_end; i++)
     {
-        std::vector<double> trial(Nvar);
-        std::vector<double> v(Nvar);
+        double* trial = gde_trial_buffer.data();
+        double* v = gde_v_buffer.data();
         for (int j = 0; j < Nvar; j++)
             trial[j] = pop[i][j];
         double parent_fit = pop_fit[i];
@@ -1994,7 +2081,7 @@ void MultiMet::GDE(double Pmu, int n_centric, int p_start, int p_end)
                     v[j] = gbest[j];
             }
 
-            double v_fit = EVAL_COMPAT(v.data(), Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum,
+            double v_fit = EVAL_COMPAT(v, Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum,
                 CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance,
                 AvailDeviceList, EnergyList, CloudDevices, EdgeDevices,
                 CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice,
@@ -4350,21 +4437,22 @@ void MultiMet::RingMigration(int gen)
     
     int subpop_size = Popsize / nSubpop;
     
-    // Buffer to store migrants (one per subpop)
-    double** migrants = new double*[nSubpop];
-    double* migrant_fit = new double[nSubpop];
+    // Buffer to store migrants (one per subpop), reused to avoid per-gen allocations.
+    const size_t needed = (size_t)nSubpop * (size_t)Nvar;
+    if (migration_buffer.size() < needed) migration_buffer.resize(needed);
+    if ((int)migration_fit_buffer.size() < nSubpop) migration_fit_buffer.resize(nSubpop);
     
     // Step 1: Each subpop prepares its migrant
     for (int k = 0; k < nSubpop; k++)
     {
-        migrants[k] = new double[Nvar];
+        double* migrant = migration_buffer.data() + (size_t)k * (size_t)Nvar;
         
         if (randval(0, 1) < pElitist)
         {
             // Send subpop gbest
             for (int j = 0; j < Nvar; j++)
-                migrants[k][j] = subpop_gbest[k][j];
-            migrant_fit[k] = subpop_gbest_fit[k];
+                migrant[j] = subpop_gbest[k][j];
+            migration_fit_buffer[k] = subpop_gbest_fit[k];
         }
         else
         {
@@ -4374,8 +4462,8 @@ void MultiMet::RingMigration(int gen)
             int rand_idx = start + rand() % (end - start);
             
             for (int j = 0; j < Nvar; j++)
-                migrants[k][j] = pop[rand_idx][j];
-            migrant_fit[k] = pop_fit[rand_idx];
+                migrant[j] = pop[rand_idx][j];
+            migration_fit_buffer[k] = pop_fit[rand_idx];
         }
     }
     
@@ -4384,31 +4472,16 @@ void MultiMet::RingMigration(int gen)
     {
         int source = ((k - Dispara) % nSubpop + nSubpop) % nSubpop;
         int worst_idx = GetSubpopWorst(k);
+        const double* migrant = migration_buffer.data() + (size_t)source * (size_t)Nvar;
         
         // Replace worst with received migrant
         for (int j = 0; j < Nvar; j++)
-            pop[worst_idx][j] = migrants[source][j];
-        pop_fit[worst_idx] = migrant_fit[source];
+            pop[worst_idx][j] = migrant[j];
+        pop_fit[worst_idx] = migration_fit_buffer[source];
     }
     
     // Step 3: Update Dispara for next migration (rotated ring)
     Dispara = (Dispara % (nSubpop - 1)) + 1;
     
-    // Cleanup
-    for (int k = 0; k < nSubpop; k++)
-        delete[] migrants[k];
-    delete[] migrants;
-    delete[] migrant_fit;
-    
     cout << "[Migration] Gen " << gen << ": ring migration complete, Dispara=" << Dispara << endl;
 }
-
-
-
-
-
-
-
-
-
-

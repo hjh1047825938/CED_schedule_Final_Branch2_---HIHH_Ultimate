@@ -595,8 +595,12 @@ bool IMOMA_Solver::Dominates(const IMOMAIndividual& a, const IMOMAIndividual& b)
 void IMOMA_Solver::FastNonDominatedSort(vector<IMOMAIndividual>& pop) const
 {
     int n = (int)pop.size();
-    vector<int> dom_count(n, 0);
-    vector<vector<int>> dom_set(n);
+    if ((int)nd_dom_count_buf.size() != n) nd_dom_count_buf.assign(n, 0);
+    else std::fill(nd_dom_count_buf.begin(), nd_dom_count_buf.end(), 0);
+    if ((int)nd_dom_set_buf.size() != n) nd_dom_set_buf.resize(n);
+    for (int i = 0; i < n; i++) nd_dom_set_buf[i].clear();
+    vector<int>& dom_count = nd_dom_count_buf;
+    vector<vector<int>>& dom_set = nd_dom_set_buf;
     for (int i = 0; i < n; i++) pop[i].rank = 0;
 
     for (int i = 0; i < n; i++) {
@@ -611,29 +615,29 @@ void IMOMA_Solver::FastNonDominatedSort(vector<IMOMAIndividual>& pop) const
         }
     }
 
-    vector<int> cur_front;
-    cur_front.reserve(n);
+    nd_cur_front_buf.clear();
+    nd_cur_front_buf.reserve(n);
     for (int i = 0; i < n; i++) {
         if (dom_count[i] == 0) {
             pop[i].rank = 0;
-            cur_front.push_back(i);
+            nd_cur_front_buf.push_back(i);
         }
     }
 
     int rank = 0;
-    while (!cur_front.empty()) {
-        vector<int> next_front;
-        for (int idx : cur_front) {
+    while (!nd_cur_front_buf.empty()) {
+        nd_next_front_buf.clear();
+        for (int idx : nd_cur_front_buf) {
             for (int j : dom_set[idx]) {
                 dom_count[j]--;
                 if (dom_count[j] == 0) {
                     pop[j].rank = rank + 1;
-                    next_front.push_back(j);
+                    nd_next_front_buf.push_back(j);
                 }
             }
         }
         rank++;
-        cur_front.swap(next_front);
+        nd_cur_front_buf.swap(nd_next_front_buf);
     }
 }
 
@@ -647,22 +651,22 @@ void IMOMA_Solver::CalculateCrowdingDistance(vector<IMOMAIndividual>& pop, const
     for (int idx : front) pop[idx].crowding_dist = 0.0;
 
     auto assign_obj = [&](bool use_energy) {
-        vector<int> order = front;
-        std::sort(order.begin(), order.end(), [&](int a, int b) {
+        crowd_order_buf.assign(front.begin(), front.end());
+        std::sort(crowd_order_buf.begin(), crowd_order_buf.end(), [&](int a, int b) {
             return use_energy ? (pop[a].energy < pop[b].energy)
                               : (pop[a].makespan < pop[b].makespan);
         });
-        pop[order.front()].crowding_dist = std::numeric_limits<double>::infinity();
-        pop[order.back()].crowding_dist = std::numeric_limits<double>::infinity();
-        double min_v = use_energy ? pop[order.front()].energy : pop[order.front()].makespan;
-        double max_v = use_energy ? pop[order.back()].energy : pop[order.back()].makespan;
+        pop[crowd_order_buf.front()].crowding_dist = std::numeric_limits<double>::infinity();
+        pop[crowd_order_buf.back()].crowding_dist = std::numeric_limits<double>::infinity();
+        double min_v = use_energy ? pop[crowd_order_buf.front()].energy : pop[crowd_order_buf.front()].makespan;
+        double max_v = use_energy ? pop[crowd_order_buf.back()].energy : pop[crowd_order_buf.back()].makespan;
         double range = max_v - min_v;
         if (range <= 1e-12) return;
-        for (int i = 1; i + 1 < (int)order.size(); i++) {
-            if (!std::isfinite(pop[order[i]].crowding_dist)) continue;
-            double prev = use_energy ? pop[order[i - 1]].energy : pop[order[i - 1]].makespan;
-            double next = use_energy ? pop[order[i + 1]].energy : pop[order[i + 1]].makespan;
-            pop[order[i]].crowding_dist += (next - prev) / range;
+        for (int i = 1; i + 1 < (int)crowd_order_buf.size(); i++) {
+            if (!std::isfinite(pop[crowd_order_buf[i]].crowding_dist)) continue;
+            double prev = use_energy ? pop[crowd_order_buf[i - 1]].energy : pop[crowd_order_buf[i - 1]].makespan;
+            double next = use_energy ? pop[crowd_order_buf[i + 1]].energy : pop[crowd_order_buf[i + 1]].makespan;
+            pop[crowd_order_buf[i]].crowding_dist += (next - prev) / range;
         }
     };
 
@@ -688,12 +692,12 @@ vector<IMOMAIndividual> IMOMA_Solver::SelectNextGeneration(vector<IMOMAIndividua
         if ((int)next.size() + (int)by_rank[r].size() <= next_size) {
             for (int idx : by_rank[r]) next.push_back(combined[idx]);
         } else {
-            vector<int> order = by_rank[r];
-            std::sort(order.begin(), order.end(), [&](int a, int b) {
+            select_order_buf.assign(by_rank[r].begin(), by_rank[r].end());
+            std::sort(select_order_buf.begin(), select_order_buf.end(), [&](int a, int b) {
                 return combined[a].crowding_dist > combined[b].crowding_dist;
             });
             int need = next_size - (int)next.size();
-            for (int i = 0; i < need; i++) next.push_back(combined[order[i]]);
+            for (int i = 0; i < need; i++) next.push_back(combined[select_order_buf[i]]);
             break;
         }
     }

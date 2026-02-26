@@ -44,6 +44,14 @@ GA_SLHH_Solver::GA_SLHH_Solver(MultiMet* s, int psize)
     probs_cur.assign(Nvar * num_rules, 1.0 / (double)num_rules);
     probs_his.assign(Nvar * num_rules, 1.0 / (double)num_rules);
     probs_mix.assign(Nvar * num_rules, 1.0 / (double)num_rules);
+    work_idx.assign(popsize, 0);
+    work_hashes.reserve(popsize);
+    work_counts.assign(num_rules, 0);
+    work_trans_next.assign(num_rules * num_rules, 0);
+    work_trans_prev.assign(num_rules * num_rules, 0);
+    ls_best_chrom.assign(Nvar, 0.0);
+    ls_cand.assign(Nvar, 0.0);
+    ls_mut_positions.assign(4, 0);
     eval_buffer.assign(Nvar, 0.0);
     temp_llh.assign(Nvar, 0);
 
@@ -91,16 +99,16 @@ void GA_SLHH_Solver::RunGeneration(int gen)
     }
 
     // Selection with elitism
-    std::vector<int> idx(popsize);
-    std::iota(idx.begin(), idx.end(), 0);
-    std::sort(idx.begin(), idx.end(),
+    if ((int)work_idx.size() != popsize) work_idx.resize(popsize);
+    std::iota(work_idx.begin(), work_idx.end(), 0);
+    std::sort(work_idx.begin(), work_idx.end(),
               [&](int a, int b) { return pop_fit[a] < pop_fit[b]; });
 
     int elite = std::min(elitism, popsize);
     for (int i = 0; i < elite; i++) {
-        newpop[i] = pop[idx[i]];
-        newpop_fit[i] = pop_fit[idx[i]];
-        llh_newpop[i] = llh_pop[idx[i]];
+        newpop[i] = pop[work_idx[i]];
+        newpop_fit[i] = pop_fit[work_idx[i]];
+        llh_newpop[i] = llh_pop[work_idx[i]];
     }
     for (int i = elite; i < popsize; i++) {
         int sel = RouletteSelect(pop_fit);
@@ -193,8 +201,8 @@ void GA_SLHH_Solver::RunGeneration(int gen)
     }
     last_mean_fit = current_mean_fit / (double)popsize;
     {
-        std::vector<uint64_t> hashes;
-        hashes.reserve(popsize);
+        work_hashes.clear();
+        work_hashes.reserve(popsize);
         for (int i = 0; i < popsize; i++) {
             uint64_t h = 1469598103934665603ull;
             for (int q = 0; q < Nvar; q++) {
@@ -202,10 +210,10 @@ void GA_SLHH_Solver::RunGeneration(int gen)
                 h ^= x;
                 h *= 1099511628211ull;
             }
-            hashes.push_back(h);
+            work_hashes.push_back(h);
         }
-        std::sort(hashes.begin(), hashes.end());
-        last_unique_llh = (int)std::distance(hashes.begin(), std::unique(hashes.begin(), hashes.end()));
+        std::sort(work_hashes.begin(), work_hashes.end());
+        last_unique_llh = (int)std::distance(work_hashes.begin(), std::unique(work_hashes.begin(), work_hashes.end()));
     }
 
     UpdateArchive();
@@ -216,20 +224,21 @@ void GA_SLHH_Solver::LocalSearch()
     if (ls_trials <= 0) return;
     if (popsize <= 0) return;
 
-    std::vector<int> idx(popsize);
-    std::iota(idx.begin(), idx.end(), 0);
-    std::sort(idx.begin(), idx.end(),
+    if ((int)work_idx.size() != popsize) work_idx.resize(popsize);
+    std::iota(work_idx.begin(), work_idx.end(), 0);
+    std::sort(work_idx.begin(), work_idx.end(),
               [&](int a, int b) { return pop_fit[a] < pop_fit[b]; });
 
     int search_count = std::max(1, popsize / 10);
     const int scales[] = {1, 2, 4};
-    int scale_count = (int)(sizeof(scales) / sizeof(scales[0]));
+        int scale_count = (int)(sizeof(scales) / sizeof(scales[0]));
     int trials_per_scale = std::max(1, ls_trials / (scale_count * 2));
+    if ((int)ls_mut_positions.size() < scales[scale_count - 1]) ls_mut_positions.resize(scales[scale_count - 1]);
 
     for (int s = 0; s < search_count; s++) {
-        int target_idx = idx[s];
-        std::vector<double> best_chrom = pop[target_idx];
-        std::vector<double> cand(best_chrom);
+        int target_idx = work_idx[s];
+        std::copy(pop[target_idx].begin(), pop[target_idx].end(), ls_best_chrom.begin());
+        std::copy(ls_best_chrom.begin(), ls_best_chrom.end(), ls_cand.begin());
         double best_fit = pop_fit[target_idx];
 
         for (int si = 0; si < scale_count; si++) {
@@ -237,19 +246,24 @@ void GA_SLHH_Solver::LocalSearch()
             int no_improve = 0;
             int max_no_improve = std::max(8, trials_per_scale / 2);
             for (int t = 0; t < trials_per_scale; t++) {
-                cand = best_chrom;
+                std::copy(ls_best_chrom.begin(), ls_best_chrom.end(), ls_cand.begin());
                 for (int k = 0; k < scale; k++) {
                     int pos = rand() % Nvar;
-                    cand[pos] = randval(0.0, 1.0);
+                    ls_mut_positions[k] = pos;
+                    ls_cand[pos] = randval(0.0, 1.0);
                 }
 
-                DecodeLLH(cand, probs_mix, temp_llh);
+                DecodeLLH(ls_cand, probs_mix, temp_llh);
                 double fit = EvalLLH(temp_llh, eval_buffer);
                 if (fit < best_fit) {
                     best_fit = fit;
-                    best_chrom.swap(cand);
+                    ls_best_chrom.swap(ls_cand);
                     no_improve = 0;
                 } else {
+                    for (int k = 0; k < scale; k++) {
+                        int pos = ls_mut_positions[k];
+                        ls_cand[pos] = ls_best_chrom[pos];
+                    }
                     no_improve++;
                     if (no_improve >= max_no_improve) break;
                 }
@@ -257,9 +271,9 @@ void GA_SLHH_Solver::LocalSearch()
         }
 
         if (best_fit + 1e-12 < pop_fit[target_idx]) {
-            pop[target_idx] = best_chrom;
+            std::copy(ls_best_chrom.begin(), ls_best_chrom.end(), pop[target_idx].begin());
             pop_fit[target_idx] = best_fit;
-            DecodeLLH(best_chrom, probs_mix, llh_pop[target_idx]);
+            DecodeLLH(ls_best_chrom, probs_mix, llh_pop[target_idx]);
             if (best_fit < gbest_fit) {
                 gbest_fit = best_fit;
                 DecodeToSolution(llh_pop[target_idx], gbest);
@@ -683,7 +697,7 @@ double GA_SLHH_Solver::EvalLLH(const std::vector<int>& llh, std::vector<double>&
     return solver->Eval(var_buf.data());
 }
 
-std::vector<double> GA_SLHH_Solver::ComputeProbabilities(const std::vector<std::vector<int>>& seqs) const
+std::vector<double> GA_SLHH_Solver::ComputeProbabilities(const std::vector<std::vector<int>>& seqs)
 {
     std::vector<double> probs(Nvar * num_rules, 0.0);
     if (seqs.empty()) {
@@ -695,9 +709,12 @@ std::vector<double> GA_SLHH_Solver::ComputeProbabilities(const std::vector<std::
         return probs;
     }
 
-    std::vector<int> counts(num_rules, 0);
-    std::vector<int> trans_next(num_rules * num_rules, 0);
-    std::vector<int> trans_prev(num_rules * num_rules, 0);
+    if ((int)work_counts.size() != num_rules) work_counts.assign(num_rules, 0);
+    if ((int)work_trans_next.size() != num_rules * num_rules) work_trans_next.assign(num_rules * num_rules, 0);
+    if ((int)work_trans_prev.size() != num_rules * num_rules) work_trans_prev.assign(num_rules * num_rules, 0);
+    std::vector<int>& counts = work_counts;
+    std::vector<int>& trans_next = work_trans_next;
+    std::vector<int>& trans_prev = work_trans_prev;
 
     for (int q = 0; q < Nvar; q++) {
         std::fill(counts.begin(), counts.end(), 0);

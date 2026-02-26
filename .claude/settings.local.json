@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pdftotext:*)",
+      "Bash(cmake:*)",
+      "Bash(./CED_Schedule.exe:*)",
+      "Bash(./build/Release/CED_Schedule.exe:*)",
+      "Bash(do echo:*)"
+    ]
+  }
+}
