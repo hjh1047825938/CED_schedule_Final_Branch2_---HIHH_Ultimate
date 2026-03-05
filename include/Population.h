@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
+#include "Rng.h"
 using namespace std;
 
 #ifndef M_PI
@@ -182,7 +183,7 @@ void Population<T>::DeleteMatrix(T **ppT, int nRow)
 template<class T>
 double Population<T>::randval(double low, double high)
 {
-	return ((double)(rand() % 1000) / 1000.0) * (high - low) + low;
+    return Rng::getInstance().uniformReal(low, high);
 }
 
 template<class T>

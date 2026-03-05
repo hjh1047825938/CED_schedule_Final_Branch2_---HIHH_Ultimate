@@ -1,0 +1,4 @@
+scale,status,latest_reward,episodes_logged,monitor_age_sec,sim_time_sec,mean_reward_last50,warn
+T100,running_or_done,-0.010612,21,2.8,436.0,-2.866375,
+T200,waiting,,0,1e+18,,,no_episode_yet
+T500,waiting,,0,1e+18,,,no_episode_yet

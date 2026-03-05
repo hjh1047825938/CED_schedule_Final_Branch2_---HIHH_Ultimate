@@ -98,7 +98,7 @@ if(MSVC)
         _CRT_SECURE_NO_WARNINGS
     )
     target_compile_options(ppo_scheduler PRIVATE
-        /Ox
+        /O2
         /GL
         /arch:AVX2
         ${CED_FP_FLAG}
@@ -122,7 +122,7 @@ else()
         -Wextra
     )
     target_compile_options(ppo_scheduler PRIVATE
-        -O3
+        -O2
         -march=native
         -flto
         -Wall

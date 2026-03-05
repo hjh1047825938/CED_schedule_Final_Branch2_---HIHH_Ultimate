@@ -313,6 +313,21 @@ void MultiMet::ComputeReferenceValues()
 
 void MultiMet::Initial()
 {
+    std::mt19937 init_rng(static_cast<uint32_t>(seed));
+    auto rand01 = [&]() -> double {
+        std::uniform_real_distribution<double> dist(0.0, 1.0);
+        return dist(init_rng);
+    };
+    auto randInt = [&](int low, int high) -> int {
+        if (low >= high) return low;
+        std::uniform_int_distribution<int> dist(low, high);
+        return dist(init_rng);
+    };
+    auto randReal = [&](double low, double high) -> double {
+        std::uniform_real_distribution<double> dist(low, high);
+        return dist(init_rng);
+    };
+
     //Prob
     fstream fs;
 
@@ -466,8 +481,8 @@ void MultiMet::Initial()
         std::fill(edge_load.begin(), edge_load.end(), 0);
         std::fill(device_load.begin(), device_load.end(), 0);
 
-        bool pure_random = (randval(0.0, 1.0) < Pini);
-        int heu = pure_random ? -1 : (rand() % 7); // Heu1..Heu7 -> 0..6
+        bool pure_random = (rand01() < Pini);
+        int heu = pure_random ? -1 : randInt(0, 6); // Heu1..Heu7 -> 0..6
 
         for (int t = 0; t < CE_Tnum; t ++)
         {
@@ -495,15 +510,15 @@ void MultiMet::Initial()
 
             if (pure_random)
             {
-                edge_mode = (!edge_list.empty() && randval(0.0, 1.0) > 0.5);
+                edge_mode = (!edge_list.empty() && rand01() > 0.5);
                 if (edge_mode)
                 {
-                    edge_list_idx = (int)(rand() % edge_list.size());
+                    edge_list_idx = randInt(0, (int)edge_list.size() - 1);
                     selected_edge = edge_list[edge_list_idx];
                 }
                 else
                 {
-                    cloud_idx = rand() % Cnum;
+                    cloud_idx = randInt(0, Cnum - 1);
                 }
             }
             else
@@ -628,15 +643,15 @@ void MultiMet::Initial()
                 }
                 else if (heu == 5) // Heu6: random edge/cloud
                 {
-                    edge_mode = (!edge_list.empty() && randval(0.0, 1.0) > 0.5);
+                    edge_mode = (!edge_list.empty() && rand01() > 0.5);
                     if (edge_mode)
                     {
-                        edge_list_idx = (int)(rand() % edge_list.size());
+                        edge_list_idx = randInt(0, (int)edge_list.size() - 1);
                         selected_edge = edge_list[edge_list_idx];
                     }
                     else
                     {
-                        cloud_idx = rand() % Cnum;
+                        cloud_idx = randInt(0, Cnum - 1);
                     }
                 }
                 else // Heu7: device-centric
@@ -696,7 +711,7 @@ void MultiMet::Initial()
                 {
                     if (pure_random)
                     {
-                        dev_idx = rand() % dev_list.size();
+                        dev_idx = randInt(0, (int)dev_list.size() - 1);
                         dev_id = dev_list[dev_idx];
                     }
                     else if (heu == 0 || heu == 3 || heu == 5 || (heu == 4 && edge_mode))
@@ -757,7 +772,7 @@ void MultiMet::Initial()
         iota(perm.begin(), perm.end(), 0);
         for (int k = ops - 1; k > 0; k --)
         {
-            int r = rand() % (k + 1);
+            int r = randInt(0, k);
             std::swap(perm[k], perm[r]);
         }
         for (int rank = 0; rank < ops; rank ++)
@@ -779,7 +794,7 @@ void MultiMet::Initial()
 
     for (int i = 0; i < Popsize; i ++)
         for (int j = 0; j < Nvar; j ++)
-            velocity[i][j] = randval(Lbound, Ubound);
+            velocity[i][j] = randReal(Lbound, Ubound);
 
     for (int i = 0; i < Popsize; i ++)
     {
@@ -818,7 +833,7 @@ void MultiMet::Initial()
     //aco
     for (int i = 0; i < Popsize; i ++)
         for (int j = 0; j < Nvar; j ++)
-            ant_tao[i][j] = randval(Lbound, Ubound);
+            ant_tao[i][j] = randReal(Lbound, Ubound);
     for (int i = 0; i < Popsize; i ++)
         ant_tao[i][Nvar] = EVAL_COMPAT(ant_tao[i], Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, CloudLoad, EdgeLoad, DeviceLoad, CETask_coDevice, Edge_Device_comm, ST, ET, CE_ST, CE_ET);
     heap_sort(ant_tao, Popsize, Nvar);

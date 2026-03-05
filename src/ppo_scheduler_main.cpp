@@ -83,6 +83,12 @@ static pair<double, double> MeanStd(const vector<double>& x) {
     return {mean, sqrt(var)};
 }
 
+static bool IsFileEmpty(const filesystem::path& p) {
+    std::error_code ec;
+    if (!filesystem::exists(p, ec)) return true;
+    return filesystem::file_size(p, ec) == 0;
+}
+
 int main(int argc, char* argv[]) {
     filesystem::path data_dir = "./data";
     string data_file = "data_matrix_100.txt";
@@ -198,8 +204,8 @@ int main(int argc, char* argv[]) {
     vector<double> final_best_all;
 
     for (int run_seed : seeds) {
-        srand(run_seed);
         Rng::getInstance().setSeed((unsigned int)run_seed);
+        srand(run_seed);
 
         MultiMet solver(40, Tnum * 2 + Tnum * Mopt * 2, 0, 1,
                         Cnum, Enum, Dnum, Tnum, Tnum, Mopt, CED_Schedule, data_dir, data_file);
@@ -223,6 +229,7 @@ int main(int argc, char* argv[]) {
 
     const auto ms = MeanStd(final_best_all);
     const filesystem::path stat_path = results_dir / "statistics.txt";
+    const bool write_header = IsFileEmpty(stat_path);
     ofstream sofs(stat_path, ios::app);
     if (!sofs.is_open()) {
         cerr << "Error: failed to write statistics file: " << stat_path << endl;
@@ -230,8 +237,14 @@ int main(int argc, char* argv[]) {
     }
     sofs.setf(std::ios::fixed);
     sofs << setprecision(10);
-    sofs << scale_tag << " seeds=" << seeds.front() << "-" << seeds.back() << " final_best=" << ms.first << " +- "
-         << ms.second << "\n";
+    if (write_header) {
+        sofs << "scale\tseeds\tmean\tstd\tmean+-std\n";
+    }
+    sofs << scale_tag << '\t'
+         << seeds.front() << "-" << seeds.back() << '\t'
+         << ms.first << '\t'
+         << ms.second << '\t'
+         << ms.first << " +- " << ms.second << "\n";
 
     cout << "Statistics written: " << stat_path << endl;
     cout << scale_tag << " final_best mean+-std = " << ms.first << " +- " << ms.second << endl;

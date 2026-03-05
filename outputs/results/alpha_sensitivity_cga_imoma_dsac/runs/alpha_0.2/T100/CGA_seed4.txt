@@ -1,0 +1,240 @@
+Command: 'C:\Users\Hu\Desktop\CED_schedule_Final\build\Release\CED_Schedule.exe' '--solver' 'CGA' '--seed' '4' '--alpha' '0.2' '--generations' '10000' '--log_every' '50' '--data_dir' 'C:\Users\Hu\Desktop\CED_schedule_Final\data' '--data_file' 'data_matrix_100.txt' '--cnum' '100' '--enum' '100' '--dnum' '300' '--tnum' '100' '--mopt' '5'
+=== CED_Schedule Configuration ===
+Data directory: "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\data"
+Data file: data_matrix_100.txt
+Generations: 10000
+Population size: 40
+Random seed: 4
+Pini (heuristic prob): 0.4
+Objective alpha: 0.2
+Solver: CGA
+Cnum/Enum/Dnum/Tnum/Mopt: 100/100/300/100/5
+Migration: disabled
+CGA input: (raw data mode via --data_dir/--data_file)
+CGA VM count (raw mode): 35
+CGA communication scale (raw mode): 0.01
+CGA edge ratio (raw mode): 0.6
+CGA deadline factor (raw mode): 1.5
+=================================
+[Initial] Loading data from: "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\data\\data_matrix_100.txt"
+[Normalization] f1_ref (makespan) = 90.9285
+[Normalization] f2_ref (energy) = 14.6194
+[Normalization] alpha = 0.2
+
+=== Running CGA Solver ===
+CGA mode: objective-compatible with CED_Schedule (best_fit smaller is better)
+CGA params: pop=300, gen=10000, pc=0.75, pm(early/late)=0.03/0.01, cat=150, cat_apply_gen<=5000
+Gen 50: best_fit = 0.191381
+Gen 100: best_fit = 0.191381
+Gen 150: best_fit = 0.190774
+Gen 200: best_fit = 0.190774
+Gen 250: best_fit = 0.190521
+Gen 300: best_fit = 0.190521
+Gen 350: best_fit = 0.190521
+Gen 400: best_fit = 0.189898
+Gen 450: best_fit = 0.189628
+Gen 500: best_fit = 0.189257
+Gen 550: best_fit = 0.188819
+Gen 600: best_fit = 0.188414
+Gen 650: best_fit = 0.188027
+Gen 700: best_fit = 0.187824
+Gen 750: best_fit = 0.187251
+Gen 800: best_fit = 0.186257
+Gen 850: best_fit = 0.185599
+Gen 900: best_fit = 0.185296
+Gen 950: best_fit = 0.18506
+Gen 1000: best_fit = 0.184419
+Gen 1050: best_fit = 0.184015
+Gen 1100: best_fit = 0.183425
+Gen 1150: best_fit = 0.183206
+Gen 1200: best_fit = 0.18302
+Gen 1250: best_fit = 0.182565
+Gen 1300: best_fit = 0.182127
+Gen 1350: best_fit = 0.182127
+Gen 1400: best_fit = 0.181941
+Gen 1450: best_fit = 0.181756
+Gen 1500: best_fit = 0.181351
+Gen 1550: best_fit = 0.181149
+Gen 1600: best_fit = 0.18098
+Gen 1650: best_fit = 0.180542
+Gen 1700: best_fit = 0.180171
+Gen 1750: best_fit = 0.180003
+Gen 1800: best_fit = 0.179801
+Gen 1850: best_fit = 0.179565
+Gen 1900: best_fit = 0.178991
+Gen 1950: best_fit = 0.178991
+Gen 2000: best_fit = 0.178975
+Gen 2050: best_fit = 0.178772
+Gen 2100: best_fit = 0.178772
+Gen 2150: best_fit = 0.178418
+Gen 2200: best_fit = 0.178182
+Gen 2250: best_fit = 0.177946
+Gen 2300: best_fit = 0.177929
+Gen 2350: best_fit = 0.17771
+Gen 2400: best_fit = 0.177508
+Gen 2450: best_fit = 0.177339
+Gen 2500: best_fit = 0.177137
+Gen 2550: best_fit = 0.17707
+Gen 2600: best_fit = 0.176952
+Gen 2650: best_fit = 0.176851
+Gen 2700: best_fit = 0.176547
+Gen 2750: best_fit = 0.176345
+Gen 2800: best_fit = 0.176176
+Gen 2850: best_fit = 0.175957
+Gen 2900: best_fit = 0.175957
+Gen 2950: best_fit = 0.175553
+Gen 3000: best_fit = 0.17535
+Gen 3050: best_fit = 0.17535
+Gen 3100: best_fit = 0.1753
+Gen 3150: best_fit = 0.1753
+Gen 3200: best_fit = 0.175131
+Gen 3250: best_fit = 0.17476
+Gen 3300: best_fit = 0.174558
+Gen 3350: best_fit = 0.174558
+Gen 3400: best_fit = 0.174457
+Gen 3450: best_fit = 0.174423
+Gen 3500: best_fit = 0.174221
+Gen 3550: best_fit = 0.174035
+Gen 3600: best_fit = 0.174035
+Gen 3650: best_fit = 0.174035
+Gen 3700: best_fit = 0.173698
+Gen 3750: best_fit = 0.173429
+Gen 3800: best_fit = 0.173311
+Gen 3850: best_fit = 0.173277
+Gen 3900: best_fit = 0.173108
+Gen 3950: best_fit = 0.173058
+Gen 4000: best_fit = 0.172906
+Gen 4050: best_fit = 0.172839
+Gen 4100: best_fit = 0.172822
+Gen 4150: best_fit = 0.172653
+Gen 4200: best_fit = 0.172485
+Gen 4250: best_fit = 0.172451
+Gen 4300: best_fit = 0.172417
+Gen 4350: best_fit = 0.172384
+Gen 4400: best_fit = 0.172215
+Gen 4450: best_fit = 0.17203
+Gen 4500: best_fit = 0.171996
+Gen 4550: best_fit = 0.171996
+Gen 4600: best_fit = 0.171861
+Gen 4650: best_fit = 0.171676
+Gen 4700: best_fit = 0.171676
+Gen 4750: best_fit = 0.171456
+Gen 4800: best_fit = 0.17144
+Gen 4850: best_fit = 0.171069
+Gen 4900: best_fit = 0.170883
+Gen 4950: best_fit = 0.170883
+Gen 5000: best_fit = 0.17085
+Gen 5050: best_fit = 0.170681
+Gen 5100: best_fit = 0.170647
+Gen 5150: best_fit = 0.170647
+Gen 5200: best_fit = 0.170647
+Gen 5250: best_fit = 0.170479
+Gen 5300: best_fit = 0.170479
+Gen 5350: best_fit = 0.17031
+Gen 5400: best_fit = 0.170091
+Gen 5450: best_fit = 0.170091
+Gen 5500: best_fit = 0.170091
+Gen 5550: best_fit = 0.169906
+Gen 5600: best_fit = 0.16972
+Gen 5650: best_fit = 0.16972
+Gen 5700: best_fit = 0.16972
+Gen 5750: best_fit = 0.169686
+Gen 5800: best_fit = 0.169686
+Gen 5850: best_fit = 0.169518
+Gen 5900: best_fit = 0.169518
+Gen 5950: best_fit = 0.169484
+Gen 6000: best_fit = 0.169484
+Gen 6050: best_fit = 0.169332
+Gen 6100: best_fit = 0.169332
+Gen 6150: best_fit = 0.169332
+Gen 6200: best_fit = 0.16913
+Gen 6250: best_fit = 0.16913
+Gen 6300: best_fit = 0.168928
+Gen 6350: best_fit = 0.168928
+Gen 6400: best_fit = 0.168742
+Gen 6450: best_fit = 0.168742
+Gen 6500: best_fit = 0.168742
+Gen 6550: best_fit = 0.168742
+Gen 6600: best_fit = 0.168692
+Gen 6650: best_fit = 0.168692
+Gen 6700: best_fit = 0.168692
+Gen 6750: best_fit = 0.168506
+Gen 6800: best_fit = 0.168506
+Gen 6850: best_fit = 0.168506
+Gen 6900: best_fit = 0.168304
+Gen 6950: best_fit = 0.168304
+Gen 7000: best_fit = 0.168304
+Gen 7050: best_fit = 0.168304
+Gen 7100: best_fit = 0.168304
+Gen 7150: best_fit = 0.168119
+Gen 7200: best_fit = 0.168119
+Gen 7250: best_fit = 0.168119
+Gen 7300: best_fit = 0.168119
+Gen 7350: best_fit = 0.168119
+Gen 7400: best_fit = 0.168119
+Gen 7450: best_fit = 0.168119
+Gen 7500: best_fit = 0.168119
+Gen 7550: best_fit = 0.1679
+Gen 7600: best_fit = 0.1679
+Gen 7650: best_fit = 0.1679
+Gen 7700: best_fit = 0.1679
+Gen 7750: best_fit = 0.167849
+Gen 7800: best_fit = 0.167849
+Gen 7850: best_fit = 0.167849
+Gen 7900: best_fit = 0.167849
+Gen 7950: best_fit = 0.167849
+Gen 8000: best_fit = 0.16768
+Gen 8050: best_fit = 0.167664
+Gen 8100: best_fit = 0.167664
+Gen 8150: best_fit = 0.167664
+Gen 8200: best_fit = 0.167478
+Gen 8250: best_fit = 0.167478
+Gen 8300: best_fit = 0.167478
+Gen 8350: best_fit = 0.16709
+Gen 8400: best_fit = 0.16709
+Gen 8450: best_fit = 0.167074
+Gen 8500: best_fit = 0.167074
+Gen 8550: best_fit = 0.167074
+Gen 8600: best_fit = 0.167074
+Gen 8650: best_fit = 0.167074
+Gen 8700: best_fit = 0.167074
+Gen 8750: best_fit = 0.167057
+Gen 8800: best_fit = 0.167057
+Gen 8850: best_fit = 0.167057
+Gen 8900: best_fit = 0.166888
+Gen 8950: best_fit = 0.166888
+Gen 9000: best_fit = 0.166888
+Gen 9050: best_fit = 0.166888
+Gen 9100: best_fit = 0.166888
+Gen 9150: best_fit = 0.166888
+Gen 9200: best_fit = 0.166888
+Gen 9250: best_fit = 0.16672
+Gen 9300: best_fit = 0.16672
+Gen 9350: best_fit = 0.16672
+Gen 9400: best_fit = 0.1665
+Gen 9450: best_fit = 0.1665
+Gen 9500: best_fit = 0.166332
+Gen 9550: best_fit = 0.166332
+Gen 9600: best_fit = 0.166298
+Gen 9650: best_fit = 0.166298
+Gen 9700: best_fit = 0.166298
+Gen 9750: best_fit = 0.166281
+Gen 9800: best_fit = 0.166079
+Gen 9850: best_fit = 0.16586
+Gen 9900: best_fit = 0.16586
+Gen 9950: best_fit = 0.16586
+Gen 10000: best_fit = 0.16586
+
+=== Final Results (CGA) ===
+Solver: CGA
+Generations = 10000
+Best generation = 9845
+Catastrophe triggers = 0
+Best fitness = 0.16586
+The best solution = 0.16586
+Time = 56.093 s
+
+exit code 0
+Command: 'C:\Users\Hu\Desktop\CED_schedule_Final\build\Release\CED_Schedule.exe' --solver CGA --seed 4 --alpha 0.2 --generations 10000 --log_every 50 --data_dir 'C:\Users\Hu\Desktop\CED_schedule_Final\data' --data_file data_matrix_100.txt --cnum 100 --enum 100 --dnum 300 --tnum 100 --mopt 5
+
+exit code 0

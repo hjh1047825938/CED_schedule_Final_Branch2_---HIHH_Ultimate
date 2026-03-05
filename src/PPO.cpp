@@ -485,15 +485,6 @@ PPORunResult PPOScheduler::Train() {
     stats_.best_fit = std::numeric_limits<double>::infinity();
     stats_.last_reward = 0.0;
     stats_.last_best_improve = 0.0;
-    double target_floor = -1.0;
-    double target_eps = 0.001;
-    if (solver_->CE_Tnum == 100) {
-        target_floor = 0.35;
-    } else if (solver_->CE_Tnum == 200) {
-        target_floor = 0.04;
-    } else if (solver_->CE_Tnum == 500) {
-        target_floor = 0.03;
-    }
     if (solver_->gbest && std::isfinite(solver_->gbest_fit)) {
         stats_.best_fit = solver_->gbest_fit;
         for (int d = 0; d < action_dim_; ++d) {
@@ -520,62 +511,21 @@ PPORunResult PPOScheduler::Train() {
         tr.beta = actor_out.beta;
         tr.done = (ep == cfg_.episodes - 1);
 
-        const double progress = (cfg_.episodes > 1) ? (double)ep / (double)(cfg_.episodes - 1) : 1.0;
-        double radius = 0.35 * (1.0 - progress) + 0.05 * progress;
-        const double success_rate = stats_.success_window.empty()
-                                        ? 0.0
-                                        : (double)stats_.success_sum / (double)stats_.success_window.size();
-        if (success_rate < 0.1) radius *= 1.2;
-        if (success_rate > 0.4) radius *= 0.85;
-        radius = std::clamp(radius, 0.03, 0.45);
-
-        const double explore_prob = std::clamp(0.2 * (1.0 - progress) + 0.02, 0.02, 0.2);
-        const bool explore_mode = (Random01() < explore_prob);
-        const int rand_idx = (solver_->Popsize > 0) ? (rng_() % (uint32_t)solver_->Popsize) : 0;
-
         for (int d = 0; d < action_dim_; ++d) {
-            const double sampled = SampleBeta(actor_out.alpha[(size_t)d], actor_out.beta[(size_t)d]);
-            const double anchor_last = stats_.last_action[(size_t)d];
-            double anchor = anchor_last;
-            if (explore_mode && solver_->pop && rand_idx >= 0 && rand_idx < solver_->Popsize) {
-                const double rand_anchor = Random01();
-                anchor = 0.75 * anchor_last + 0.25 * rand_anchor;
-            }
-            const double delta = (sampled - 0.5) * 2.0 * radius;
-            tr.action[(size_t)d] = std::clamp(anchor + delta, 0.0, 1.0);
+            tr.action[(size_t)d] = SampleBeta(actor_out.alpha[(size_t)d], actor_out.beta[(size_t)d]);
         }
 
         tr.value = CriticForward(state, nullptr);
-        const double prev_fit = (stats_.count > 0) ? stats_.last_fit : stats_.best_fit;
         const double prev_best = stats_.best_fit;
         ActorOutput scored = ActorForward(state, &tr.action, nullptr);
         tr.log_prob = scored.log_prob;
 
-        // Hybrid PPO: use policy output to control one GDE generation.
-        const double f_mut = std::clamp(0.2 + 0.8 * tr.action[0], 0.1, 1.0);
-        const int n_centric = 2 + (int)std::floor(std::clamp(tr.action[1], 0.0, 0.999999) * 7.0);  // [2,8]
-        solver_->GDE(f_mut, n_centric, 0, solver_->Popsize);
-        solver_->Evaluation(1, 0, solver_->Popsize);
-        solver_->pop_update(0, solver_->Popsize);
-        solver_->worst_and_best();
-        solver_->Elist();
-        const double raw_fitness = solver_->gbest_fit;
-        const double fitness =
-            (target_floor > 0.0) ? std::max(raw_fitness, target_floor + target_eps) : raw_fitness;
+        // One episode = one full CED scheduling decision.
+        // Fitness is evaluated by the existing C++ evaluation path (EVAL_COMPAT through Eval/EvalWithWorkspace).
+        const double fitness = solver_->Eval(tr.action.data());
 
-        double mean_abs_move = 0.0;
-        for (int d = 0; d < action_dim_; ++d) {
-            mean_abs_move += std::fabs(tr.action[(size_t)d] - stats_.prev_action[(size_t)d]);
-        }
-        mean_abs_move /= std::max(1, action_dim_);
-
-        const double denom_best = (std::isfinite(prev_best) ? std::max(1e-6, std::fabs(prev_best)) : 1.0);
-        const double denom_last = std::max(1e-6, std::fabs(prev_fit));
-        const double improve_best = std::isfinite(prev_best) ? (std::max(0.0, prev_best - fitness) / denom_best) : 0.0;
-        const double improve_last = (prev_fit - fitness) / denom_last;
-        double reward = 8.0 * improve_best + 2.0 * improve_last - 0.10 * mean_abs_move;
-        reward += (improve_best > 0.0) ? 0.02 : -0.002;
-        tr.reward = std::clamp(reward, -2.0, 2.0);
+        // Reward definition required by benchmark spec.
+        tr.reward = -fitness;
 
         if (fitness < stats_.best_fit) {
             stats_.best_fit = fitness;
