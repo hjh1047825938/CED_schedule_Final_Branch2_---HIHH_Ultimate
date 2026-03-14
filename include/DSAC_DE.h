@@ -27,7 +27,7 @@ constexpr int STATE_DIM = 17;
 // Observation dimension: 6 (diff to gbest + 5 random individuals)
 constexpr int OBS_DIM = 6;
 // Hidden layer size
-constexpr int HIDDEN_DIM = 128;
+constexpr int HIDDEN_DIM = 32;
 
 // Experience replay buffer entry
 struct DSACTransition {
@@ -68,13 +68,19 @@ public:
     // Weights and biases
     std::vector<std::vector<double>> w1; // [HIDDEN_DIM x (STATE_DIM + OBS_DIM)]
     std::vector<double> b1;              // [HIDDEN_DIM]
-    std::vector<std::vector<double>> w2; // [NUM_DE_OPS x HIDDEN_DIM]
-    std::vector<double> b2;              // [NUM_DE_OPS]
+    std::vector<std::vector<double>> w2_mid; // [HIDDEN_DIM x HIDDEN_DIM]
+    std::vector<double> b2_mid;              // [HIDDEN_DIM]
+    std::vector<std::vector<double>> w3;     // [NUM_DE_OPS x HIDDEN_DIM]
+    std::vector<double> b3;                  // [NUM_DE_OPS]
+    std::vector<double> cached_h1;       // cached hidden activations for backprop
+    std::vector<double> cached_h2;       // cached hidden activations for backprop
+    std::vector<double> cached_logits;   // cached output logits
+    std::vector<double> cached_probs;    // cached action probabilities
 
     PolicyNetwork();
     void init_weights(std::mt19937& rng);
-    std::vector<double> forward(const std::vector<double>& state_obs);
-    std::vector<double> get_action_probs(const std::vector<double>& state_obs);
+    const std::vector<double>& forward(const std::vector<double>& state_obs);
+    const std::vector<double>& get_action_probs(const std::vector<double>& state_obs);
     int sample_action(const std::vector<double>& probs, std::mt19937& rng);
 };
 
@@ -83,12 +89,17 @@ class QNetwork {
 public:
     std::vector<std::vector<double>> w1; // [HIDDEN_DIM x (STATE_DIM + OBS_DIM)]
     std::vector<double> b1;
-    std::vector<std::vector<double>> w2; // [NUM_DE_OPS x HIDDEN_DIM]
-    std::vector<double> b2;
+    std::vector<std::vector<double>> w2_mid; // [HIDDEN_DIM x HIDDEN_DIM]
+    std::vector<double> b2_mid;
+    std::vector<std::vector<double>> w3; // [NUM_DE_OPS x HIDDEN_DIM]
+    std::vector<double> b3;
+    std::vector<double> cached_h1;       // cached hidden activations for backprop
+    std::vector<double> cached_h2;       // cached hidden activations for backprop
+    std::vector<double> cached_q_values; // cached Q-values
 
     QNetwork();
     void init_weights(std::mt19937& rng);
-    std::vector<double> forward(const std::vector<double>& state_obs);
+    const std::vector<double>& forward(const std::vector<double>& state_obs);
     double get_q_value(const std::vector<double>& state_obs, int action);
     void copy_from(const QNetwork& other);
     void soft_update(const QNetwork& other, double tau);
@@ -112,6 +123,7 @@ public:
     void SetLearningRate(double lr) { learning_rate = lr; }
     void SetDiscountFactor(double gamma) { discount_factor = gamma; }
     void SetTemperature(double alpha) { temperature = alpha; }
+    void SetSoftUpdateRate(double soft_tau) { tau = soft_tau; }
     void SetBufferSize(int size) { buffer_size = size; }
     void SetBatchSize(int size) { batch_size = size; }
     void SetTrainingEnabled(bool enabled) { training_enabled = enabled; }
@@ -171,6 +183,17 @@ private:
     // Temporary buffers
     std::vector<double> trial;
     std::vector<int> r_indices;
+    std::vector<std::array<int, 5>> selected_r_indices_cache;
+    std::vector<std::vector<double>> selected_state_obs_cache;
+    std::array<double, NUM_DE_OPS> tmp_qmin;
+    std::array<double, NUM_DE_OPS> tmp_advantage;
+    std::array<double, NUM_DE_OPS> tmp_dlogit;
+    std::array<double, NUM_DE_OPS> tmp_next_probs;
+    std::array<double, NUM_DE_OPS> tmp_next_q1;
+    std::array<double, NUM_DE_OPS> tmp_next_q2;
+    std::array<double, HIDDEN_DIM> tmp_hidden_grad1;
+    std::array<double, HIDDEN_DIM> tmp_hidden_grad2;
+    int train_counter;
 
     // Core methods
     void compute_population_stats();
@@ -182,7 +205,8 @@ private:
     void store_transition(const DSACTransition& trans);
     void train_step();
     void update_op_stats(int op_idx, double parent_fit, double offspring_fit);
-    int select_operator_ucb();  // UCB-based operator selection
+    [[deprecated("Use policy network action selection instead.")]]
+    int select_operator_ucb();  // Deprecated: UCB-based operator selection
     double adaptive_F(int gen); // Adaptive scaling factor
     double adaptive_CR(int gen); // Adaptive crossover rate
 

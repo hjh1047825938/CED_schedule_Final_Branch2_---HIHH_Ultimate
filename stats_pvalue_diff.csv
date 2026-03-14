@@ -1,0 +1,28 @@
+problem,comparison,paper_pvalue,recomputed_pvalue,match_flag,notes
+T100,CCHIHH-full vs CCHIHH-noCC,0.000181651146,0.001953125,False,该 p 值不可能来自 n=10 双侧 exact Wilcoxon
+T200,CCHIHH-full vs CCHIHH-noCC,0.00100797624,0.001953125,False,该 p 值不可能来自 n=10 双侧 exact Wilcoxon
+T500,CCHIHH-full vs CCHIHH-noCC,0.000182671791,0.001953125,False,该 p 值不可能来自 n=10 双侧 exact Wilcoxon
+T100,CCHIHH-full vs CCHIHH-noHI,0.000182672,REQUIRES RERUN,False,当前仓库缺少完整 10-run 原始配对数据
+T200,CCHIHH-full vs CCHIHH-noHI,0.000182672,REQUIRES RERUN,False,当前仓库缺少完整 10-run 原始配对数据
+T500,CCHIHH-full vs CCHIHH-noHI,0.000182672,REQUIRES RERUN,False,当前仓库缺少完整 10-run 原始配对数据
+T100,CCHIHH-full vs CCHIHH-noCB,0.001953,0.001953125,True,与 exact Wilcoxon 仅有表格舍入差异
+T200,CCHIHH-full vs CCHIHH-noCB,0.001953,0.001953125,True,与 exact Wilcoxon 仅有表格舍入差异
+T500,CCHIHH-full vs CCHIHH-noCB,0.001953,0.001953125,True,与 exact Wilcoxon 仅有表格舍入差异
+T100,CCHIHH-full vs CCHIHH-noGate,0.232421875,REQUIRES RERUN,False,当前仓库缺少完整 10-run 原始配对数据
+T200,CCHIHH-full vs CCHIHH-noGate,0.232421875,REQUIRES RERUN,False,当前仓库缺少完整 10-run 原始配对数据
+T500,CCHIHH-full vs CCHIHH-noGate,0.02734375,REQUIRES RERUN,False,当前仓库缺少完整 10-run 原始配对数据
+T100,CCHIHH-full vs CCHIHH-noMig,0.001953125,0.001953125,True,与 exact Wilcoxon 完全一致
+T200,CCHIHH-full vs CCHIHH-noMig,0.00390625,0.00390625,True,与 exact Wilcoxon 完全一致
+T500,CCHIHH-full vs CCHIHH-noMig,0.001953125,0.001953125,True,与 exact Wilcoxon 完全一致
+T100,CCHIHH-full vs CGA,0.001953125,0.001953125,True,与 exact Wilcoxon 完全一致
+T200,CCHIHH-full vs CGA,0.001953125,REQUIRES RERUN,False,当前仓库缺少完整 10-run 原始配对数据
+T500,CCHIHH-full vs CGA,0.001953125,0.001953125,True,与 exact Wilcoxon 完全一致
+T100,CCHIHH-full vs IMOMA,0.001953125,0.001953125,True,与 exact Wilcoxon 完全一致
+T200,CCHIHH-full vs IMOMA,0.001953125,0.001953125,True,与 exact Wilcoxon 完全一致
+T500,CCHIHH-full vs IMOMA,0.001953125,0.001953125,True,与 exact Wilcoxon 完全一致
+T100,CCHIHH-full vs PPO,1.0825e-05,0.001953125,False,该 p 值不可能来自 n=10 双侧 exact Wilcoxon
+T200,CCHIHH-full vs PPO,1.0825e-05,0.001953125,False,该 p 值不可能来自 n=10 双侧 exact Wilcoxon
+T500,CCHIHH-full vs PPO,1.0825e-05,0.001953125,False,该 p 值不可能来自 n=10 双侧 exact Wilcoxon
+T100,CCHIHH-full vs DSAC-DE,1.0825e-05,0.001953125,False,该 p 值不可能来自 n=10 双侧 exact Wilcoxon
+T200,CCHIHH-full vs DSAC-DE,1.0825e-05,0.001953125,False,该 p 值不可能来自 n=10 双侧 exact Wilcoxon
+T500,CCHIHH-full vs DSAC-DE,1.0825e-05,0.001953125,False,该 p 值不可能来自 n=10 双侧 exact Wilcoxon

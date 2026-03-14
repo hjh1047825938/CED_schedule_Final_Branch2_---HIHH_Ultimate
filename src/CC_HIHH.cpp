@@ -8,6 +8,95 @@
 #include <omp.h>
 #endif
 
+namespace {
+
+constexpr double kPi = 3.14159265358979323846;
+
+double unit_open(double u) {
+    if (u <= 0.0) return 1e-10;
+    if (u >= 1.0) return 1.0 - 1e-10;
+    return u;
+}
+
+void segment_shift_values(double* values, int block_len, int seg_len) {
+    if (values == nullptr || block_len < 2) {
+        return;
+    }
+    seg_len = std::max(1, std::min(seg_len, block_len));
+    if (seg_len >= block_len) {
+        return;
+    }
+
+    int seg_start = rand() % (block_len - seg_len + 1);
+    int remaining = block_len - seg_len;
+    int insert_pos = rand() % (remaining + 1);
+
+    std::vector<double> segment(seg_len);
+    std::vector<double> temp;
+    temp.reserve(remaining);
+
+    for (int s = 0; s < seg_len; ++s) {
+        segment[s] = values[seg_start + s];
+    }
+    for (int j = 0; j < block_len; ++j) {
+        if (j < seg_start || j >= seg_start + seg_len) {
+            temp.push_back(values[j]);
+        }
+    }
+
+    int wi = 0;
+    for (int j = 0; j < block_len; ++j) {
+        if (j >= insert_pos && j < insert_pos + seg_len) {
+            values[j] = segment[j - insert_pos];
+        } else {
+            values[j] = temp[wi++];
+        }
+    }
+}
+
+void apply_vns_neighborhood(double* values, int block_len, int k) {
+    if (values == nullptr || block_len < 2) {
+        return;
+    }
+
+    if (k == 1) {
+        int j1 = rand() % block_len;
+        int j2 = rand() % block_len;
+        if (j1 != j2) {
+            std::swap(values[j1], values[j2]);
+        }
+        return;
+    }
+
+    if (k == 2) {
+        int j = rand() % (block_len - 1);
+        std::swap(values[j], values[j + 1]);
+        return;
+    }
+
+    if (k == 3) {
+        int seg_len = std::min(block_len, 2 + rand() % 3);
+        int start = rand() % (block_len - seg_len + 1);
+        std::reverse(values + start, values + start + seg_len);
+        return;
+    }
+
+    if (k == 4) {
+        int seg_len = std::min(block_len, 2 + rand() % 2);
+        segment_shift_values(values, block_len, seg_len);
+        return;
+    }
+
+    int seg_len = std::min(block_len, 3 + rand() % 3);
+    int start = rand() % (block_len - seg_len + 1);
+    for (int t = seg_len - 1; t > 0; --t) {
+        int r = rand() % (t + 1);
+        std::swap(values[start + t], values[start + r]);
+    }
+}
+
+}  // namespace
+
 //=============================================================================
 // CC_HIHH_Solver Implementation
 //=============================================================================
@@ -105,6 +194,9 @@ void CC_HIHH_Solver::Init()
         int full_start = 0;
         int full_len = Nvar;
         P_full.init(0, full_start, full_len, popsize, nSubpop, num_ops_full, state_dim, recent_k);
+        archive_full.init(std::max(1, popsize / nSubpop), full_len);
+        archive_offload.init(0, 0);
+        archive_dev.init(0, 0);
 
         for (int i = 0; i < popsize && i < solver->Popsize; i++) {
             std::copy(solver->pop[i], solver->pop[i] + full_len, P_full.pop[i]);
@@ -144,6 +236,10 @@ void CC_HIHH_Solver::Init()
     int dev_start = 2 * CE_Tnum + ops;
     int dev_len = ops;
     P_dev.init(2, dev_start, dev_len, popsize, nSubpop, num_ops_dev, state_dim, recent_k);
+    int archive_size = std::max(1, popsize / nSubpop);
+    archive_offload.init(archive_size, offload_len);
+    archive_dev.init(archive_size, dev_len);
+    archive_full.init(0, 0);
     
     std::cout << "  Block 0 (offload): start=" << offload_start << ", len=" << offload_len << std::endl;
     std::cout << "  Block 1 (seq): start=" << seq_start << ", len=" << seq_len << std::endl;
@@ -573,11 +669,17 @@ void CC_HIHH_Solver::ApplyOperator(int op, BlockPopulation& bp, int p_start, int
 
 void CC_HIHH_Solver::ApplyGA(BlockPopulation& bp, int p_start, int p_end)
 {
-    const double pc = 0.8;
-    const double pm = 0.15;
     const int island_size = p_end - p_start;
     const int block_len = bp.block_len;
-    
+    if (block_len <= 0 || island_size <= 0) {
+        return;
+    }
+
+    const double eta_c = 20.0;
+    const double eta_m = 20.0;
+    const double pc = 0.9;
+    const double pm = 1.0 / static_cast<double>(block_len);
+
     for (int i = p_start; i < p_end; i++) {
         int t1 = p_start + rand() % island_size;
         int t2 = p_start + rand() % island_size;
@@ -589,20 +691,29 @@ void CC_HIHH_Solver::ApplyGA(BlockPopulation& bp, int p_start, int p_end)
         if (randval(0, 1) < pc) {
             int partner = p_start + rand() % island_size;
             if (partner == i) continue;
-            
-            int point = rand() % block_len;
-            for (int j = 0; j < point; j++) {
-                double r = randval(0, 1);
-                double temp = bp.newpop[i][j] * r + (1 - r) * bp.newpop[partner][j];
-                bp.newpop[i][j] = clip01(temp);
+
+            for (int j = 0; j < block_len; j++) {
+                if (randval(0, 1) < 0.5) {
+                    double u = unit_open(randval(0, 1));
+                    double beta_q = (u <= 0.5)
+                        ? std::pow(2.0 * u, 1.0 / (eta_c + 1.0))
+                        : std::pow(1.0 / (2.0 * (1.0 - u)), 1.0 / (eta_c + 1.0));
+                    double c1 = 0.5 * ((1.0 + beta_q) * bp.newpop[i][j] + (1.0 - beta_q) * bp.newpop[partner][j]);
+                    bp.newpop[i][j] = clip01(c1);
+                }
             }
         }
     }
-    
+
     for (int i = p_start; i < p_end; i++) {
-        if (randval(0, 1) < pm) {
-            int r = rand() % block_len;
-            bp.newpop[i][r] = randval(0, 1);
+        for (int j = 0; j < block_len; j++) {
+            if (randval(0, 1) < pm) {
+                double u = randval(0, 1);
+                double delta_q = (u < 0.5)
+                    ? std::pow(2.0 * u, 1.0 / (eta_m + 1.0)) - 1.0
+                    : 1.0 - std::pow(2.0 * (1.0 - u), 1.0 / (eta_m + 1.0));
+                bp.newpop[i][j] = clip01(bp.newpop[i][j] + delta_q);
+            }
         }
     }
 }
@@ -616,20 +727,51 @@ void CC_HIHH_Solver::ApplyDE(BlockPopulation& bp, int p_start, int p_end)
         return;
     }
     
+    const int block_len = bp.block_len;
     const double F = 0.5;
     const double CR = 0.5;
-    const int block_len = bp.block_len;
-    
+    const double p = 0.1;
+    DEArchive* archive = nullptr;
+    if (!use_blocks) {
+        archive = &archive_full;
+    } else if (bp.block_id == 0) {
+        archive = &archive_offload;
+    } else if (bp.block_id == 2) {
+        archive = &archive_dev;
+    }
+
+    std::vector<std::pair<double, int>> fit_idx;
+    fit_idx.reserve(island_size);
+    for (int i = p_start; i < p_end; ++i) {
+        fit_idx.push_back({bp.pop_fit[i], i});
+    }
+    std::sort(fit_idx.begin(), fit_idx.end());
+    int p_count = std::max(1, static_cast<int>(std::floor(p * island_size)));
+
     for (int i = p_start; i < p_end; i++) {
-        int r1, r2, r3;
+        int pbest_idx = fit_idx[rand() % p_count].second;
+        int r1;
         do { r1 = p_start + rand() % island_size; } while (r1 == i);
-        do { r2 = p_start + rand() % island_size; } while (r2 == i || r2 == r1);
-        do { r3 = p_start + rand() % island_size; } while (r3 == i || r3 == r1 || r3 == r2);
-        
+
+        const double* r2_vals = nullptr;
+        int archive_count = (archive != nullptr) ? archive->count : 0;
+        double archive_prob = (archive_count > 0)
+            ? static_cast<double>(archive_count) / static_cast<double>(island_size + archive_count)
+            : 0.0;
+        if (archive_count > 0 && randval(0, 1) < archive_prob) {
+            r2_vals = archive->random_get();
+        } else {
+            int r2_idx;
+            do { r2_idx = p_start + rand() % island_size; } while (r2_idx == i || r2_idx == r1);
+            r2_vals = bp.pop[r2_idx];
+        }
+
         int jrand = rand() % block_len;
         for (int j = 0; j < block_len; j++) {
             if (randval(0, 1) < CR || j == jrand) {
-                double v = bp.pop[r1][j] + F * (bp.pop[r2][j] - bp.pop[r3][j]);
+                double v = bp.pop[i][j]
+                    + F * (bp.pop[pbest_idx][j] - bp.pop[i][j])
+                    + F * (bp.pop[r1][j] - r2_vals[j]);
                 bp.newpop[i][j] = clip01(v);
             } else {
                 bp.newpop[i][j] = bp.pop[i][j];
@@ -647,20 +789,36 @@ void CC_HIHH_Solver::ApplyGDE(BlockPopulation& bp, int p_start, int p_end)
         return;
     }
     
-    const double F = randval(0.2, 0.8);
-    const double CR = randval(0.1, 0.6);
     const int block_len = bp.block_len;
-    const int best_idx = bp.get_island_best_idx(p_start, p_end);
-    
+    const double F = 0.5;
+    const double CR = 0.5;
+    const double p = 0.15;
+
+    std::vector<std::pair<double, int>> fit_idx;
+    fit_idx.reserve(island_size);
+    for (int i = p_start; i < p_end; ++i) {
+        fit_idx.push_back({bp.pop_fit[i], i});
+    }
+    std::sort(fit_idx.begin(), fit_idx.end());
+    int p_count = std::max(1, static_cast<int>(std::floor(p * island_size)));
+
     for (int i = p_start; i < p_end; i++) {
-        int r1, r2;
-        do { r1 = p_start + rand() % island_size; } while (r1 == i);
+        int pbest_idx = fit_idx[rand() % p_count].second;
+        int cand1;
+        int cand2;
+        do { cand1 = p_start + rand() % island_size; } while (cand1 == i);
+        do { cand2 = p_start + rand() % island_size; } while (cand2 == i || cand2 == cand1);
+        int r1 = (bp.pop_fit[cand1] < bp.pop_fit[cand2]) ? cand1 : cand2;
+
+        int r2;
         do { r2 = p_start + rand() % island_size; } while (r2 == i || r2 == r1);
-        
+
         int jrand = rand() % block_len;
         for (int j = 0; j < block_len; j++) {
             if (randval(0, 1) < CR || j == jrand) {
-                double v = bp.pop[best_idx][j] + F * (bp.pop[r1][j] - bp.pop[r2][j]);
+                double v = bp.pop[i][j]
+                    + F * (bp.pop[pbest_idx][j] - bp.pop[i][j])
+                    + F * (bp.pop[r1][j] - bp.pop[r2][j]);
                 bp.newpop[i][j] = clip01(v);
             } else {
                 bp.newpop[i][j] = bp.pop[i][j];
@@ -671,19 +829,22 @@ void CC_HIHH_Solver::ApplyGDE(BlockPopulation& bp, int p_start, int p_end)
 
 void CC_HIHH_Solver::ApplyBitFlip(BlockPopulation& bp, int p_start, int p_end)
 {
-    const double pm = 0.1;
+    const double p_flip = 0.1;
+    const double cauchy_scale = 0.1;
     const int half_len = bp.block_len / 2;
-    const int block_len = bp.block_len;
-    
+
     for (int i = p_start; i < p_end; i++) {
+        std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
         for (int j = 0; j < half_len; j++) {
-            if (randval(0, 1) < pm) {
+            if (randval(0, 1) < p_flip) {
                 bp.newpop[i][j] = (bp.newpop[i][j] < 0.5) ? 0.75 : 0.25;
             }
         }
-        for (int j = half_len; j < block_len; j++) {
-            if (randval(0, 1) < pm) {
-                bp.newpop[i][j] = randval(0, 1);
+        for (int j = half_len; j < bp.block_len; j++) {
+            if (randval(0, 1) < p_flip) {
+                double u = unit_open(randval(0, 1));
+                double cauchy_sample = cauchy_scale * std::tan(kPi * (u - 0.5));
+                bp.newpop[i][j] = clip01(bp.pop[i][j] + cauchy_sample);
             }
         }
     }
@@ -691,18 +852,21 @@ void CC_HIHH_Solver::ApplyBitFlip(BlockPopulation& bp, int p_start, int p_end)
 
 void CC_HIHH_Solver::ApplySeqSwap(BlockPopulation& bp, int p_start, int p_end, int n_swaps)
 {
-    // For sequence block: swap a few pairs (local exploitation)
-    if (bp.block_len < 2) return;
+    if (bp.block_len < 2) {
+        for (int i = p_start; i < p_end; ++i) {
+            if (bp.block_len > 0) {
+                std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
+            }
+        }
+        return;
+    }
     if (n_swaps < 1) n_swaps = 1;
 
     for (int i = p_start; i < p_end; i++) {
-        int swaps = n_swaps;
-        for (int k = 0; k < swaps; k++) {
-            int j1 = rand() % bp.block_len;
-            int j2 = rand() % bp.block_len;
-            if (j1 != j2) {
-                std::swap(bp.newpop[i][j1], bp.newpop[i][j2]);
-            }
+        std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
+        for (int k = 0; k < n_swaps; k++) {
+            int seg_len = 1 + rand() % 3;
+            segment_shift_values(bp.newpop[i], bp.block_len, seg_len);
         }
     }
 }
@@ -741,13 +905,7 @@ void CC_HIHH_Solver::ApplyVNS(BlockPopulation& bp, int p_start, int p_end)
         for (int k = 1; k <= vns_max_k; k++) {
             for (int sample = 0; sample < vns_samples_per_k; sample++) {
                 std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
-                for (int swap_count = 0; swap_count < k; swap_count++) {
-                    int j1 = rand() % bp.block_len;
-                    int j2 = rand() % bp.block_len;
-                    if (j1 != j2) {
-                        std::swap(bp.newpop[i][j1], bp.newpop[i][j2]);
-                    }
-                }
+                apply_vns_neighborhood(bp.newpop[i], bp.block_len, k);
             }
         }
     }
@@ -756,10 +914,10 @@ void CC_HIHH_Solver::ApplyVNS(BlockPopulation& bp, int p_start, int p_end)
         int i = fit_idx[e].second;
         std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
         for (int k = 0; k < seq_swap_count; k++) {
-            int j1 = rand() % bp.block_len;
-            int j2 = rand() % bp.block_len;
-            if (j1 != j2) {
-                std::swap(bp.newpop[i][j1], bp.newpop[i][j2]);
+            int a = rand() % bp.block_len;
+            int b = rand() % bp.block_len;
+            if (a != b) {
+                std::swap(bp.newpop[i][a], bp.newpop[i][b]);
             }
         }
     }
@@ -789,8 +947,9 @@ void CC_HIHH_Solver::ApplyLevy(BlockPopulation& bp, int p_start, int p_end)
         std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
         for (int k = 0; k < n_perturb; k++) {
             int j = rand() % bp.block_len;
-            double levy_step = LevyFlight(levy_beta);
-            double new_val = bp.pop[i][j] + levy_step_coeff * levy_step;
+            double u = unit_open(randval(0, 1));
+            double cauchy_sample = std::tan(kPi * (u - 0.5));
+            double new_val = bp.pop[i][j] + levy_step_coeff * cauchy_sample;
             bp.newpop[i][j] = clip01(new_val);
         }
     }
@@ -805,9 +964,14 @@ void CC_HIHH_Solver::ApplyBlockResample(BlockPopulation& bp, int p_start, int p_
     if (count < 1) count = 1;
 
     for (int i = p_start; i < p_end; i++) {
+        std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
         for (int k = 0; k < count; k++) {
             int idx = rand() % bp.block_len;
-            bp.newpop[i][idx] = clip01(randval(0, 1));
+            if (randval(0, 1) < 0.5) {
+                bp.newpop[i][idx] = clip01(1.0 - bp.pop[i][idx]);
+            } else {
+                bp.newpop[i][idx] = clip01(randval(0, 1));
+            }
         }
     }
 }
@@ -846,6 +1010,13 @@ void CC_HIHH_Solver::SelectionUpdate(BlockPopulation& bp, int p_start, int p_end
 {
     for (int i = p_start; i < p_end; i++) {
         if (bp.newpop_fit[i] < bp.pop_fit[i]) {
+            if (!use_blocks) {
+                archive_full.add(bp.pop[i]);
+            } else if (bp.block_id == 0) {
+                archive_offload.add(bp.pop[i]);
+            } else if (bp.block_id == 2) {
+                archive_dev.add(bp.pop[i]);
+            }
             std::copy(bp.newpop[i], bp.newpop[i] + bp.block_len, bp.pop[i]);
             bp.pop_fit[i] = bp.newpop_fit[i];
         }

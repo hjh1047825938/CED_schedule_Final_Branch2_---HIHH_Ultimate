@@ -1,0 +1,10 @@
+^C:\CED_BUILD\CMAKEFILES\58E1AEEFEB44C39CC4F3349D44AD81B3\GENERATE.STAMP.RULE
+setlocal
+"D:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Hu/Desktop/CED_schedule_Final_Branch2_分块+HIHH_Edited_2/CED_schedule_Final_Branch2_分块+HIHH/CED_schedule_Edited/CED_schedule/CED_schedule -BC:/ced_build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/ced_build/CED_Schedule.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -1,0 +1,51 @@
+﻿閫傜敤浜?.NET Framework MSBuild 鐗堟湰 17.14.18+a338add32
+
+  1>Checking Build System
+  Building Custom Rule C:/Users/Hu/Desktop/CED_schedule_Final_Branch2_鍒嗗潡+HIHH/CED_schedule_Edited/CED_schedule/CED_schedule/CMakeLists.txt
+  main.cpp
+  Multimethod.cpp
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(1,1): warning C4828: 鏂囦欢鍖呭惈鍦ㄥ亸绉?0x6d2e 澶勫紑濮嬬殑瀛楃锛岃瀛楃鍦ㄥ綋鍓嶆簮瀛楃闆嗕腑鏃犳晥(浠ｇ爜椤?65001)銆?[C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(205,11): warning C4244: 鈥滃垵濮嬪寲鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(211,29): warning C4244: 鈥?鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(212,21): warning C4244: 鈥滃垵濮嬪寲鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(221,29): warning C4244: 鈥?鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(919,59): warning C4244: 鈥滃弬鏁扳€? 浠庘€淭鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(919,59): warning C4244:         with [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(919,59): warning C4244:         [ [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(919,59): warning C4244:             T=double [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(919,59): warning C4244:         ] [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(1626,16): warning C4244: 鈥滃垵濮嬪寲鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(1636,22): warning C4244: 鈥?鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(1641,45): warning C4244: 鈥?鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(2710,39): warning C4244: 鈥?鈥? 浠庘€淭鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(2710,39): warning C4244:         with [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(2710,39): warning C4244:         [ [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(2710,39): warning C4244:             T=double [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(2710,39): warning C4244:         ] [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(2744,13): warning C4244: 鈥?鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(3795,1): warning C4828: 鏂囦欢鍖呭惈鍦ㄥ亸绉?0x1ed8a 澶勫紑濮嬬殑瀛楃锛岃瀛楃鍦ㄥ綋鍓嶆簮瀛楃闆嗕腑鏃犳晥(浠ｇ爜椤?65001)銆?[C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(4086,40): warning C4244: 鈥?鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Population.h(119,18): warning C4244: 鈥?鈥? 浠庘€渢ime_t鈥濊浆鎹㈠埌鈥渓ong鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+  (缂栬瘧婧愭枃浠垛€?./Multimethod.cpp鈥?
+      C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Population.h(119,18):
+      妯℃澘瀹炰緥鍖栦笂涓嬫枃(鏈€鏃╃殑瀹炰緥鍖栦笂涓嬫枃)涓?
+          C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.h(23,25):
+          鏌ョ湅瀵规鍦ㄧ紪璇戠殑 绫?妯℃澘 瀹炰緥鍖栤€淧opulation<double>鈥濈殑寮曠敤
+          C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Population.h(77,2):
+          鍦ㄧ紪璇?绫?妯℃澘 鎴愬憳鍑芥暟鈥淧opulation<double>::Population(int,int,T,T)鈥濇椂
+          with
+          [
+              T=double
+          ]
+              C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Multimethod.cpp(51,17):
+              璇峰弬闃?"MultiMet::MultiMet" 涓 "Population<double>::Population" 鐨勭涓€涓紩鐢?
+  
+  Problems.cpp
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Problems.cpp(396,21): warning C4244: 鈥滃垵濮嬪寲鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Problems.cpp(402,44): warning C4244: 鈥?鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Problems.cpp(409,21): warning C4244: 鈥滃垵濮嬪寲鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\Problems.cpp(415,44): warning C4244: 鈥?鈥? 浠庘€渄ouble鈥濊浆鎹㈠埌鈥渋nt鈥濓紝鍙兘涓㈠け鏁版嵁 [C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+  CC_HIHH.cpp
+  姝ｅ湪鐢熸垚浠ｇ爜...
+  CED_Schedule.vcxproj -> C:\Users\Hu\Desktop\CED_schedule_Final_Branch2_鍒嗗潡+HIHH\CED_schedule_Edited\CED_schedule\CED_schedule\build\Release\CED_Schedule.exe
+  Building Custom Rule C:/Users/Hu/Desktop/CED_schedule_Final_Branch2_鍒嗗潡+HIHH/CED_schedule_Edited/CED_schedule/CED_schedule/CMakeLists.txt

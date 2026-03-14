@@ -1,0 +1,12 @@
+﻿适用于 .NET Framework MSBuild 版本 17.14.18+a338add32
+
+  Problems.cpp
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Problems.cpp(52,41): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Problems.cpp(55,41): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Problems.cpp(66,35): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Problems.cpp(70,60): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Problems.cpp(372,21): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Problems.cpp(378,44): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Problems.cpp(385,21): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Problems.cpp(391,44): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+  CED_Schedule.vcxproj -> C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\Release\CED_Schedule.exe

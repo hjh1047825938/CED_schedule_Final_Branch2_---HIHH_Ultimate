@@ -1,0 +1,52 @@
+CD Diagram N=9 Summary
+
+Data source:
+- CCHIHH, DSAC-DE, CGA, IMOMA: exact mean fitness from outputs/results/alpha_sensitivity_cga_imoma_dsac/aggregated/alpha_*/T*/final_performance_summary.csv
+- PPO: exact α=0.5 values from paper main results; α=0.2 and α=0.8 values from Figure 6 endpoint approximations supplied in prompt
+
+Per-instance mean fitness used:
+- T100_a02: CCHIHH=0.156131, DSAC-DE=0.163999, CGA=0.165294, IMOMA=0.184395, PPO=0.210000
+- T200_a02: CCHIHH=0.026399, DSAC-DE=0.041274, CGA=0.035986, IMOMA=0.043340, PPO=0.065000
+- T500_a02: CCHIHH=0.020830, DSAC-DE=0.037657, CGA=0.033979, IMOMA=0.038439, PPO=0.055000
+- T100_a05: CCHIHH=0.342314, DSAC-DE=0.324761, CGA=0.353245, IMOMA=0.377472, PPO=0.388900
+- T200_a05: CCHIHH=0.038271, DSAC-DE=0.047151, CGA=0.049487, IMOMA=0.057598, PPO=0.071800
+- T500_a05: CCHIHH=0.026043, DSAC-DE=0.037228, CGA=0.039213, IMOMA=0.046502, PPO=0.057500
+- T100_a08: CCHIHH=0.484452, DSAC-DE=0.486480, CGA=0.486859, IMOMA=0.491712, PPO=0.496000
+- T200_a08: CCHIHH=0.037180, DSAC-DE=0.051296, CGA=0.041328, IMOMA=0.046267, PPO=0.068000
+- T500_a08: CCHIHH=0.021441, DSAC-DE=0.034004, CGA=0.027925, IMOMA=0.031296, PPO=0.048000
+
+Average ranks:
+- CCHIHH: 1.111
+- DSAC-DE: 2.556
+- CGA: 2.556
+- IMOMA: 3.778
+- PPO: 5.000
+
+Friedman chi-square = 30.8444
+p-value = 0.000003
+CD = 2.0333
+
+Algorithm pairs without significant difference (|Δrank| < CD):
+- CCHIHH vs DSAC-DE: Δrank = 1.444
+- CCHIHH vs CGA: Δrank = 1.444
+- DSAC-DE vs CGA: Δrank = 0.000
+- DSAC-DE vs IMOMA: Δrank = 1.222
+- CGA vs IMOMA: Δrank = 1.222
+- IMOMA vs PPO: Δrank = 1.222
+
+Non-significant connected groups drawn on the CD diagram:
+- CCHIHH | DSAC-DE | CGA
+- DSAC-DE | CGA | IMOMA
+- IMOMA | PPO
+
+Notes:
+- T100_a02: PPO uses Figure 6 approximate endpoint value (0.2100)
+- T200_a02: PPO uses Figure 6 approximate endpoint value (0.0650)
+- T500_a02: PPO uses Figure 6 approximate endpoint value (0.0550)
+- T100_a08: PPO uses Figure 6 approximate endpoint value (0.4960)
+- T200_a08: PPO uses Figure 6 approximate endpoint value (0.0680)
+- T500_a08: PPO uses Figure 6 approximate endpoint value (0.0480)
+
+Old vs new CD comparison:
+- Old CD diagram (N=3): CD=2.728, 只能区分 top-2 vs PPO
+- New CD diagram (N=9): CD=2.033, 预期能区分 CCHIHH/DSAC-DE vs IMOMA/PPO，且 CCHIHH vs CGA 仍不显著

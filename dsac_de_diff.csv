@@ -1,0 +1,9 @@
+component,original_method,current_implementation,possible_effect,severity
+operator pool,5 个 DE mutation operators,仍为 5 个 DE operators,该项基本保留,低
+SAC / policy update frequency,原文 Algorithm 1 表示每轮交互后进行梯度更新,代码为 `if (++train_counter % 2 != 0) return;`，即每 2 次触发一次 train_step，不是每 10 代,与论文当前写法不一致；训练节奏改变,高
+replay buffer,原文 buffer size = 40000,代码 `buffer_size(20000)`,经验回放容量减半，可能降低训练稳定性,中
+batch size,原文 batch size = 512,代码默认 `batch_size(256)`；论文正文却写 32,实现与原文、与论文描述同时不一致,高
+network update scope,原方法更新完整 actor/critic 网络,代码更新 `w1/w2_mid/w3` 和偏置，属于完整多层更新；不是只更新 output layer,论文当前简化描述错误,高
+state definition,原文 state=17 维 population state，obs=6 维 individual observation,代码保留 global state + observation 拼接思路,核心思想保留，但实现细节需逐项核对,中
+reward definition,原文奖励由 gbest 改善与终局回报组成,代码实现了代际 improvement/终局逻辑，但未在论文当前实现说明中展开,可能影响可复核性,中
+training scope,原文强调 DSAC policy 训练后可迁移到其他 case,当前实现是在线伴随进化更新，不是单独先训后测的固定策略协议,协议语义不同，可能影响对 baseline 的理解,高

@@ -1,0 +1,39 @@
+﻿CMake is re-running because C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp is out-of-date.
+  the file 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build_output5.txt'
+  is newer than 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp.depend'
+  result='-1'
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build
+适用于 .NET Framework MSBuild 版本 17.14.18+a338add32
+
+  1>Checking Build System
+  CMake is re-running because C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp is out-of-date.
+    the file 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build_output6.txt'
+    is newer than 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+  -- Configuring done (0.1s)
+  -- Generating done (0.1s)
+  -- Build files have been written to: C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build
+  Building Custom Rule C:/Users/Hu/Desktop/CED_schedule/CED_schedule/CMakeLists.txt
+  CMake is re-running because C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp is out-of-date.
+    the file 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build_output6.txt'
+    is newer than 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+  -- Configuring done (0.0s)
+  -- Generating done (0.1s)
+  -- Build files have been written to: C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build
+  main.cpp
+  CED_Schedule.vcxproj -> C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\Release\CED_Schedule.exe
+  Building Custom Rule C:/Users/Hu/Desktop/CED_schedule/CED_schedule/CMakeLists.txt
+  CMake is re-running because C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp is out-of-date.
+    the file 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build_output6.txt'
+    is newer than 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+  -- Configuring done (0.0s)
+  -- Generating done (0.1s)
+  -- Build files have been written to: C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build

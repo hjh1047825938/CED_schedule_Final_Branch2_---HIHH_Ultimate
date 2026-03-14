@@ -84,6 +84,11 @@ void print_usage(const char* prog_name) {
     cout << "  --cchihh_reward_log <p>          Write operator rewards CSV\n";
     cout << "  --cchihh_global_stats <p>        Write global stats CSV\n";
     cout << "  --cchihh_global_stats_every <n>  Global stats interval (default: log_every)\n";
+    cout << "  --cchihh_diversity_log <p>       Write block diversity CSV\n";
+    cout << "  --cchihh_diversity_log_every <n> Diversity logging interval (default: 50)\n";
+    cout << "  --reward_variance_log <p>        Write per-generation reward variance CSV\n";
+    cout << "  --shared_bandit                  Share one bandit across all three CC blocks\n";
+    cout << "  --schedule_export <p>            Export decoded best schedule CSV at the end\n";
     cout << "  --resample_gate <n>  Stagnation gate for block resample (default: 15, 0=disable gate)\n";
     cout << "  --reward_clip <f>    Stable reward clip (default: 0.2)\n";
     cout << "  --eps0 <f>           Stable epsilon start (default: 0.2)\n";
@@ -472,6 +477,7 @@ int main(int argc, char* argv[])
     bool cchihh_random_ops = false;
     bool cchihh_fixed_ops = false;
     bool cchihh_no_blocks = false;
+    bool shared_bandit = false;
     string cchihh_op_mode = "bandit";
     string cchihh_op_stats_path;
     int cchihh_op_stats_every = 0;
@@ -482,6 +488,10 @@ int main(int argc, char* argv[])
     string cchihh_reward_log_path;
     string cchihh_global_stats_path;
     int cchihh_global_stats_every = 0;
+    string cchihh_diversity_log_path;
+    int cchihh_diversity_log_every = 50;
+    string reward_variance_log_path;
+    string schedule_export_path;
     int resample_gate = 15;
     double stable_reward_clip = 0.2;
     double eps0 = 0.2;
@@ -603,6 +613,8 @@ int main(int argc, char* argv[])
             cchihh_random_ops = true;
         } else if (strcmp(argv[i], "--cchihh_fixed_ops") == 0) {
             cchihh_fixed_ops = true;
+        } else if (strcmp(argv[i], "--shared_bandit") == 0) {
+            shared_bandit = true;
         } else if (strcmp(argv[i], "--op_mode") == 0 && i + 1 < argc) {
             cchihh_op_mode = argv[++i];
             std::transform(cchihh_op_mode.begin(), cchihh_op_mode.end(), cchihh_op_mode.begin(),
@@ -643,6 +655,15 @@ int main(int argc, char* argv[])
             cchihh_global_stats_path = argv[++i];
         } else if (strcmp(argv[i], "--cchihh_global_stats_every") == 0 && i + 1 < argc) {
             cchihh_global_stats_every = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--cchihh_diversity_log") == 0 && i + 1 < argc) {
+            cchihh_diversity_log_path = argv[++i];
+        } else if (strcmp(argv[i], "--cchihh_diversity_log_every") == 0 && i + 1 < argc) {
+            cchihh_diversity_log_every = atoi(argv[++i]);
+            if (cchihh_diversity_log_every < 1) cchihh_diversity_log_every = 1;
+        } else if (strcmp(argv[i], "--reward_variance_log") == 0 && i + 1 < argc) {
+            reward_variance_log_path = argv[++i];
+        } else if (strcmp(argv[i], "--schedule_export") == 0 && i + 1 < argc) {
+            schedule_export_path = argv[++i];
         } else if (strcmp(argv[i], "--resample_gate") == 0 && i + 1 < argc) {
             resample_gate = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--reward_clip") == 0 && i + 1 < argc) {
@@ -696,6 +717,7 @@ int main(int argc, char* argv[])
         cout << "CCHIHH gate: " << (resample_gate > 0 ? "enabled" : "disabled") << endl;
         cout << "CCHIHH blocks: " << (cchihh_no_blocks ? "disabled" : "enabled") << endl;
         cout << "CCHIHH migration: " << (cchihh_migration ? "enabled" : "disabled") << endl;
+        cout << "CCHIHH shared bandit: " << (shared_bandit ? "enabled" : "disabled") << endl;
         cout << "CCHIHH op mode: " << cchihh_op_mode << endl;
         cout << "CCHIHH fixed ops: " << (cchihh_fixed_ops ? "enabled" : "disabled") << endl;
         if (!cchihh_op_stats_path.empty()) {
@@ -708,8 +730,17 @@ int main(int argc, char* argv[])
         if (!cchihh_reward_log_path.empty()) {
             cout << "CCHIHH reward log: " << cchihh_reward_log_path << endl;
         }
+        if (!cchihh_diversity_log_path.empty()) {
+            cout << "CCHIHH diversity log: " << cchihh_diversity_log_path << endl;
+        }
+        if (!reward_variance_log_path.empty()) {
+            cout << "CCHIHH reward variance log: " << reward_variance_log_path << endl;
+        }
         if (!cchihh_global_stats_path.empty()) {
             cout << "CCHIHH global stats: " << cchihh_global_stats_path << endl;
+        }
+        if (!schedule_export_path.empty()) {
+            cout << "Schedule export: " << schedule_export_path << endl;
         }
     }
     if (solver_name == "QHH" || solver_name == "QPHH") {
@@ -1067,6 +1098,7 @@ int main(int argc, char* argv[])
         cc_solver.SetUseBlocks(!cchihh_no_blocks);
         cc_solver.SetMigrationEnabled(cchihh_migration);
         cc_solver.SetUseBandit(cchihh_op_mode == "bandit");
+        cc_solver.SetSharedBanditMode(shared_bandit);
         if (cchihh_op_mode == "roundrobin") cc_solver.SetSelectionMode(MODE_ROUND_ROBIN);
         else if (cchihh_op_mode == "random") cc_solver.SetSelectionMode(MODE_RANDOM);
         else cc_solver.SetSelectionMode(MODE_CONTEXTUAL_BANDIT);
@@ -1085,9 +1117,15 @@ int main(int argc, char* argv[])
         if (!cchihh_reward_log_path.empty()) {
             cc_solver.SetRewardLogging(cchihh_reward_log_path);
         }
+        if (!reward_variance_log_path.empty()) {
+            cc_solver.SetRewardVarianceLogging(reward_variance_log_path);
+        }
         if (!cchihh_global_stats_path.empty()) {
             int global_every = cchihh_global_stats_every > 0 ? cchihh_global_stats_every : log_every;
             cc_solver.SetGlobalStatsLogging(cchihh_global_stats_path, global_every);
+        }
+        if (!cchihh_diversity_log_path.empty()) {
+            cc_solver.SetDiversityLogging(cchihh_diversity_log_path, cchihh_diversity_log_every);
         }
         if (stable_mode) {
             cc_solver.SetStableMode(true);
@@ -1104,6 +1142,7 @@ int main(int argc, char* argv[])
             cc_solver.LogOpStatsIfNeeded(gen, gen == max_generations - 1);
             cc_solver.LogWeightsIfNeeded(gen, gen == max_generations - 1);
             cc_solver.LogGlobalStatsIfNeeded(gen, gen == max_generations - 1);
+            cc_solver.LogDiversityIfNeeded(gen, gen == max_generations - 1);
             
             if (max_evals > 0) {
                 while (solver.GetEvalCount() >= next_log_eval) {
@@ -1125,6 +1164,16 @@ int main(int argc, char* argv[])
         cout << "CCHIHH gate_blocked_total = " << cc_solver.GetGateBlockedTotal() << endl;
         cout << "CCHIHH gate_fallback_total = " << cc_solver.GetGateFallbackTotal() << endl;
         cout << "Time = " << (double)(t2 - t1) / CLOCKS_PER_SEC << " s" << endl;
+
+        if (!schedule_export_path.empty()) {
+            const string instance_tag = "T" + std::to_string(Tnum);
+            bool ok = solver.ExportScheduleCSV(cc_solver.GetGlobalBest(), schedule_export_path, seed, cc_solver.GetGlobalBestFit(), instance_tag);
+            if (ok) {
+                cout << "Schedule export written to " << schedule_export_path << endl;
+            } else {
+                cout << "Schedule export failed for " << schedule_export_path << endl;
+            }
+        }
 
 #ifdef PROFILE_EVAL
         PrintEvalProfile(solver);
@@ -1260,11 +1309,10 @@ int main(int argc, char* argv[])
         dsac_de.SetLearningRate(0.0001);
         dsac_de.SetDiscountFactor(0.99);
         dsac_de.SetTemperature(0.5);
+        dsac_de.SetSoftUpdateRate(0.5);
         dsac_de.SetBufferSize(40000);
-        dsac_de.SetBatchSize(64);
-        // Note: Training is disabled by default for efficiency
-        // Set to true for online learning (slower but adaptive)
-        dsac_de.SetTrainingEnabled(false);
+        dsac_de.SetBatchSize(512);
+        dsac_de.SetTrainingEnabled(true);
         dsac_de.Init();
         solver.ResetEvalCount();
         uint64_t next_log_eval = (uint64_t)log_every;

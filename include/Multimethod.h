@@ -173,6 +173,7 @@ public:
     void Evaluation(bool s, int p_start, int p_end);             //s = 0: evalu pop, s = 1: evalu newpop
     double Eval(const double* var);
     double EvalWithWorkspace(const double* var, Workspace& ws);
+    bool ExportScheduleCSV(const double* var, const std::filesystem::path& out_path, unsigned int seed, double fitness, const std::string& instance_tag = "");
     void IncrementEvalCount();
     void ResetEvalCount() {
         eval_count = 0;

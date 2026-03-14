@@ -1,0 +1,4 @@
+problem,runtime_mean_sec,estimated_total_evals,estimated_avg_eval_sec,notes
+T100,33.075,1210000,2.7334710743801656e-05,基于 wall-clock / 估算 eval budget 的粗略值，不是插桩 profiling
+T200,85.2539,1210000,7.045776859504132e-05,基于 wall-clock / 估算 eval budget 的粗略值，不是插桩 profiling
+T500,289.063,1210000,0.00023889504132231404,基于 wall-clock / 估算 eval budget 的粗略值，不是插桩 profiling

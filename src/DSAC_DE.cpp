@@ -12,14 +12,21 @@
 PolicyNetwork::PolicyNetwork() {
     w1.resize(HIDDEN_DIM, std::vector<double>(STATE_DIM + OBS_DIM, 0.0));
     b1.resize(HIDDEN_DIM, 0.0);
-    w2.resize(NUM_DE_OPS, std::vector<double>(HIDDEN_DIM, 0.0));
-    b2.resize(NUM_DE_OPS, 0.0);
+    w2_mid.resize(HIDDEN_DIM, std::vector<double>(HIDDEN_DIM, 0.0));
+    b2_mid.resize(HIDDEN_DIM, 0.0);
+    w3.resize(NUM_DE_OPS, std::vector<double>(HIDDEN_DIM, 0.0));
+    b3.resize(NUM_DE_OPS, 0.0);
+    cached_h1.resize(HIDDEN_DIM, 0.0);
+    cached_h2.resize(HIDDEN_DIM, 0.0);
+    cached_logits.resize(NUM_DE_OPS, 0.0);
+    cached_probs.resize(NUM_DE_OPS, 0.0);
 }
 
 void PolicyNetwork::init_weights(std::mt19937& rng) {
     // Xavier initialization
     std::normal_distribution<double> dist1(0.0, std::sqrt(2.0 / (STATE_DIM + OBS_DIM + HIDDEN_DIM)));
-    std::normal_distribution<double> dist2(0.0, std::sqrt(2.0 / (HIDDEN_DIM + NUM_DE_OPS)));
+    std::normal_distribution<double> dist2(0.0, std::sqrt(2.0 / (HIDDEN_DIM + HIDDEN_DIM)));
+    std::normal_distribution<double> dist3(0.0, std::sqrt(2.0 / (HIDDEN_DIM + NUM_DE_OPS)));
 
     for (int i = 0; i < HIDDEN_DIM; i++) {
         for (int j = 0; j < STATE_DIM + OBS_DIM; j++) {
@@ -27,52 +34,61 @@ void PolicyNetwork::init_weights(std::mt19937& rng) {
         }
         b1[i] = 0.0;
     }
+    for (int i = 0; i < HIDDEN_DIM; i++) {
+        for (int j = 0; j < HIDDEN_DIM; j++) {
+            w2_mid[i][j] = dist2(rng);
+        }
+        b2_mid[i] = 0.0;
+    }
     for (int i = 0; i < NUM_DE_OPS; i++) {
         for (int j = 0; j < HIDDEN_DIM; j++) {
-            w2[i][j] = dist2(rng);
+            w3[i][j] = dist3(rng);
         }
-        b2[i] = 0.0;
+        b3[i] = 0.0;
     }
 }
 
-std::vector<double> PolicyNetwork::forward(const std::vector<double>& state_obs) {
-    // h1 = ReLU(w1 * state_obs + b1)
-    std::vector<double> h1(HIDDEN_DIM, 0.0);
+const std::vector<double>& PolicyNetwork::forward(const std::vector<double>& state_obs) {
     for (int i = 0; i < HIDDEN_DIM; i++) {
         double sum = b1[i];
         for (size_t j = 0; j < state_obs.size(); j++) {
             sum += w1[i][j] * state_obs[j];
         }
-        h1[i] = std::max(0.0, sum); // ReLU
+        cached_h1[i] = std::max(0.0, sum); // ReLU
     }
 
-    // h2 = w2 * h1 + b2
-    std::vector<double> h2(NUM_DE_OPS, 0.0);
-    for (int i = 0; i < NUM_DE_OPS; i++) {
-        double sum = b2[i];
+    for (int i = 0; i < HIDDEN_DIM; i++) {
+        double sum = b2_mid[i];
         for (int j = 0; j < HIDDEN_DIM; j++) {
-            sum += w2[i][j] * h1[j];
+            sum += w2_mid[i][j] * cached_h1[j];
         }
-        h2[i] = sum;
+        cached_h2[i] = std::max(0.0, sum);
     }
-    return h2;
+
+    for (int i = 0; i < NUM_DE_OPS; i++) {
+        double sum = b3[i];
+        for (int j = 0; j < HIDDEN_DIM; j++) {
+            sum += w3[i][j] * cached_h2[j];
+        }
+        cached_logits[i] = sum;
+    }
+    return cached_logits;
 }
 
-std::vector<double> PolicyNetwork::get_action_probs(const std::vector<double>& state_obs) {
-    std::vector<double> logits = forward(state_obs);
+const std::vector<double>& PolicyNetwork::get_action_probs(const std::vector<double>& state_obs) {
+    const std::vector<double>& logits = forward(state_obs);
 
     // Softmax (Eq. 21)
     double max_logit = *std::max_element(logits.begin(), logits.end());
     double sum_exp = 0.0;
-    std::vector<double> probs(NUM_DE_OPS);
     for (int i = 0; i < NUM_DE_OPS; i++) {
-        probs[i] = std::exp(logits[i] - max_logit);
-        sum_exp += probs[i];
+        cached_probs[i] = std::exp(logits[i] - max_logit);
+        sum_exp += cached_probs[i];
     }
     for (int i = 0; i < NUM_DE_OPS; i++) {
-        probs[i] /= sum_exp;
+        cached_probs[i] /= sum_exp;
     }
-    return probs;
+    return cached_probs;
 }
 
 int PolicyNetwork::sample_action(const std::vector<double>& probs, std::mt19937& rng) {
@@ -93,13 +109,19 @@ int PolicyNetwork::sample_action(const std::vector<double>& probs, std::mt19937&
 QNetwork::QNetwork() {
     w1.resize(HIDDEN_DIM, std::vector<double>(STATE_DIM + OBS_DIM, 0.0));
     b1.resize(HIDDEN_DIM, 0.0);
-    w2.resize(NUM_DE_OPS, std::vector<double>(HIDDEN_DIM, 0.0));
-    b2.resize(NUM_DE_OPS, 0.0);
+    w2_mid.resize(HIDDEN_DIM, std::vector<double>(HIDDEN_DIM, 0.0));
+    b2_mid.resize(HIDDEN_DIM, 0.0);
+    w3.resize(NUM_DE_OPS, std::vector<double>(HIDDEN_DIM, 0.0));
+    b3.resize(NUM_DE_OPS, 0.0);
+    cached_h1.resize(HIDDEN_DIM, 0.0);
+    cached_h2.resize(HIDDEN_DIM, 0.0);
+    cached_q_values.resize(NUM_DE_OPS, 0.0);
 }
 
 void QNetwork::init_weights(std::mt19937& rng) {
     std::normal_distribution<double> dist1(0.0, std::sqrt(2.0 / (STATE_DIM + OBS_DIM + HIDDEN_DIM)));
-    std::normal_distribution<double> dist2(0.0, std::sqrt(2.0 / (HIDDEN_DIM + NUM_DE_OPS)));
+    std::normal_distribution<double> dist2(0.0, std::sqrt(2.0 / (HIDDEN_DIM + HIDDEN_DIM)));
+    std::normal_distribution<double> dist3(0.0, std::sqrt(2.0 / (HIDDEN_DIM + NUM_DE_OPS)));
 
     for (int i = 0; i < HIDDEN_DIM; i++) {
         for (int j = 0; j < STATE_DIM + OBS_DIM; j++) {
@@ -107,45 +129,59 @@ void QNetwork::init_weights(std::mt19937& rng) {
         }
         b1[i] = 0.0;
     }
+    for (int i = 0; i < HIDDEN_DIM; i++) {
+        for (int j = 0; j < HIDDEN_DIM; j++) {
+            w2_mid[i][j] = dist2(rng);
+        }
+        b2_mid[i] = 0.0;
+    }
     for (int i = 0; i < NUM_DE_OPS; i++) {
         for (int j = 0; j < HIDDEN_DIM; j++) {
-            w2[i][j] = dist2(rng);
+            w3[i][j] = dist3(rng);
         }
-        b2[i] = 0.0;
+        b3[i] = 0.0;
     }
 }
 
-std::vector<double> QNetwork::forward(const std::vector<double>& state_obs) {
-    std::vector<double> h1(HIDDEN_DIM, 0.0);
+const std::vector<double>& QNetwork::forward(const std::vector<double>& state_obs) {
     for (int i = 0; i < HIDDEN_DIM; i++) {
         double sum = b1[i];
         for (size_t j = 0; j < state_obs.size(); j++) {
             sum += w1[i][j] * state_obs[j];
         }
-        h1[i] = std::max(0.0, sum);
+        cached_h1[i] = std::max(0.0, sum);
     }
 
-    std::vector<double> q_values(NUM_DE_OPS, 0.0);
-    for (int i = 0; i < NUM_DE_OPS; i++) {
-        double sum = b2[i];
+    for (int i = 0; i < HIDDEN_DIM; i++) {
+        double sum = b2_mid[i];
         for (int j = 0; j < HIDDEN_DIM; j++) {
-            sum += w2[i][j] * h1[j];
+            sum += w2_mid[i][j] * cached_h1[j];
         }
-        q_values[i] = sum;
+        cached_h2[i] = std::max(0.0, sum);
     }
-    return q_values;
+
+    for (int i = 0; i < NUM_DE_OPS; i++) {
+        double sum = b3[i];
+        for (int j = 0; j < HIDDEN_DIM; j++) {
+            sum += w3[i][j] * cached_h2[j];
+        }
+        cached_q_values[i] = sum;
+    }
+    return cached_q_values;
 }
 
 double QNetwork::get_q_value(const std::vector<double>& state_obs, int action) {
-    std::vector<double> q_values = forward(state_obs);
+    const std::vector<double>& q_values = forward(state_obs);
     return q_values[action];
 }
 
 void QNetwork::copy_from(const QNetwork& other) {
     w1 = other.w1;
     b1 = other.b1;
-    w2 = other.w2;
-    b2 = other.b2;
+    w2_mid = other.w2_mid;
+    b2_mid = other.b2_mid;
+    w3 = other.w3;
+    b3 = other.b3;
 }
 
 void QNetwork::soft_update(const QNetwork& other, double tau) {
@@ -155,11 +191,17 @@ void QNetwork::soft_update(const QNetwork& other, double tau) {
         }
         b1[i] = tau * other.b1[i] + (1.0 - tau) * b1[i];
     }
+    for (int i = 0; i < HIDDEN_DIM; i++) {
+        for (int j = 0; j < HIDDEN_DIM; j++) {
+            w2_mid[i][j] = tau * other.w2_mid[i][j] + (1.0 - tau) * w2_mid[i][j];
+        }
+        b2_mid[i] = tau * other.b2_mid[i] + (1.0 - tau) * b2_mid[i];
+    }
     for (int i = 0; i < NUM_DE_OPS; i++) {
         for (int j = 0; j < HIDDEN_DIM; j++) {
-            w2[i][j] = tau * other.w2[i][j] + (1.0 - tau) * w2[i][j];
+            w3[i][j] = tau * other.w3[i][j] + (1.0 - tau) * w3[i][j];
         }
-        b2[i] = tau * other.b2[i] + (1.0 - tau) * b2[i];
+        b3[i] = tau * other.b3[i] + (1.0 - tau) * b3[i];
     }
 }
 
@@ -171,20 +213,21 @@ DSAC_DE_Solver::DSAC_DE_Solver(MultiMet* solver, int popsize)
     : solver(solver), popsize(popsize), nvar(solver->Nvar),
       max_generations(1000), F_base(0.5), CR(0.5),
       learning_rate(0.0001), discount_factor(0.99), temperature(0.5),
-      tau(0.005), buffer_size(40000), batch_size(512),
+      tau(0.5), buffer_size(40000), batch_size(512),
       training_enabled(true), K1(1.0), K2(1.0),
       initial_gbest_fit(std::numeric_limits<double>::max()),
       global_best_fit(std::numeric_limits<double>::max()),
       pop_mean(0.0), pop_std(0.0), pop_worst(0.0),
-      stagnation_count(0), total_op_selections(0)
+      stagnation_count(0), total_op_selections(0), train_counter(0)
 {
     global_best = new double[nvar];
     trial.resize(nvar);
     r_indices.resize(5);
+    selected_r_indices_cache.resize(popsize);
+    selected_state_obs_cache.resize(popsize, std::vector<double>(STATE_DIM + OBS_DIM, 0.0));
 
-    // Initialize RNG
-    std::random_device rd;
-    rng.seed(rd());
+    // Keep DSAC-DE reproducible under the same CLI --seed.
+    rng.seed(static_cast<uint32_t>(solver->seed));
 }
 
 DSAC_DE_Solver::~DSAC_DE_Solver() {
@@ -224,6 +267,7 @@ void DSAC_DE_Solver::Init() {
     compute_population_stats();
 
     replay_buffer.clear();
+    train_counter = 0;
 }
 
 void DSAC_DE_Solver::compute_population_stats() {
@@ -511,54 +555,167 @@ void DSAC_DE_Solver::train_step() {
     if (!training_enabled || (int)replay_buffer.size() < batch_size) {
         return;
     }
-
-    // Only train every 10 generations to reduce overhead
-    static int train_counter = 0;
-    if (++train_counter % 10 != 0) {
-        return;
-    }
+    train_counter++;
 
     // Sample mini-batch
     std::uniform_int_distribution<int> dist(0, (int)replay_buffer.size() - 1);
+    const double eps = 1e-10;
+    const double target_entropy = std::log((double)NUM_DE_OPS) * 0.98;
+    const double lr = learning_rate / batch_size;
+    auto clip = [](double g) { return std::max(-1.0, std::min(1.0, g)); };
 
-    // Reduced batch processing for efficiency
-    int actual_batch = std::min(batch_size, 32);
-
-    for (int b = 0; b < actual_batch; b++) {
+    for (int b = 0; b < batch_size; b++) {
         int idx = dist(rng);
         const DSACTransition& trans = replay_buffer[idx];
 
-        // Get target Q-value
-        std::vector<double> next_probs = policy.get_action_probs(trans.next_state);
-        std::vector<double> q1_next = q1_target.forward(trans.next_state);
-        std::vector<double> q2_next = q2_target.forward(trans.next_state);
+        // Paper Eq. (23): target action is the greedy action from the policy.
+        const std::vector<double>& next_probs_ref = policy.get_action_probs(trans.next_state);
+        const std::vector<double>& q1_next_ref = q1_target.forward(trans.next_state);
+        const std::vector<double>& q2_next_ref = q2_target.forward(trans.next_state);
 
-        double target_q = 0.0;
+        int next_action = 0;
+        double best_prob = -1.0;
         for (int a = 0; a < NUM_DE_OPS; a++) {
-            double min_q = std::min(q1_next[a], q2_next[a]);
-            double log_prob = (next_probs[a] > 1e-10) ? std::log(next_probs[a]) : -23.0;
-            target_q += next_probs[a] * (min_q - temperature * log_prob);
+            const double pa = std::max(next_probs_ref[a], eps);
+            tmp_next_probs[a] = pa;
+            tmp_next_q1[a] = q1_next_ref[a];
+            tmp_next_q2[a] = q2_next_ref[a];
+            if (pa > best_prob) {
+                best_prob = pa;
+                next_action = a;
+            }
+        }
+        const double next_min_q = std::min(tmp_next_q1[next_action], tmp_next_q2[next_action]);
+        const double target = trans.reward + (trans.done ? 0.0 : discount_factor * next_min_q);
+
+        // 2) Update Q1 (all layers)
+        const std::vector<double>& q1_vals = q1.forward(trans.state);
+        const double q1_error = clip(q1_vals[trans.action] - target);
+        for (int h2 = 0; h2 < HIDDEN_DIM; h2++) {
+            const double w3_old = q1.w3[trans.action][h2];
+            tmp_hidden_grad2[h2] = (q1.cached_h2[h2] > 0.0) ? (q1_error * w3_old) : 0.0;
+            q1.w3[trans.action][h2] -= lr * (q1_error * q1.cached_h2[h2]);
+        }
+        q1.b3[trans.action] -= lr * q1_error;
+        for (int h1 = 0; h1 < HIDDEN_DIM; h1++) {
+            double dh1 = 0.0;
+            if (q1.cached_h1[h1] > 0.0) {
+                for (int h2 = 0; h2 < HIDDEN_DIM; h2++) {
+                    dh1 += tmp_hidden_grad2[h2] * q1.w2_mid[h2][h1];
+                }
+            }
+            tmp_hidden_grad1[h1] = (q1.cached_h1[h1] > 0.0) ? dh1 : 0.0;
+            for (size_t k = 0; k < trans.state.size(); k++) {
+                q1.w1[h1][k] -= lr * tmp_hidden_grad1[h1] * trans.state[k];
+            }
+            q1.b1[h1] -= lr * tmp_hidden_grad1[h1];
+        }
+        for (int h2 = 0; h2 < HIDDEN_DIM; h2++) {
+            const double dh2 = tmp_hidden_grad2[h2];
+            for (int h1 = 0; h1 < HIDDEN_DIM; h1++) {
+                q1.w2_mid[h2][h1] -= lr * dh2 * q1.cached_h1[h1];
+            }
+            q1.b2_mid[h2] -= lr * dh2;
         }
 
-        double y = trans.reward + (trans.done ? 0.0 : discount_factor * target_q);
-
-        // Update Q-networks (simplified SGD)
-        std::vector<double> q1_vals = q1.forward(trans.state);
-        std::vector<double> q2_vals = q2.forward(trans.state);
-
-        double q1_error = q1_vals[trans.action] - y;
-        double q2_error = q2_vals[trans.action] - y;
-
-        // Update output layer weights for the selected action
-        for (int h = 0; h < HIDDEN_DIM; h++) {
-            q1.w2[trans.action][h] -= learning_rate * q1_error * 0.01;
-            q2.w2[trans.action][h] -= learning_rate * q2_error * 0.01;
+        // 2) Update Q2 (all layers)
+        const std::vector<double>& q2_vals = q2.forward(trans.state);
+        const double q2_error = clip(q2_vals[trans.action] - target);
+        for (int h2 = 0; h2 < HIDDEN_DIM; h2++) {
+            const double w3_old = q2.w3[trans.action][h2];
+            tmp_hidden_grad2[h2] = (q2.cached_h2[h2] > 0.0) ? (q2_error * w3_old) : 0.0;
+            q2.w3[trans.action][h2] -= lr * (q2_error * q2.cached_h2[h2]);
         }
-        q1.b2[trans.action] -= learning_rate * q1_error * 0.01;
-        q2.b2[trans.action] -= learning_rate * q2_error * 0.01;
+        q2.b3[trans.action] -= lr * q2_error;
+        for (int h1 = 0; h1 < HIDDEN_DIM; h1++) {
+            double dh1 = 0.0;
+            if (q2.cached_h1[h1] > 0.0) {
+                for (int h2 = 0; h2 < HIDDEN_DIM; h2++) {
+                    dh1 += tmp_hidden_grad2[h2] * q2.w2_mid[h2][h1];
+                }
+            }
+            tmp_hidden_grad1[h1] = (q2.cached_h1[h1] > 0.0) ? dh1 : 0.0;
+            for (size_t k = 0; k < trans.state.size(); k++) {
+                q2.w1[h1][k] -= lr * tmp_hidden_grad1[h1] * trans.state[k];
+            }
+            q2.b1[h1] -= lr * tmp_hidden_grad1[h1];
+        }
+        for (int h2 = 0; h2 < HIDDEN_DIM; h2++) {
+            const double dh2 = tmp_hidden_grad2[h2];
+            for (int h1 = 0; h1 < HIDDEN_DIM; h1++) {
+                q2.w2_mid[h2][h1] -= lr * dh2 * q2.cached_h1[h1];
+            }
+            q2.b2_mid[h2] -= lr * dh2;
+        }
+
+        // 3) Update policy
+        const std::vector<double>& probs = policy.get_action_probs(trans.state);
+        const std::vector<double>& q1_pi = q1.forward(trans.state);
+        const std::vector<double>& q2_pi = q2.forward(trans.state);
+        double adv_expectation = 0.0;
+
+        for (int a = 0; a < NUM_DE_OPS; a++) {
+            const double pa = std::max(probs[a], eps);
+            tmp_qmin[a] = std::min(q1_pi[a], q2_pi[a]);
+            tmp_advantage[a] = temperature * std::log(pa) - tmp_qmin[a];
+            adv_expectation += pa * tmp_advantage[a];
+        }
+
+        for (int a = 0; a < NUM_DE_OPS; a++) {
+            const double pa = std::max(probs[a], eps);
+            tmp_dlogit[a] = clip(pa * (tmp_advantage[a] - adv_expectation));
+        }
+
+        for (int h2 = 0; h2 < HIDDEN_DIM; h2++) {
+            double dh2 = 0.0;
+            for (int a = 0; a < NUM_DE_OPS; a++) {
+                dh2 += tmp_dlogit[a] * policy.w3[a][h2];
+            }
+            tmp_hidden_grad2[h2] = (policy.cached_h2[h2] > 0.0) ? dh2 : 0.0;
+        }
+
+        for (int a = 0; a < NUM_DE_OPS; a++) {
+            for (int h2 = 0; h2 < HIDDEN_DIM; h2++) {
+                policy.w3[a][h2] -= lr * tmp_dlogit[a] * policy.cached_h2[h2];
+            }
+            policy.b3[a] -= lr * tmp_dlogit[a];
+        }
+
+        for (int h1 = 0; h1 < HIDDEN_DIM; h1++) {
+            double dh1 = 0.0;
+            if (policy.cached_h1[h1] > 0.0) {
+                for (int h2 = 0; h2 < HIDDEN_DIM; h2++) {
+                    dh1 += tmp_hidden_grad2[h2] * policy.w2_mid[h2][h1];
+                }
+            }
+            tmp_hidden_grad1[h1] = (policy.cached_h1[h1] > 0.0) ? dh1 : 0.0;
+            for (size_t k = 0; k < trans.state.size(); k++) {
+                policy.w1[h1][k] -= lr * tmp_hidden_grad1[h1] * trans.state[k];
+            }
+            policy.b1[h1] -= lr * tmp_hidden_grad1[h1];
+        }
+        for (int h2 = 0; h2 < HIDDEN_DIM; h2++) {
+            for (int h1 = 0; h1 < HIDDEN_DIM; h1++) {
+                policy.w2_mid[h2][h1] -= lr * tmp_hidden_grad2[h2] * policy.cached_h1[h1];
+            }
+            policy.b2_mid[h2] -= lr * tmp_hidden_grad2[h2];
+        }
+
+        // 4) Temperature alpha update
+        double actual_entropy = 0.0;
+        for (int a = 0; a < NUM_DE_OPS; a++) {
+            const double pa = std::max(probs[a], eps);
+            actual_entropy -= pa * std::log(pa);
+        }
+        temperature += lr * (actual_entropy - target_entropy);
+        if (temperature < 0.01) {
+            temperature = 0.01;
+        } else if (temperature > 5.0) {
+            temperature = 5.0;
+        }
     }
 
-    // Soft update target networks
+    // 5) Soft update target networks
     q1_target.soft_update(q1, tau);
     q2_target.soft_update(q2, tau);
 }
@@ -574,8 +731,19 @@ void DSAC_DE_Solver::RunGeneration(int gen) {
     std::vector<double> v_buffer(nvar);
 
     for (int i = 0; i < popsize; i++) {
-        // Select operator using UCB
-        int action = select_operator_ucb();
+        // DSAC policy-driven operator selection:
+        // obs_i = get_observation(i), state_obs = global_state || obs_i, action ~ pi(.|state_obs)
+        std::vector<double> obs = get_observation(i);
+        for (int k = 0; k < 5; k++) {
+            selected_r_indices_cache[i][k] = r_indices[k];
+        }
+
+        std::vector<double>& state_obs = selected_state_obs_cache[i];
+        std::copy(global_state.begin(), global_state.end(), state_obs.begin());
+        std::copy(obs.begin(), obs.end(), state_obs.begin() + STATE_DIM);
+
+        const std::vector<double>& probs = policy.get_action_probs(state_obs);
+        int action = policy.sample_action(probs, rng);
         actions_used[i] = action;
 
         // Adaptive scaling factor based on stagnation
@@ -589,10 +757,10 @@ void DSAC_DE_Solver::RunGeneration(int gen) {
         double F = F_base + 0.3 * (dist(rng) - 0.5);
         F = std::max(0.2, std::min(0.9, F));
 
-        // Generate mutant vector based on selected operator
-        select_random_indices(i, 5);
-        int r1 = r_indices[0], r2 = r_indices[1], r3 = r_indices[2];
-        int r4 = r_indices[3], r5 = r_indices[4];
+        // Generate mutant vector using the same r1-r5 sampled during observation
+        int r1 = selected_r_indices_cache[i][0], r2 = selected_r_indices_cache[i][1];
+        int r3 = selected_r_indices_cache[i][2], r4 = selected_r_indices_cache[i][3];
+        int r5 = selected_r_indices_cache[i][4];
 
         for (int j = 0; j < nvar; j++) {
             switch (action) {
@@ -696,19 +864,22 @@ void DSAC_DE_Solver::RunGeneration(int gen) {
     if (training_enabled) {
         double reward = compute_reward(gen, prev_gbest);
         std::vector<double> next_global_state = get_global_state();
-        std::vector<double> next_obs = get_observation(0);
-        std::vector<double> next_state_obs = next_global_state;
-        next_state_obs.insert(next_state_obs.end(), next_obs.begin(), next_obs.end());
 
-        DSACTransition trans;
-        trans.state = global_state;
-        trans.state.insert(trans.state.end(), get_observation(0).begin(), get_observation(0).end());
-        trans.action = actions_used[0];
-        trans.reward = reward;
-        trans.next_state = next_state_obs;
-        trans.done = (gen == max_generations - 1);
+        for (int i = 0; i < popsize; i++) {
+            std::vector<double> next_obs = get_observation(i);
+            std::vector<double> next_state_obs(STATE_DIM + OBS_DIM, 0.0);
+            std::copy(next_global_state.begin(), next_global_state.end(), next_state_obs.begin());
+            std::copy(next_obs.begin(), next_obs.end(), next_state_obs.begin() + STATE_DIM);
 
-        store_transition(trans);
+            DSACTransition trans;
+            trans.state = selected_state_obs_cache[i];
+            trans.action = actions_used[i];
+            trans.reward = reward;
+            trans.next_state = std::move(next_state_obs);
+            trans.done = (gen == max_generations - 1);
+            store_transition(trans);
+        }
+
         train_step();
     }
 }

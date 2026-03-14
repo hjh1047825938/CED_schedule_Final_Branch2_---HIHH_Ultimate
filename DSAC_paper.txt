@@ -1,0 +1,1286 @@
+
+===== PAGE 1 =====
+IEEE TRANSACTIONS ON INDUSTRIAL INFORMA TICS, VOL. 20, NO. 2, FEBRUARY 2024 1753
+DSAC-Conﬁgured Differential Evolution
+for Cloud–Edge–Device Collaborative
+T ask Scheduling
+Y uanjun Laili , Member, IEEE, Xiaohan Wang , Lin Zhang , Senior Member, IEEE,
+and Lei Ren , Member, IEEE
+Abstract—Industrial Internet of Things enables various
+manufacturing processes executed in distributed produc-
+tion lines and ﬂexible workshops. With different cloud–
+edge–device collaboration ways, interconnected manufac-
+turing tasks and computational tasks are cooperatively
+completed in manufacturing cells, cloud resources, and
+edge resources. Large-scale decision variables and com-
+plex precedence constraints make the scheduling problem
+intractable. To this end, this article proposed a discretized
+soft actor–critic conﬁgured differential evolution algorithm
+to ﬁnd a stable solution for the cloud–edge–device collab-
+orative task-scheduling problem. A mathematical model is
+established to describe the relationship between different
+tasks, the variables, the main constraints in collaboration,
+and the scheduling targets. A decentralized partially ob-
+servable Markov decision process is modeled with ﬁve neu-
+ral networks and three discretized loss functions to formu-
+late the discretized soft actor–critic policy efﬁciently and
+enable it to ﬁnd the best differential evolution conﬁgura-
+tions for different scheduling cases. Experimental analysis
+of four cloud–edge–device scheduling instances indicates
+that the proposed method trained in one case is adaptable
+to the other three cases. In the four cases, the proposed
+method reduces the total objective by 30.82% and 44.35% at
+most compared to ﬁve deep-reinforcement-learning-based
+differential evolution algorithms and seven typical evolu-
+tionary algorithms, respectively.
+Index Terms —Cloud–edge–device collaboration, deep
+reinforcement learning (DRL), differential evolution (DE),
+Industrial Internet of Things (IIoT), task scheduling.
+Manuscript received 3 April 2023; accepted 23 May 2023. Date of
+publication 31 May 2023; date of current version 19 January 2024. This
+work was supported by the National Key Research and Development
+Program of China under Grant 2021YFB3300400 and in part by the
+National Natural Science Foundation of China under Grant 62173017
+and Grant 62225302. Paper no. TII-23-1160. Paper no. TII-23-1160.
+(Corresponding authors: Xiaohan Wang; Lei Ren.)
+Y uanjun Laili and Lei Ren are with the School of Automation Science
+and Electrical Engineering, Beihang University , Beijing 100191, China,
+and also with the Zhongguancun Laboratory , Beijing 100094, China
+(e-mail: lailiyuanjun@buaa.edu.cn; renlei@buaa.edu.cn).
+Xiaohan Wang and Lin Zhang are with the School of Automation
+Science and Electrical Engineering, Beihang University , Beijing 100191,
+China (e-mail: by1903042@buaa.edu.cn; zhanglin@buaa.edu.cn).
+Color versions of one or more ﬁgures in this article are available at
+https://doi.org/10.1109/TII.2023.3281661.
+Digital Object Identiﬁer 10.1109/TII.2023.3281661
+Fig. 1. Structure of IIoT and a manufacturing example with the digital
+twin.
+I. I NTRODUCTION
+I
+NDUSTRIAL Internet of Things (IIoT) closely connects
+manufacturing resources, suppliers, products, and customers
+with cloud and edge [1]. A general structure of IIoT is shown
+in Fig. 1. Cloud data center provides abundant computing re-
+sources and storage for industrial data management, multidisci-
+plinary knowledge extraction, and complex computation. Edge
+resources nearby industrial ﬁelds alleviate the pressure of the
+cloud and make real-time supervision and control under the
+assistance of the cloud [2].
+There are two kinds of tasks to be scheduled in an IIoT-based
+manufacturing system: 1) manufacturing tasks and 2) compu-
+tational tasks. A manufacturing task deﬁnes the machining or
+the assembly process, which can be ﬁnished by a production
+line or a workshop. In a general production scenario, each
+manufacturing task is further divided into a series of operations.
+These operations have strict precedence relationships and can
+be executed distributively by different manufacturing devices.
+To implement efﬁcient production, each manufacturing task
+is usually accompanied by a group of computational appli-
+cations, such as machining control, data sampling, numerical
+analysis, or digital twin. In traditional manufacturing systems,
+these computation applications are deployed on OPC (OLE
+(Object Linking and Embedding) for Process Control) servers
+(servers in the OLE for Process Control-Uniﬁed Architecture
+(OPC-UA) architecture [3]) or Programmable Logic Controller
+1551-3203 © 2023 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: BEIHANG UNIVERSITY. Downloaded on February 26,2026 at 07:04:15 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 2 =====
+1754 IEEE TRANSACTIONS ON INDUSTRIAL INFORMA TICS, VOL. 20, NO. 2, FEBRUARY 2024
+(PLC) servers locally. In an IIoT platform, they can be combined
+as a computational task ofﬂoading to an edge server or a cloud
+server. Therefore, a manufacturing task is usually associated
+with a computational task.
+Consider tasks in Fig.1 as an example, there are six machining
+tasks (blue rectangular) producing three subassemblies and one
+assembly task (green rectangular) producing a product. Each
+machining task corresponds to a digital twin simulation (blue
+circle) while the last assembly task is associated with a data
+summarization task to predict product quality. When the ﬁrst
+digital twin simulation task is initiated, the rest ﬁve digital
+twin simulation tasks should be started to collect environmental
+data and establish simulation as well. The six digital twin tasks
+should be carried out cooperatively and ﬁnished simultaneously
+to demonstrate a complete production process of the three
+subassemblies. Then, the data summarization task collects data
+from the six digital twin simulation tasks and starts assembly
+analysis. Obviously, the six digital twin simulation tasks have
+a start-time constraint with a precursor start and an end-time
+constraint with a precursor ﬁnish while the data summariza-
+tion task has a start time constraint with precursor ﬁnish. The
+connection relationships between such computational tasks are
+complex. The communication overhead among cloud, edge, and
+manufacturing resources increases largely [4], [5].
+In addition, a computational task requires data from one or
+more manufacturing devices and data synchronization with these
+devices. If a cloud server executes the task, its input and output
+are collected and deployed by an edge server. On the contrary, if
+an edge server executes the task, it applies empirical knowledge
+and historical data from the cloud data center to implement fast
+computing.
+With different cloud–edge collaboration modes, numerous
+tasks interconnected in complex ways are submitted to the IIoT
+platform sporadically. These task requests come from complex
+product suppliers for producing components and subassemblies.
+As a single complex product (such as an electromobile or au-
+tomobile) has hundreds or even thousands of components and
+subassemblies, an IIoT platform that connects hundreds of in-
+dustrial devices and edge servers can accept at least one hundred
+manufacturing tasks at a time. Suppose each task includes ﬁve
+basic operations, there are at least 500 variables to determine the
+devices for ﬁnishing these manufacturing tasks, 500 variables to
+determine the priority of their operations, 100 variables to decide
+whether the corresponding computational tasks are ofﬂoaded
+to edge or cloud, and 100 variables to ﬁnd the suitable server
+for executing the computational tasks. Thousands of variables
+make the scheduling of hybrid tasks in the IIoT platform more
+challenging [6].
+Existing research on task scheduling in the IIoT environment
+focuses on either the computational task-scheduling problems
+in the cloud–edge environment, or the manufacturing task-
+scheduling problems in the industrial ﬁeld [7]. Little research
+considered the complex interconnections between these two
+sides. The tasks can form a cyclic graph with complex start-
+time and end-time constraints. Hence, ﬁnding problem-speciﬁc
+heuristics and methods for scheduling scenarios with different
+complex precedence constraints is nontrivial.
+Therefore, this article establishes a mathematical model of the
+hybrid task-scheduling problem in the IIoT environment consid-
+ering three task precedence constraints. A deep-reinforcement-
+learning (DRL) conﬁgured differential evolution (DE) algorithm
+is designed to solve this problem. The evolutionary process is
+modeled as a decentralized partially observable Markov decision
+process (Dec-POMDP). Then, a discretized soft actor–critic
+(DSAC) policy is established for selecting DE mutation opera-
+tors. In contrast to other DRL algorithms integrated into the DE
+algorithm, the DSAC alleviates the overﬁtting issue and reduces
+the instability in the DE algorithm via maximum entropy learn-
+ing. Five neural networks and three loss functions are designed
+to train the DSAC policy efﬁciently. Experimental analysis of
+four cases shows that the proposed DSAC-DE trained in one case
+is always adaptable to the other three cases. In the four cases, the
+proposed DSAC-DE reduces the overall manufacturing time and
+energy consumption by 44.35% and 30.82% at most compared to
+seven typical EAs and ﬁve DRL-integrated DE-based (DRL-DE)
+algorithms, respectively.
+The rest of this article is organized as follows: Section II
+presents the recent works on the research of task scheduling in
+the IIoT environment. Section III gives the mathematical model
+of cloud–edge–device collaborative task scheduling in IIoT.
+Section IV introduces the details of the proposed DSAC-DE
+algorithm. Experimental results are discussed in Section V.
+Finally, Section VI concludes this article.
+II. R
+ELA TEDWORKS
+This section gives a brief overview of the research on task
+scheduling in the IIoT environment from two aspects: 1) problem
+modeling and 2) method design.
+A. Task-Scheduling Models in Cloud–Edge
+Collaboration
+Computational task scheduling in fog, edge, and cloud com-
+puting has been widely studied [8], [9]. The characteristics of
+the hierarchical resource connection ways [6], different wireless
+transmission costs, and the network function virtualization rules
+that inﬂuence the computation and communication efﬁciency are
+introduced. Considering the collaboration between cloud and
+edge, Xie et al. [10] and Liu et al. [11] scheduled the com-
+putational tasks considering the communication of cloud, edge,
+and manufacturing devices. Nevertheless, the inﬂuence between
+manufacturing tasks and computational tasks is ignored.
+In recent years, manufacturing task scheduling in ﬂexible and
+distributed workshops has attracted considerable interest [12],
+[13]. The main target is to realize just-in-time manufacturing
+with due-time constraints [14]. The issues about production
+line reconﬁguration, dynamic resource occupancy, and logistics
+among distributed workshops that inﬂuence the manufacturing
+efﬁciency are taken into consideration [15], [16], [17].V a r i -
+ous task precedence constraints under different production pro-
+cesses, including sequence, parallel, and loop, are analyzed[17].
+However, the collaboration of cloud and edge for manufacturing
+tasks is not considered. The inﬂuence between manufacturing
+tasks and the related computational tasks is neglected.
+Authorized licensed use limited to: BEIHANG UNIVERSITY. Downloaded on February 26,2026 at 07:04:15 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 3 =====
+LAILI et al.: DSAC-CONFIGURED DIFFERENTIAL EVOLUTION FOR CLOUD–EDGE–DEVICE COLLABORA TIVE T ASK SCHEDULING 1755
+B. Task-Scheduling Algorithms in the IIoT Environment
+Commonly applied scheduling algorithms include determin-
+istic mathematical programming methods, EAs, and DRL. Due
+to the high complexity, deterministic methods are usually ap-
+plied as heuristics for small-scale local search [6]. EAs with
+population-based iteration are more adaptable for solving dif-
+ferent task-scheduling problems [13], [15]. Y et the extensibility
+of a ﬁxed EA for different scheduling scenarios is limited.
+To solve dynamic scheduling problems, DRL is introduced to
+learn policies under dynamic contexts and generate scheduling
+solutions [12]. However, DRL requires a long training process
+to obtain similar accuracy compared with classical EAs [18].
+Recent research also applies DRL as a hyperheuristic to adjust
+EAs in solving task-scheduling problems [19]. Typical studies
+include the use of deep Q-learning network (DQN) and actor-
+critic (AC) models to adjust hyperparameters of GAs, variable
+neighborhood search, particle swarm optimization (PSO), DEs,
+and so forth [20], [21], [22]. Based on these studies, Zhang
+et al. [23] adopted a radial basis network as a surrogate to
+expand the dataset of DQN. Sharma et al. [24] deﬁned complex
+state representation with 99 variables and three different reward
+functions to train the DQN. Xu et al. [25] deﬁned the reward
+as the improvement of the current state and the next state
+during the evolutionary search. However, all of these works
+model the evolutionary process as a Markov decision process
+(MDP) without random noise. However, the randomness in the
+evolutionary search process always makes the training of DRL
+nontrivial, but none of these works discussed this issue.
+III. C
+LOUD–EDGE–DEVICE COLLABORA TIVE
+TASK-SCHEDULING MODEL IN THE IIOTE NVIRONMENT
+This section gives a mathematical representation of the cloud–
+edge–device collaborative task-scheduling model in the IIoT
+environment. The main notations used in this article are listed
+in Table I.
+The cloud–edge–device collaborative task-scheduling prob-
+lem means assigning manufacturing devices, edge servers, and
+cloud servers to execute the collaborative computational tasks
+and manufacturing tasks. Suppose there are N manufacturing
+tasks J = {J
+1,J 2,...,J N} and N computational tasks C =
+{C1,C 2,...,C N} submitted to the IIoT platform at a time.
+A manufacturing task Ji contains ni operations of Oi =
+{Oi,1,Oi,2,...,O i,ni}. These operations are executed in se-
+quence. Each operation is processed by a manufacturing de-
+vice. There are a set of available manufacturing devices D =
+{D1,D 2,... } in the IIoT platform. Each device Dl ∈D has a
+task queueQ(D)
+l by priority. TheN manufacturing tasks can be
+executed independently.
+A computational task Ci serves for a manufacturing task
+Ji can be described by six properties, i.e., {Rcpu,i,R mem,i,ti,
+H(up)
+i ,H (down)
+i , Λi}, specifying the required amount of CPU
+cores and memory size forCi, the basic computational time, the
+amount of data required from the ni devices for executing Ji,
+the amount of knowledge required from the cloud data center,
+and the neighbor tasks that communicate with C
+i, respectively.
+T ABLE I
+PRIMARY NOTATIONS
+The length of H(up)
+i is ni. The interconnection among N com-
+putational tasks in IIoT can be summarized into the following
+three types of execution constraints.
+Type I precedence: A computational task can start only if the
+precursor tasks are ﬁnished.
+Type II precedence: A computational task can start only if the
+precursor tasks are started.
+Type III precedence: A computational task can ﬁnish only if
+the precursor tasks are ﬁnished.
+Authorized licensed use limited to: BEIHANG UNIVERSITY. Downloaded on February 26,2026 at 07:04:15 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 4 =====
+1756 IEEE TRANSACTIONS ON INDUSTRIAL INFORMA TICS, VOL. 20, NO. 2, FEBRUARY 2024
+Accordingly, the precursor tasks of the constraint κ∈[1, 3]
+are represented by a set Λ(κ)
+i ⊂Λi.
+The candidate cloud servers for a computational task are
+represented by a set S. The candidate edge servers for Ci
+are Ei, which is a collection of available edge servers nearby
+Di,j,∀j ∈[1,ni]. A server includes two main properties, i.e.,
+{V (cloud/edge)
+cpu,k ,V (cloud/edge)
+mem,k }, which represent the CPU cores and
+memory size of the server. A computational task Ci can be
+assigned to a server Sk or Ei,k if Rcpu,i ≤V (cloud/edge)
+cpu,k and
+Rmem,j ≤V (cloud/edge)
+mem,k are satisﬁed.
+Under this scenario, the decision variables are as follows.
+1) 1) Xi,j,∀i ∈[1,N ],j ∈[1,ni] determines the device for
+processing a manufacturing operation Oi,j . Each opera-
+tion corresponds to a collection of candidate devicesDi,j .
+It has Xi,j ∈Di,j .
+2) 2) Yi,j,∀i ∈[1,N ],j ∈[1,ni] indicates the priority of
+Oi,j . If multiple operations are assigned to a manufactur-
+ing device, the operations are executed from the highest
+priority to the lowest one.
+3) 3) Bi,∀i ∈[1,N ] determines whether a computational
+task Ci is processed on an edge server or a cloud server.
+Bi = 1 meansCi is assigned to a nearby edge whileBi =
+0 means Ci is executed in cloud.
+4) 4) Zi,∀i ∈[1,N ] indicates the server for executing Ci.
+if Bi = 1, Zi ∈Ei, otherwise Zi ∈S. The distance be-
+tween any edge server in Ei and the device Xi,j,∀j ∈
+[1,ni] should be less than the maximum wireless trans-
+mission distance.
+The following assumptions are made.
+1) 1. Each manufacturing operation is processed by a device
+and cannot be divided further.
+2) 2. Each computational task represents a virtual machine
+or a microservice with multiple computation applications
+for a manufacturing task.
+3) 3. Each device executes one and only one operation at a
+time.
+4) 4. Each cloud/edge server can execute multiple compu-
+tational tasks if it is not overloaded, i.e., the CPU and
+memory capacities are not fully occupied.
+A. Time and Energy Consumption by Manufacturing
+Tasks
+An operation O
+i,j will be started if its precursor Oi,j−1 is
+ﬁnished and all of the operations in Q(D)
+Xi,j that have higher
+priority than Oi,j are ﬁnished. Therefore, suppose the starting
+time of an operation Oi,j isT (start)
+Oi,j , it is calculated by
+T (start)
+Oi,j =m a x
+⎛
+⎝T (end)
+Oi,j−1 +T (trans)
+Xi,j−1,Xi,j , max
+l∈Q(D)
+Xi,j ,Yl>Y i,j
+T (end)
+l
+⎞
+⎠
+(1)
+whereT (trans)
+Xi,j−1,Xi,j is the transportation time between two devices
+that process the operations Oi,j−1 and Oi,j , respectively. Yl is
+the priority of the lth operation in Q(D)
+Xi,j .
+Then, the end time of Oi,j is calculated by
+T (end)
+Oi,j = T (start)
+Oi,j +T (proc)
+Oi,j (2)
+whereT (proc)
+Oi,j is the basic processing time ofOi,j . The end time of
+a manufacturing taskJi equals the end time of its last operation,
+i.e., T (end)
+Ji = T (end)
+Oi,ni
+. Therefore, the overall makespan of the N
+manufacturing tasks are calculated by
+T (m) =m a x
+i∈[1,N ]
+T (end)
+Ji . (3)
+Suppose P (D)
+l is the average power of device Dl, the energy
+consumption of N manufacturing tasks is represented by
+W (m) =
+|D|∑
+l=1
+P (D)
+l ·
+⎛
+⎝T (end)
+Q(D)
+l,|Q(D)
+l |
+−T (start)
+Q(D)
+l,1
+⎞
+⎠ (4)
+where Q(D)
+l,1 and Q(D)
+l,|Q(D)
+l | are the ﬁrst operation and the last
+operation in Q(D)
+l , and |Q(D)
+l | is the number of operations
+executed in Dl,|D| is the number of devices in D.
+B. Time and Energy Consumption by Computational
+Tasks
+1) Computational Tasks to Edge Servers: If Bi = 1, the
+computational task Ci is executed by an edge server Zi.T h e
+selected edge server Zi for executing Ci has to receive data
+from ni devices Xi = {Xi,1,Xi,2,...,X i,ni}. According to
+the work in[26] and [27], the transmission rateri(Xi,j ) between
+ad e v i c eXi,j and an edge server Zi is represented by
+ri(Xi,j )= w log2
+(
+1 + qXi,j gXi,j,i
+ϖ0 + ∑
+l∈Di\Xi,j qlgl,i
+)
+(5)
+where w is the basic channel bandwidth, ϖ0 denotes the com-
+munication noise, qXi,j and ql are the transmission power of
+devices Xi,j and Dl, respectively. gXi,j,i or gl,i is the channel
+gain from Xi,j or Dl to the base station Zi nearby.Di \Xi,j
+represents the device list involving all elements of Di except
+Xi,j .
+After the construction of the communication, the related
+devicesXi will upload data to the server. The data upload time
+forCi in an edge server is calculated using
+T (edge)
+up,i =m a x
+l∈[1,ni]
+H(up)
+i,l
+ri(Xi,l) (6)
+where H(up)
+i,l ∈H(up)
+i is the amount of data required by the lth
+device. The data download time from the cloud data center for
+task Ci is obtained by
+T (edge)
+down,i = H(down)
+i
+rcloud
+(7)
+where rcloud represents the bandwidth between an edge server
+and the cloud.
+Hence, the start time T (start)
+Ci , the computation time TCi , and
+the end timeT (end)
+Ci ofCi inZi can be calculated by (8), (9), and
+Authorized licensed use limited to: BEIHANG UNIVERSITY. Downloaded on February 26,2026 at 07:04:15 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 5 =====
+LAILI et al.: DSAC-CONFIGURED DIFFERENTIAL EVOLUTION FOR CLOUD–EDGE–DEVICE COLLABORA TIVE T ASK SCHEDULING 1757
+(10), respectively
+T (start)
+Ci =m a x
+{
+max
+k∈Λ(1)
+i
+T (end)
+k , max
+k∈Λ(2)
+i
+T (start)
+k ,T (start)
+Oi,1
+}
+(8)
+TCi =m a x
+{
+T (edge)
+up,i ,T (edge)
+down,i
+}
++ti, (9)
+T (end)
+Ci =m a x
+{
+max
+k∈Λ(3)
+i
+T (end)
+k ,T (start)
+Ci +TCi,T (end)
+Ji
+}
+. (10)
+The energy consumption of a computational task Ci executing
+in an edge serverZi includes the communication energy and the
+computing energy, as deﬁned by
+W (c)
+i =
+ni∑
+l=1
+qXi,lH(up)
+i,l
+ri(Xi,l)
++P (c)
+Zi
+(
+α1 · Rcpu,i
+V (edge)
+cpu,Zi
++α2 · Rmem,i
+V (edge)
+mem,Zi
+)
+TCi (11)
+whereα1 andα2 are two weight factors, which satisfy α1,α2 ∈
+[0, 1] andα1 +α2 = 1. P (c)
+Zi is the average power of Zi.
+2) Computational Tasks to Cloud Servers: If Bi = 0, the
+computational task Ci is executed by a cloud server Zi.I nt h i s
+scenario, a nearby edge server collects required data from the
+ni-related devices with wireless communication and forwards
+the data to the cloud.
+With the collaboration of the cloud server Zi and the nearest
+edge serverEk ∈Ei, the data upload time for Ci is represented
+by
+T (cloud)
+up,i =m a x
+l∈[1,ni ]
+H(up)
+i,l
+rk(Xi,l) +
+ni∑
+l=1
+H(up)
+i,l
+rcloud
+. (12)
+The data download time between a cloud server and the cloud
+data center is negligible. The start time and the end time of Ci
+in a cloud server are shown by (8) and (10), respectively. The
+computation time of task Ci in a cloud server Zi is deﬁned by
+TCi = T (cloud)
+up,i +ti. (13)
+Similar to (11), the energy consumption of ﬁnishing the compu-
+tational task on a cloud server is deﬁned by
+W (c)
+i =
+ni∑
+l=1
+qXi,lH(up)
+i,l
+rk(Xi,l)
++P (c)
+Zi
+(
+α1 · Rcpu,i
+V (cloud)
+cpu,Zi
++α2 · Rmem,i
+V (cloud)
+mem,Zi
+)
+TCi (14)
+where k is the index of the nearest edge server in Ei.
+C. Optimization Objective
+In summary, the optimization objective in this article is to
+minimize the weighted sum of the overall makespan of compu-
+tational tasks and manufacturing tasks and the overall energy
+Fig. 2. Mainframe of the proposed DSAC-DE algorithm. Q network1,
+Q-target network1, Q network2, Q-target network2, and policy network
+are ﬁve neural networks. J(Q),J (π), and J(α) are three loss functions
+to train these ﬁve networks. The trained policy network is utilized as the
+DSAC policy .
+consumption, as represented by
+f (X,Y ,B,Z)= λ1 max
+{
+max
+i∈[1,N ]
+T (end)
+Ci ,T (m)
+}
++ λ2
+( N∑
+i=1
+W (c)
+i +W (m)
+)
+(15)
+where λ1, λ2 are two weight factors within the scope of (0, 1),
+and λ1 + λ2 = 1. X,Y ,B,Z denote the candidate sets of
+decision variables.
+IV . PROPOSED DSAC-DE SCHEDULING ALGORITHM
+This section provides the details of the proposed DSAC-DE
+algorithm. The main framework of the DSAC-DE is shown
+in Fig. 2. Suppose p = {p
+1,p 2,...,p N (p)} represents a group
+of individuals (i.e., solutions) for evolution, the DSAC policy
+selects a proper DE mutation operator for each individual, and
+the DE mutation operator generates offspring individuals.
+A. DE Conﬁguration
+The real number encoding scheme is applied to uniformly
+represent the four decision variables groups. The coding length
+of an individual is 2 N + 2 ∑
+N
+i=1 ni. Suppose the gene-bit of
+an individual is{A(1),A(2),A(3),A(4)}, each gene-bit a(κ)
+i ∈
+A(κ) is within the scope of(0, 1),κ∈[1, 4]. The decoding rules
+between the gene-bits and the decision variables are explained
+as follows.
+1) a(1)
+i ∈A(1),i ∈[1,N ].I f a(1)
+i > 0.5, Bi = 1. Otherwise,
+Bi = 0.
+2)a(2)
+i ∈A(2),i ∈[1,N ].I fBi = 1,Zi = ⌊a(2)
+i ·|Ei|⌋.O t h -
+erwise,Zi = ⌊a(2)
+i ·|S|⌋.
+3) a(3)
+i ∈A(3),i ∈[1, ∑N
+i=1 ni]. Yi,j = a(3)∑i
+k=1 nk +j .
+4)a(4)
+i ∈A(4),i ∈[1, ∑N
+i=1 ni].Xi,j = ⌊a(4)∑i
+k=1 nk +j ·|D|⌋.
+Authorized licensed use limited to: BEIHANG UNIVERSITY. Downloaded on February 26,2026 at 07:04:15 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 6 =====
+1758 IEEE TRANSACTIONS ON INDUSTRIAL INFORMA TICS, VOL. 20, NO. 2, FEBRUARY 2024
+DE generates the offspring individuals via differential muta-
+tion and differential crossover [28]. The ﬁve differential muta-
+tion operators adopted in this article are shown in
+p(t+1)
+i =
+⎧
+⎪⎪
+⎪
+⎪
+⎪
+⎪
+⎨
+⎪⎪
+⎪
+⎪
+⎪
+⎪
+⎩
+1) p
+(t)
+gbest +F · (p(t)
+r1 −p(t)
+r2 )
+2) p(t)
+r1 +F · (p(t)
+r2 −p(t)
+r3 )+ F · (p(t)
+r4 −p(t)
+r5 )
+3) p(t)
+gbest +F · (p(t)
+r1 −p(t)
+r2 )+ F · (p(t)
+r3 −p(t)
+r4 )
+4) p(t)
+i +F · (p(t)
+gbest −p(t)
+i )+ F · (p(t)
+r1 −p(t)
+r2 )
+5) p(t)
+r1 +F · (p(t)
+r2 −p(t)
+r3 )
+(16)
+where p(t)
+i represents the offspring individual i in the tth itera-
+tion. p(t)
+gbest is the global best individual ever ﬁnd. F ∈[0, 2] is
+a scaling factor, and r1,r 2,r 3,r 4,r 5 are ﬁve random variables
+within the scope of [1,N (p)]. In each evolutionary iteration, the
+proposed DSAC policy selects different mutation operatorsN (p)
+times to generate N (p) offspring individuals, respectively.
+The differential crossover following the DE mutation operator
+determines how much the parent individual p(t)
+i is inherited by
+the offspringp(t+1)
+i , i.e., p(t+1)
+i,j = p(t)
+i,j ,i f rj ≤CR,∀j ∈[1,L ],
+whereL denotes the length of the codes.rj ∈(0, 1) is a random
+variable, and CR ∈(0, 1) is a given crossover rate.
+B. Dec-POMDP Modeling
+The evolutionary process is modeled as a Dec-POMDP , which
+can be characterized by a tuple < G,U,P,r, Ψ,π,γ>. Each
+individual is regarded as an agent, and the environment is the
+population and the DE conﬁguration. g ∈G is the global state
+for all individuals. Each individual selects an action ui ∈U to
+form a joint action(u1,u 2,...,u N (p) ). Each actionui represents
+the serial number of a candidate differential mutation operator.
+With ﬁve differential mutation operators, the action space is 5.
+The state of the environment updates according to the state tran-
+sition probabilityP and the joint actionU . All individuals share
+the same reward functionr(g,u ).π
+i ∈πis the policy model for
+the individualpi.pi obtains an observationψi ∈Ψ after the state
+transition. The relationship amongg,ui,ψi,πi is represented by
+ui = πi(g||ψi), where || is the vector concatenation. γ∈(0, 1)
+represents the discount factor.
+1) State and Observation: The population state in the tth
+iteration is represented by g(t) =<g (t)
+mean,g (t)
+std ,g (t)
+op1,g (t)
+op2,g (t)
+op3,
+g(t)
+op4,g (t)
+op5 >, where g(t)
+mean,g (t)
+std are the mean and the standard
+deviation of the population. They are normalized to (0, 1) with
+the worst objective value in the population. g(t)
+opi,i ∈[1, 5] de-
+notes the history utilization of the operator op i, and g(t)
+opi =<
+NS (t)
+opi,1,NS (t)
+opi,2,NS (t)
+opi,3 >. NS (t)
+opi,j,j ∈[1, 3] represents the
+time of successful evolution using opi, andj ∈[1, 3] means three
+perspectives to measure the success.
+(a) If the offspring is better than the parent after applying op i
+in tth iteration, NS (t+1)
+opi,1 = NS (t)
+opi,1 + 1.
+(b) If the offspring beats the global best one, NS (t+1)
+opi,2 =
+NS (t)
+opi,2 + 1.
+(c) If the offspring is better than the average objective value,
+NS (t+1)
+opi,3 = NS (t)
+opi,3 + 1.
+Hence, the total dimension of g(t) is 17 (17 = 1+1+5*3).
+The observation identiﬁes each individual and reﬂects the
+direction of evolution. The observation of pi is represented
+by ψ(t)
+i =<D f(t)
+i,gbest,Df (t)
+i,r1,Df (t)
+i,r2,Df (t)
+i,r3,Df (t)
+i,r4,Df (t)
+i,r5 >,
+where Df (t)
+i,gbest is the absolute value of the difference between
+the objective value f (t)
+i of p(t)
+i and the global best objective
+valuef (t)
+gbest.Df (t)
+i,rj ,j ∈[1, 5] represents the absolute value of the
+objective difference between individuals indexed byi andrj , and
+r1,r 2,...,r 5 are the ﬁve random parameters of the differential
+mutation operators. The total dimension of ψ(t)
+i is 6.
+2) Reward Function: The target of the DRL is to obtain
+higher rewards, and we formulate a reward function to optimize
+the objective. The reward function is represented by
+r
+t =
+⎧
+⎨
+⎩
+K1
+f (t)
+gbest
+,t = MAXGEN
+K2 ·
+(
+f (t−1)
+gbest −f (t)
+gbest
+)
+,t ̸= MAXGEN
+(17)
+where MAXGEN is the maximum number of evolutionary it-
+erations, K1,K 2 are two given parameters. f (t)
+gbest is the global
+best objective in the tth iteration. The incremental rewards ( rt
+when t ̸= MAXGEN) can accelerate the convergence speed
+for training the DRL model while the ﬁnal reward ( rt when
+t = MAXGEN) indicates the best ﬁtness value ever found. This
+article applies K2 = 4·K1/(f (0)
+gbest)2 to restrict the impact of
+the ﬁnal reward to be higher than that of the incremental reward,
+as the global best-searched objective determines the scheduling
+performance. It is proved as follows.
+Proposition 1: A sufﬁcient condition for the inﬂuence of the
+ﬁnal reward to be greater than that of the incremental reward is
+thatK2 ≤4·K1/(f (0)
+gbest )2.
+Proof 1: Given that K2 ≤4·K1/(f (0)
+gbest )2. Based on
+Cauchy’s inequality, then we have
+K2
+K1
+≤ 4
+(f (0)
+gbest )2
+≤ 1
+(f (0)
+gbest −f (MAXGEN)
+gbest )f (MAXGEN)
+gbest
+(18)
+i.e., K1
+f (MAXGEN)
+gbest
+≥K2
+(
+f (0)
+gbest −f (MAXGEN)
+gbest
+)
+= K2
+MAXGEN∑
+t=0
+(
+f (t−1)
+gbest −f (t)
+gbest
+)
+(19)
+which concludes the proof. Equation (19) means that the inﬂu-
+ence of the ﬁnal reward is greater than or equal to that of the
+incremental rewards.
+C. DSAC Policy Model
+The DSAC policy is described by (20). It is learned by neural
+network models, which convert g
+(t),ψ(t)
+i into the probability
+Authorized licensed use limited to: BEIHANG UNIVERSITY. Downloaded on February 26,2026 at 07:04:15 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 7 =====
+LAILI et al.: DSAC-CONFIGURED DIFFERENTIAL EVOLUTION FOR CLOUD–EDGE–DEVICE COLLABORA TIVE T ASK SCHEDULING 1759
+distribution of ﬁve differential mutation operators (i.e., actions).
+h1 = ReLU
+(
+w1(g(t)||ψ(t)
+i )+ b1
+)
+h2 = w2h1 +b2 (20)
+where ReLU(x)=m a x (0,x ) is the ReLU activation function,
+w1,w 2,b 1,b 2 are weight and bias parameters of two layers
+of multilayer perceptron (MLP), || means the concatenating
+operation. h1,h 2 are two hidden variables. The dimension of
+h1 is 128, and the dimension of h2 is 5. Then, a SoftMax layer
+is introduced to scale each dimension of h2 into the scope of
+(0, 1), as demonstrated by
+ρi = eh2,i
+∑5
+j=1 eh2,j
+∀i ∈[1, 5] (21)
+where ρi ∈(0, 1) represents the probability of choosing the ith
+differential mutation operator shown in (16). The categorical
+distribution is constructed based on {ρ1,ρ2,ρ3,ρ4,ρ5}, and
+the selected differential mutation operator is sampled from the
+distribution.
+D. Training of the DSAC Policy
+The training target is to learn the DSAC policy πto guide the
+selection of DE mutation operators. However, the randomness
+of the evolutionary search brings a large amount of noise to
+the training. Therefore, the maximum entropy learning that
+minimizes both the discounted reward and the maximum entropy
+is introduced to learn an optimal policy modelπ
+∗[29],a ss h o w n
+by
+π∗= argmaxπ
+∑
+t
+E(st,at )∼τπ
+[
+γt(rt(st,at)+ αH(π(·|st)))
+]
+(22)
+where st = gt||ψt represents the concatenated state. τπ means
+the trajectory generated by the policy π. γis the discounted
+factor. rt represents the reward. H(π(·|st)) = −logπ(·|st) is
+the information entropy of πatst, andαis a temperature factor
+that reﬂects the tradeoff between exploring more actions and ob-
+taining higher rewards. A largerαmeans a greater optimization
+weight on action exploration.
+To learn the optimal policy represented by (22), we apply
+the soft AC (SAC) framework in DRL, which totally con-
+tains ﬁve neural networks: a policy network π(·) deﬁned in
+(20) and two pairs of critic networks Q
+(1)(·),Q (1,target)(·) and
+Q(2)(·),Q (2,target)(·). The critic networks evaluate the output of
+the policy model by estimating the Q-values, and we leverage
+two pairs of critic networks to avoid the overestimation of
+Q-values [30]. Hence, before training the policy model, it is
+necessary to train these critic networks ﬁrst. The critic networks
+are updated based on the temporal difference (TD) method [31],
+and the loss function to update Q
+(i)(·),i ∈{1, 2} is deﬁned by
+J(Q(i))= E(st,at,st+1,rt )∼D
+[ 1
+2 (Q(i)(st,at)−(rt +γmin
+× (Q(1,target)(st+1,at+1),Q (2,target)(st+1,at+1))))2
+]
+(23)
+where D represents a replay buffer, (st,at,st+1,rt) is a tran-
+sition sampled from D, and at+1 = argmaxaπ(a|st+1) is the
+greedy action predicted by the policy model. The minimum value
+of Q
+(1,target)(st+1,at+1),Q (2,target)(st+1,at+1) is applied as the
+targetQ-value to avoid overestimation.
+Then, the policy model is updated to learn an optimal policy
+represented by (22). To adapt to the discrete action space in the
+cloud–edge–device collaborative task-scheduling problem, the
+loss function to train π(·) is designed by
+J(π)= Est∼D [π(st)T [αlog(π(st))−
+min(Q(1)(st,at),Q (2)(st,at))]] (24)
+where at is sampled based on π(st). Equation (24) is the loss
+function representation of (22), and the detailed derivation can
+be found in [32]. The only difference between (24) and that
+introduced in [32] is that we directly use π(st)T as the action
+distribution considering the discrete action space. The temper-
+ature factor αis a hyperparameter, which can be updated using
+gradient descent. The loss function for αis deﬁned by
+J(α)= Eat∼π(st)[−αlog(π(st)) +H]
+= π(st)T [−αlog(π(st)) +H] (25)
+whereH is constant and represents the target entropy. Equation
+(25) means thatJ(α) is negatively correlated withπ(st). When
+the action selection tends to be deterministic (i.e.,π(st) is a large
+value),J(α) promotes the action exploration by increasing the
+value of α.
+The training algorithm is summarized in Algorithm 1.
+ηθ,ηφ, andηα are three learning rates. ∇ represents the gra-
+dient. τ∈(0, 1) is the soft updating rate. Line 1–Line 5 means
+the initialization. Line 7–Line 18 means the interaction between
+agents and the environment. Line 9–Line 14 generate offspring
+individuals and make the observation. Line 19–Line 24 repre-
+sents the gradient step that updates neural networks and αwith
+loss functions of (23), (24), and (25).
+V. E
+XPERIMENTS AND DISCUSSIONS
+A. Experimental Conﬁguration
+To validate the effectiveness of the proposed DSAC-DE in
+solving the cloud–edge–device task-scheduling problem, four
+artiﬁcial cases case1,case 2,case 3, andcase4 are introduced.
+The conﬁgurations of these four cases are reported in Table II.
+Take an automobile engine as a representative example [33],
+it contains nine manufacturing tasks. Considering the products
+with 10–40 discrete manufacturing steps, i.e., 10–40 tasks, the
+IIoT platform can take 10 orders as a batch to generate a
+scheduling solution. Therefore, there will be about 100 to 400
+manufacturing tasks in a period. To demonstrate the device
+capacity restriction under different task scale, the number of
+manufacturing devices in the four cases are uniformly set as 300.
+As multiple computational tasks can be executed in parallel in
+a cloud/edge server with virtualization technology, the server
+capacity restriction is loose. To be simple, we set the number
+of cloud servers and distributed edge servers as the same as
+Authorized licensed use limited to: BEIHANG UNIVERSITY. Downloaded on February 26,2026 at 07:04:15 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 8 =====
+1760 IEEE TRANSACTIONS ON INDUSTRIAL INFORMA TICS, VOL. 20, NO. 2, FEBRUARY 2024
+Algorithm 1: Training Algorithm.
+T ABLE II
+CONFIGURA TIONS OF FOUR CASES
+the number of computational tasks in each artiﬁcial case. If the
+number of tasks and resources increases, they can be divided
+into multiple groups. The proposed algorithm can be applied
+to different groups simultaneously with only one-time training.
+The expected computing time and energy of manufacturing
+tasks and computational tasks are generated from two datasets,
+i.e., ClusterData 2011 traces [34] and Alibaba Cluster Data
+V2018 [35]. The server conﬁgurations of both cloud and edge
+are all from the SPECpower ssj2008 dataset.
+The DSAC policy model is trained on case1 and applied to
+the four cases to show its extendibility. MAXGEN for training
+Fig. 3. Comparison results on searching curves. (a) Case1. (b) Case2.
+(c) Case3. (d) Case4.
+T ABLE III
+PERCENT AGE OF THE IMPROVEMENTS ON THE AVERAGE OBJECTIVE VALUES
+OBT AINED BY THE DSAC-DE COMP AREDWITH OTHER DRL-DES
+is 200 in an episode, and MAXGEN for evaluation is 1000. The
+population size is 30. The experiments and algorithm compar-
+isons are conducted using Python 3.7.1 and PyTorch 1.6.0 with
+CUDA 11.0. The running environment is Intel XEON Gold 6240
+@2.4 GHz CPU, 128 GB RAM, and NVIDIA RTX 3080 GPU.
+B. Comparison of Different DRL Algorithms on the
+Automatic Conﬁguration of DE
+In this section, the proposed DSAC policy model is compared
+to DQN [21], DDQN [24], DDQN with prioritized experience
+replay (DDQN-PR), Dueling DDQN (D3QN), and proximal
+policy optimization (PPO) to show its effectiveness on ﬁnding
+suitable differential mutation operators for solving the cloud–
+edge–device collaborative task-scheduling problem. All algo-
+rithms are based on the same architecture described in Fig. 2.
+The hidden units of the six DRL-DE algorithms are [32, 32], the
+learning rate is 0.0001, the buffer size is 40000, the batch size is
+512, γis set as 0.99, and αand βare 0.5 and 0.5, respectively.
+The models after 700 training episodes are applied.
+Fig. 3 indicates the searching curves of DRL-DE algorithms,
+the shadow means the ﬂuctuation range, and the line denotes the
+average values. It can be found that DSAC-DE converges faster
+than others, especially in case2, and DSAC-DE can ﬁnd better
+solutions in all four cases. Table III reports the percentage of
+the improvements on the average objective values obtained by
+Authorized licensed use limited to: BEIHANG UNIVERSITY. Downloaded on February 26,2026 at 07:04:15 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 9 =====
+LAILI et al.: DSAC-CONFIGURED DIFFERENTIAL EVOLUTION FOR CLOUD–EDGE–DEVICE COLLABORA TIVE T ASK SCHEDULING 1761
+Fig. 4. Comparison results on ﬁnal objective value. (a) Case1.
+(b) Case2. (c) Case3. (d) Case4.
+T ABLE IV
+PERCENT AGE OF THE IMPROVEMENTS ON THE AVERAGE OBJECTIVE VALUES
+OBT AINED BY THE DSAC-DE COMP AREDWITH OTHER EAS
+the DSAC-DE compared with the other ﬁve DRL-DE methods.
+The value shows it can reduce the average objective values by
+30.82% at most compared to D3QN-DE in case4.
+C. Comparison of the Proposed DSAC-DE to Typical
+EAs
+The proposed DSAC-DE is compared to six typical EAs,
+including an artiﬁcial bee colony algorithm (ABCA), ACO, bees
+algorithm (BA), DE, GA, and PSO and a random conﬁgured
+DE (RN-DE). In RN-DE, the differential mutation operator
+is randomly selected for each individual in each evolutionary
+iteration.
+The average results of these algorithms in 10 runs are shown
+in Fig. 4. RN-DE performs better than DE in case2 and case4.
+This illustrates the advantage of applying multiple differential
+mutation operators. DSAC-DE shows far better than RN-DE.
+It proved that the DSAC policy learned from case1 and can
+be well extended to other three cases. In addition, DSAC-DE
+performs remarkably better than ACO, BA, DE, GA, and PSO,
+and performs similar or even better than ABCA, which adopts
+additional local search iterations. TableIV reports the percentage
+of the improvements on the average objective values obtained by
+the DSAC-DE compared with other EAs, which indicates that
+Fig. 5. Comparison results on average running time. (a) Case1.
+(b) Case2. (c) Case3. (d) Case4.
+Fig. 6. Comparison results on the makespan and the total energy .
+(a) Case1. (b) Case2. (c) Case3. (d) Case4.
+Fig. 7. Comparison results on the total communication time of CT .
+(a) Case1. (b) Case2. (c) Case3. (d) Case4.
+the proposed DSAC-DE can reduce the average objective values
+by 44.35% at most compared to ACO in case2.
+As shown in Fig. 5, the decision time of DSAC-DE is slightly
+higher than that of BA, DE, GA, and PSO and is much lower
+than that of ACO and ABCA with local search iterations.
+The best seven solutions obtained by these algorithms are
+demonstrated in Fig. 6. The results of DASC-DE mainly gather
+in the lower-left side of Fig. 6, which means that DSAC-DE
+can always ﬁnd solutions with the lowest makespan and energy
+consumption. In addition, the total communication time of hy-
+brid tasks is indicated in Fig. 7. It can be found that ABCA and
+DSAC-DE can ﬁnd solutions with lower communication time
+Authorized licensed use limited to: BEIHANG UNIVERSITY. Downloaded on February 26,2026 at 07:04:15 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 10 =====
+1762 IEEE TRANSACTIONS ON INDUSTRIAL INFORMA TICS, VOL. 20, NO. 2, FEBRUARY 2024
+T ABLE V
+RESOURCE AVAILABILITIES OF EIGHT CASES
+Fig. 8. Comparison results on cases with diverse resource availabili-
+ties. (a) Case1. (b) Case2. (c) Case3. (d) Case4.
+than others, which also shows that their scheduling solutions are
+more reasonable in practice.
+D. Adaptability to Changes in Resources
+To explore whether the performance of a trained DSAC policy
+will decline when the resource availability changes, the four
+cases are modiﬁed to case1A–case4A by randomly reducing the
+available servers, as reported in TableV. The experiments of the
+DSAC policy without re-training on all of the eight cases are
+demonstrated in Fig. 8. It can be found that there is no apparent
+difference between the two types of points in four subﬁgures of
+Fig. 8. The solution quality is well maintained with changing
+resource availabilities. Therefore, the results validate that the
+DSAC policy is able to adapt to changes in the availability of
+resources.
+To conclude, the proposed DSAC-DE performs better and
+is more stable than DRL-based EAs and typical EAs. Without
+tedious parameter tuning and operator selection, it is able to ﬁnd
+suitable scheduling solutions for different scenarios with only
+one-time training.
+VI. C
+ONCLUSION
+This article studied the cloud–edge–device collaborative task-
+scheduling problem with three kinds of task constraints. To solve
+this problem in a parameter-free way, a DSAC-DE algorithm
+was proposed. The evolutionary process was modeled as a
+Dec-POMDP . The maximum entropy learning in DSAC reduced
+the inﬂuence of searching randomness of DE and alleviated
+overﬁtting. Experimental results veriﬁed the effectiveness of
+the proposed algorithm in different scales of cloud–edge–device
+collaborative task-scheduling problems and proved its superior-
+ity compared to other typical EAs and DRL-based EAs.
+Future works include developing an end-to-end perception of
+the scheduling scene to generate an adaptable state and reward
+and designing parallel strategies to accelerate both the training
+and searching process.
+R
+EFERENCES
+[1] L. Da Xu, W. He, and S. Li, “Internet of Things in industries: A survey,”
+IEEE Trans. Ind. Informat., vol. 10, no. 4, pp. 2233–2243, Nov. 2014.
+[2] E. Sisinni, A. Saifullah, S. Han, U. Jennehag, and M. Gidlund, “Industrial
+Internet of Things: Challenges, opportunities, and directions,”IEEE Trans.
+Ind. Informat., vol. 14, no. 11, pp. 4724–4734, Nov. 2018.
+[3] A. Martins, J. Lucas, H. Costelha, and N. Carlos, “Developing an OPC UA
+server for CNC machines,” Procedia Comput. Sci., vol. 180, pp. 561–570,
+2021.
+[4] Y . Lu, X. Huang, K. Zhang, S. Maharjan, and Y . Zhang, “Communication-
+efﬁcient federated learning for digital twin edge networks in Indus-
+trial IOT,” IEEE Trans. Ind. Informat. , vol. 17, no. 8, pp. 5709–5718,
+Aug. 2021.
+[5] N. Srinidhi, S. D. Kumar, and K. V enugopal, “Network optimizations in the
+Internet of Things: A review,” Eng. Sci. Technol., vol. 22, no. 1, pp. 1–21,
+2021.
+[6] D. A. Chekired, L. Khoukhi, and H. T. Mouftah, “Industrial IOT data
+scheduling based on hierarchical fog computing: A key for enabling smart
+factory,” IEEE Trans. Ind. Informat. , vol. 14, no. 10, pp. 4590–4602,
+Oct. 2018.
+[7] W. Mao, Z. Zhao, Z. Chang, G. Min, and W. Gao, “Energy-efﬁcient
+industrial Internet of Things: Overview and open issues,” IEEE Trans.
+Ind. Informat., vol. 17, no. 11, pp. 7225–7237, Nov. 2021.
+[8] L. Chen, P . Zhou, L. Gao, and J. Xu, “Adaptive fog conﬁguration for the
+industrial Internet of Things,” IEEE Trans. Ind. Informat., vol. 14, no. 10,
+pp. 4656–4664, Oct. 2018.
+[9] H. Y uan, J. Bi, and M. Zhou, “Multiqueue scheduling of heterogeneous
+tasks with bounded response time in hybrid green IaaS clouds,” IEEE
+Trans. Ind. Informat., vol. 15, no. 10, pp. 5404–5412, Oct. 2019.
+[10] Y . Xie et al., “A novel directional and non-local-convergent particle swarm
+optimization based workﬂow scheduling in cloud–edge environment,”
+Future Gener . Comput. Syst., vol. 97, pp. 361–378, 2019.
+[11] D. Liu, X. Chen, Z. Zhou, and Q. Ling, “HierTrain: Fast hierarchical
+edge AI learning with hybrid parallelism in mobile-edge-cloud com-
+puting,” IEEE Open J. Commun. Soc. , vol. 1, pp. 634–645, May 2020.
+doi: 10.1109/OJCOMS.2020.2994737.
+[12] S. Luo, “Dynamic scheduling for ﬂexible job shop with new job insertions
+by deep reinforcement learning,” Appl. Soft Comput. , vol. 91, 2020,
+Art. no. 106208.
+[13] G. Zhang, Y . Hu, J. Sun, and W. Zhang, “An improved genetic algorithm for
+the ﬂexible job shop scheduling problem with multiple time constraints,”
+Swarm Evol. Comput., vol. 54, 2020, Art. no. 100664.
+[14] M. M. Ahmadian, A. Salehipour, and T. Cheng, “A meta-heuristic to solve
+the just-in-time job-shop scheduling problem,”Eur . J. Oper . Res., vol. 288,
+no. 1, pp. 14–29, 2021.
+[15] Y . Cao, S. Wang, L. Kang, and Y . Gao, “A TQCS-based service selection
+and scheduling strategy in cloud manufacturing,” Int. J. Adv. Manuf.
+Technol., vol. 82, no. 1, pp. 235–251, 2016.
+[16] W. Li et al., “Subtask scheduling for distributed robots in cloud manufac-
+turing,” IEEE Syst. J., vol. 11, no. 2, pp. 941–950, Jun. 2017.
+[17] H. Akbaripour, M. Houshmand, T. V an Woensel, and N. Mutlu, “Cloud
+manufacturing service selection optimization and scheduling with trans-
+portation considerations: Mixed-integer programming models,”Int. J. Adv.
+Manuf. Technol., vol. 95, no. 1, pp. 43–70, 2018.
+[18] X. Wang, L. Zhang, T. Lin, C. Zhao, K. Wang, and Z. Chen, “Solving job
+scheduling problems in a resource preemption environment with multi-
+agent reinforcement learning,” Robot. Comput.-Integr . Manuf., vol. 77,
+2022, Art. no. 102324.
+[19] Y . Jin, H. Wang, T. Chugh, D. Guo, and K. Miettinen, “Data-driven
+evolutionary optimization: An overview and case studies,” IEEE Trans.
+Evol. Comput., vol. 23, no. 3, pp. 442–458, Jun. 2019.
+Authorized licensed use limited to: BEIHANG UNIVERSITY. Downloaded on February 26,2026 at 07:04:15 UTC from IEEE Xplore.  Restrictions apply. 
+
+===== PAGE 11 =====
+LAILI et al.: DSAC-CONFIGURED DIFFERENTIAL EVOLUTION FOR CLOUD–EDGE–DEVICE COLLABORA TIVE T ASK SCHEDULING 1763
+[20] R. Chen, B. Y ang, S. Li, and S. Wang, “A self-learning genetic algorithm
+based on reinforcement learning for ﬂexible job-shop scheduling prob-
+lem,” Comput. Ind. Eng., vol. 149, 2020, Art. no. 106778.
+[21] Z. Tan and K. Li, “Differential evolution with mixed mutation strategy
+based on deep reinforcement learning,”Appl. Soft Comput., vol. 111, 2021,
+Art. no. 107678.
+[22] T. Visutarrom, T.-C. Chiang, A. Konak, and S. Kulturel-Konak, “Re-
+inforcement learning-based differential evolution for solving economic
+dispatch problems,” in Proc. IEEE Int. Conf. Ind. Eng. Eng. Manage. ,
+2020, pp. 913–917.
+[23] T. Zhang, H. Wang, B. Y uan, Y . Jin, and X. Y ao, “Surrogate-
+assisted evolutionary q-learning for black-box dynamic time-linkage
+optimization problems,” IEEE Trans. Evol. Comput. , to be published,
+doi: 10.1109/TEVC.2022.3179256.
+[24] M. Sharma, A. Komninos, M. López-Ibáñez, and D. Kazakov, “Deep
+reinforcement learning based parameter control in differential evolution,”
+in Proc. Genet. Evol. Comput. Conf. , 2019, pp. 709–717.
+[25] Z. Xu, G. Han, L. Liu, M. Martínez-García, and Z. Wang, “Multi-energy
+scheduling of an industrial integrated energy system by reinforcement
+learning-based differential evolution,”IEEE Trans. Green Commun. Netw.,
+vol. 5, no. 3, pp. 1077–1090, Sep. 2021.
+[26] X. Chen, L. Jiao, W. Li, and X. Fu, “Efﬁcient multi-user computation
+ofﬂoading for mobile-edge cloud computing,” IEEE/ACM Trans. Netw.,
+vol. 24, no. 5, pp. 2795–2808, Oct. 2016.
+[27] L. Ren, Y . Laili, X. Li, and X. Wang, “Coding-based large-scale task
+assignment for industrial edge intelligence,” IEEE Trans. Netw. Sci. Eng.,
+vol. 7, no. 4, pp. 2286–2297, Oct.–Dec. 2020.
+[28] K. V . Price, “Differential evolution,” inHandbook of Optimization. Berlin,
+Germany: Springer, 2013, pp. 187–214.
+[29] T. Haarnoja et al., “Soft actor-critic algorithms and applications,” 2018,
+arXiv:1812.05905.
+[30] G. An, S. Moon, J.-H. Kim, and H. O. Song, “Uncertainty-based ofﬂine
+reinforcement learning with diversiﬁed q-ensemble,” Adv. Neural Inf.
+Process. Syst., vol. 34, pp. 7436–7447, 2021.
+[31] S. Blakeman and D. Mareschal, “A complementary learning systems
+approach to temporal difference learning,” Neural Netw. , vol. 122,
+pp. 218–230, 2020.
+[32] T. Haarnoja, A. Zhou, P . Abbeel, and S. Levine, “Soft actor-critic: Off-
+policy maximum entropy deep reinforcement learning with a stochastic
+actor,” in Proc. Int. Conf. Mach. Learn. , 2018, pp. 1861–1870.
+[33] Y . Laili, C. Peng, Z. Chen, F. Y e, and L. Zhang, “Concurrent local search
+for process planning and scheduling in the industrial internet-of-things
+environment,” J. Ind. Inf. Integration, vol. 28, 2022, Art. no. 100364.
+[34] Y . Lin, A. Barker, and S. Ceesay, “Exploring characteristics of inter-cluster
+machines and cloud applications on Google clusters,” in Proc. IEEE Int.
+Conf. Big Data, 2020, pp. 2785–2794.
+[35] J. Guo et al., “Who limits the resource efﬁciency of my datacenter: An
+analysis of Alibaba datacenter traces,” in Proc. Int. Symp. Qual. Service ,
+2019, pp. 1–10.
+Y uanjun Laili (Member, IEEE) received the
+B.S., M.S., and Ph.D. degrees in automation
+control from the School of Automation Science
+and Electrical Engineering, Beihang University ,
+Beijing, China, in 2009, 2012, and 2015, respec-
+tively .
+She is currently an Associate Professor with
+the School of Automation Science and Electri-
+cal Engineering, Beihang University , and with
+Zhongguancun Laboratory , Beijing. She is also
+a Chief Scientist of the National Key R&D Pro-
+gram of China. Her main research interests include the areas of intelli-
+gent optimization, modeling, and simulation of manufacturing systems.
+Dr. Laili is a member of The Society For Modeling and Simulation In-
+ternational (SCS). She has won the “Y oung T alent Lift Project” supported
+by the China Association for Science and T echnology and the “Y oung
+Simulation Scientist Award” from SCS. She is an Associate Editor for the
+International Journal of Modeling, Simulation, and Scientiﬁc Computing
+and Cogent Engineering.
+Xiaohan Wang received the B.S. degree in
+2019 from Beihang University , Beijing, China,
+where he is currently working toward the Ph.D.
+degree with the School of Automation Science
+and Electrical Engineering.
+His research interests include scheduling,
+deep reinforcement learning, and machine
+learning-based optimization.
+Mr. Wang received the recommended test-
+free qualiﬁcation for Ph.D. in 2018 and obtained
+the outstanding graduate of Beihang University
+in 2019.
+Lin Zhang (Senior Member, IEEE) received the
+B.S. degree from the Department of Computer
+and System Science, Nankai University , Tianjin,
+China, in 1986, and the M.S. and Ph.D. degrees
+from the Department of Automation, Tsinghua
+University , Beijing, China, in 1989 and 1992,
+respectively .
+He is currently a Professor with Beihang Uni-
+versity , Beijing. From 2002 to 2005, he was
+with the US Naval Postgraduate School as a
+Senior Research Associate of the US National
+Research Council. He authored or coauthored more than 300 papers
+and 20 books and chapters. His research interests include service-
+oriented modeling and simulation, cloud manufacturing and simulation,
+model engineering, model-based systems engineering, cyber-physical
+systems, M&S for manufacturing systems, etc.
+Dr. Zhang was the President of the Society for Modeling and Sim-
+ulation International (SCS), the Executive Vice-President of the China
+Simulation Federation (CSF), and the President of the Federation of
+Asian Simulation Societies (ASIASIM). He is a Fellow of SCS, ASIASIM
+and CSF , a Chief Scientist of the National 863 Program and National
+Key R&D Program of China. He is the Director of Engineering Research
+Center of Complex Product Advanced Manufacturing Systems, Ministry
+of Education of China, and Editor-in-Chief and Associate Editor of eight
+peer-reviewed international journals. He is a recipient of the National
+Award for Excellent Science and T echnology Books, the Outstanding
+Individual Award of National High-T ech R&D Program, the National
+Excellent Scientiﬁc and T echnological Workers Awards, and the SCS
+Outstanding Professional Contribution Award.
+Lei Ren (Member, IEEE) received the Ph.D. de-
+gree in computer science from the Institute of
+Software, Chinese Academy of Sciences, Bei-
+jing, China, in 2009.
+He is currently a Professor with the School
+of Automation Science and Electrical Engi-
+neering, Beihang University , Beijing, and also
+with Zhongguancun Laboratory , Beijing. His re-
+search interests include neural networks and
+deep learning, time-series analysis, and indus-
+trial artiﬁcial intelligence applications.
+Dr. Ren is an Associate Editor for the IEEE T
+RANSACTIONS ON NEURAL
+NETWORKS AND LEARNING SYSTEMS and other international journals.
+Authorized licensed use limited to: BEIHANG UNIVERSITY. Downloaded on February 26,2026 at 07:04:15 UTC from IEEE Xplore.  Restrictions apply. 

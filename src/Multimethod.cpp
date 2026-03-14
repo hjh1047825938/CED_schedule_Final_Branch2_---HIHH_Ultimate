@@ -1,6 +1,7 @@
 #include "Multimethod.h"
 #include <limits>
 #include <numeric>
+#include <iomanip>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -926,6 +927,60 @@ double MultiMet::EvalWithWorkspace(const double* var, Workspace& ws)
     ws.f2_ref = workspace.f2_ref;
     ws.alpha = workspace.alpha;
     return EvaluFunc(var, ws, Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, ws.cloud_load.data(), ws.edge_load.data(), DeviceLoad, CETask_coDevice, ws.edge_device_comm.data(), ws.st_rows.data(), ws.et_rows.data(), ws.ce_st.data(), ws.ce_et.data());
+}
+
+bool MultiMet::ExportScheduleCSV(const double* var, const std::filesystem::path& out_path, unsigned int seed, double fitness, const std::string& instance_tag)
+{
+    std::filesystem::path parent = out_path.parent_path();
+    if (!parent.empty()) {
+        std::error_code ec;
+        std::filesystem::create_directories(parent, ec);
+    }
+
+    Workspace export_ws;
+    export_ws.resize(Cnum, CE_Tnum, M_Jnum, M_OPTnum, Enum, Dnum);
+    const double exported_fitness = EvalWithWorkspace(var, export_ws);
+
+    std::ofstream out(out_path, std::ios::out | std::ios::trunc);
+    if (!out.is_open()) {
+        std::cerr << "[ScheduleExport] Failed to open: " << out_path << std::endl;
+        return false;
+    }
+
+    out << std::fixed << std::setprecision(6);
+    out << "task_id,type,assigned_tier,server_id,start_time,end_time,job_id,op_index\n";
+
+    for (int i = 0; i < CE_Tnum; ++i) {
+        const bool is_edge = export_ws.ce_sele[i];
+        const char* tier = is_edge ? "edge" : "cloud";
+        const char prefix = is_edge ? 'e' : 'c';
+        out << "CE_" << i
+            << ",CE," << tier
+            << "," << prefix << export_ws.cevar[i]
+            << "," << export_ws.ce_st[i]
+            << "," << export_ws.ce_et[i]
+            << ",,\n";
+    }
+
+    for (int job = 0; job < M_Jnum; ++job) {
+        for (int op = 0; op < M_OPTnum; ++op) {
+            const int op_idx = job * M_OPTnum + op;
+            out << "MFG_j" << (job + 1) << "_op" << (op + 1)
+                << ",MFG,device,d" << export_ws.mvar[op_idx]
+                << "," << export_ws.st_rows[job][op]
+                << "," << export_ws.et_rows[job][op]
+                << ",j" << (job + 1)
+                << "," << (op + 1) << "\n";
+        }
+    }
+
+    const std::string resolved_tag = instance_tag.empty() ? ("T" + std::to_string(CE_Tnum)) : instance_tag;
+    out << "# instance=" << resolved_tag << "\n";
+    out << "# makespan=" << export_ws.last_makespan << "\n";
+    out << "# energy=" << export_ws.last_energy << "\n";
+    out << "# fitness=" << (std::isfinite(fitness) ? fitness : exported_fitness) << "\n";
+    out << "# seed=" << seed << "\n";
+    return true;
 }
 
 void MultiMet::IncrementEvalCount()

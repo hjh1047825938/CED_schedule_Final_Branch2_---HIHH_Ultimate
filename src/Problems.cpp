@@ -443,7 +443,6 @@ double CED_Schedule(const double* var, Workspace& ws, int Cnum, int Enum, int Dn
             if (dur > time_expand) time_expand = dur;
         }
         energy += EnergyList[u_ratio] * time_expand * energy_scale;
-        energy += EnergyList[u_ratio] * time_expand / 1000.0;
     }
 #ifdef PROFILE_EVAL
     ws.profile.tasks_us += std::chrono::duration_cast<std::chrono::microseconds>(clock::now() - t_stage).count();
@@ -456,7 +455,11 @@ double CED_Schedule(const double* var, Workspace& ws, int Cnum, int Enum, int Dn
 
     const double f1_normalized = time_max / f1_ref;
     const double f2_normalized = energy / f2_ref;
-    return alpha * f1_normalized + (1.0 - alpha) * f2_normalized;
+    const double fitness = alpha * f1_normalized + (1.0 - alpha) * f2_normalized;
+    ws.last_makespan = time_max;
+    ws.last_energy = energy;
+    ws.last_fitness = fitness;
+    return fitness;
 }
 
 

@@ -1,0 +1,5 @@
+Skipped figures and missing data requirements
+
+All requested source data are now available locally.
+fig_diversity_curves.pdf uses real logs from outputs/results/diversity_logs/T500/.
+fig_gantt_T200.pdf uses real schedule export from outputs/results/schedule_exports/.

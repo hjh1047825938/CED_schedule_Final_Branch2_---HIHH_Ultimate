@@ -1,0 +1,182 @@
+[
+  {
+    "problem": "T100",
+    "comparison": "CCHIHH-full vs CCHIHH-noCC",
+    "paper_pvalue": 0.000181651146,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T200",
+    "comparison": "CCHIHH-full vs CCHIHH-noCC",
+    "paper_pvalue": 0.00100797624,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T500",
+    "comparison": "CCHIHH-full vs CCHIHH-noCC",
+    "paper_pvalue": 0.000182671791,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T100",
+    "comparison": "CCHIHH-full vs CCHIHH-noCB",
+    "paper_pvalue": 0.001953,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T200",
+    "comparison": "CCHIHH-full vs CCHIHH-noCB",
+    "paper_pvalue": 0.001953,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T500",
+    "comparison": "CCHIHH-full vs CCHIHH-noCB",
+    "paper_pvalue": 0.001953,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T100",
+    "comparison": "CCHIHH-full vs CCHIHH-noMig",
+    "paper_pvalue": 0.001953125,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T200",
+    "comparison": "CCHIHH-full vs CCHIHH-noMig",
+    "paper_pvalue": 0.00390625,
+    "wilcoxon_exact_p": 0.00390625,
+    "mannwhitney_exact_p": 0.00012990105869362836,
+    "wilcoxon_statistic": 1.0,
+    "mannwhitney_statistic": 4.0
+  },
+  {
+    "problem": "T500",
+    "comparison": "CCHIHH-full vs CCHIHH-noMig",
+    "paper_pvalue": 0.001953125,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T100",
+    "comparison": "CCHIHH-full vs CGA",
+    "paper_pvalue": 0.001953125,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T500",
+    "comparison": "CCHIHH-full vs CGA",
+    "paper_pvalue": 0.001953125,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T100",
+    "comparison": "CCHIHH-full vs IMOMA",
+    "paper_pvalue": 0.001953125,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T200",
+    "comparison": "CCHIHH-full vs IMOMA",
+    "paper_pvalue": 0.001953125,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T500",
+    "comparison": "CCHIHH-full vs IMOMA",
+    "paper_pvalue": 0.001953125,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T100",
+    "comparison": "CCHIHH-full vs PPO",
+    "paper_pvalue": 1.0825e-05,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T200",
+    "comparison": "CCHIHH-full vs PPO",
+    "paper_pvalue": 1.0825e-05,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T500",
+    "comparison": "CCHIHH-full vs PPO",
+    "paper_pvalue": 1.0825e-05,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T100",
+    "comparison": "CCHIHH-full vs DSAC-DE",
+    "paper_pvalue": 1.0825e-05,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 100.0
+  },
+  {
+    "problem": "T200",
+    "comparison": "CCHIHH-full vs DSAC-DE",
+    "paper_pvalue": 1.0825e-05,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  },
+  {
+    "problem": "T500",
+    "comparison": "CCHIHH-full vs DSAC-DE",
+    "paper_pvalue": 1.0825e-05,
+    "wilcoxon_exact_p": 0.001953125,
+    "mannwhitney_exact_p": 1.082508822446903e-05,
+    "wilcoxon_statistic": 0.0,
+    "mannwhitney_statistic": 0.0
+  }
+]

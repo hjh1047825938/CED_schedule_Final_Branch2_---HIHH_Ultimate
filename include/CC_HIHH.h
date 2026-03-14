@@ -74,6 +74,43 @@ struct ContextualBanditSelector {
         return best_op;
     }
 
+    int select_masked(const std::array<double, 7>& s, double epsilon, int excluded_op) const {
+        if (num_ops <= 0) return 0;
+        int allowed = 0;
+        for (int i = 0; i < num_ops; ++i) {
+            if (i != excluded_op) ++allowed;
+        }
+        if (allowed <= 0) return 0;
+
+        double r = (double)rand() / RAND_MAX;
+        if (r < epsilon) {
+            int pick = rand() % allowed;
+            for (int i = 0; i < num_ops; ++i) {
+                if (i == excluded_op) continue;
+                if (pick == 0) return i;
+                --pick;
+            }
+        }
+        return select_best_masked(s, excluded_op);
+    }
+
+    int select_best_masked(const std::array<double, 7>& s, int excluded_op) const {
+        if (num_ops <= 0) return 0;
+        double best_score = -1e30;
+        int best_op = 0;
+        bool found = false;
+        for (int i = 0; i < num_ops; i++) {
+            if (i == excluded_op) continue;
+            double sc = score_op(i, s);
+            if (!found || sc > best_score) {
+                best_score = sc;
+                best_op = i;
+                found = true;
+            }
+        }
+        return found ? best_op : 0;
+    }
+
     void update(const std::array<double, 7>& s, int op_idx, double reward, double lr) {
         if (op_idx < 0 || op_idx >= num_ops) return;
         double pred = score_op(op_idx, s);
@@ -94,6 +131,103 @@ struct ContextualBanditSelector {
         std::fill(selection_count.begin(), selection_count.end(), 0);
         total_updates = 0;
     }
+};
+
+struct BanditSnapshot {
+    int num_ops;
+    int feat_dim;
+    std::vector<double> weights;  // [num_ops * feat_dim]
+
+    BanditSnapshot() : num_ops(0), feat_dim(0) {}
+
+    void clear() {
+        num_ops = 0;
+        feat_dim = 0;
+        weights.clear();
+    }
+
+    void take_snapshot(const ContextualBanditSelector& sel) {
+        num_ops = sel.num_ops;
+        feat_dim = sel.feat_dim;
+        weights = sel.weights;
+    }
+
+    double score_op(int op_idx, const std::array<double, 7>& s) const {
+        if (op_idx < 0 || op_idx >= num_ops) return -1e30;
+        double score = 0.0;
+        const int base = op_idx * feat_dim;
+        const int nfeat = std::min(feat_dim, 7);
+        for (int k = 0; k < nfeat; ++k) {
+            score += weights[base + k] * s[k];
+        }
+        return score;
+    }
+
+    int select_from_snapshot(const std::array<double, 7>& s, double epsilon,
+                             int n_ops_block, int block_offset = 0) const {
+        if (n_ops_block <= 0) return 0;
+        double r = (double)rand() / RAND_MAX;
+        if (r < epsilon) return rand() % n_ops_block;
+
+        int best_op = 0;
+        double best_score = score_op(block_offset + 0, s);
+        for (int op = 1; op < n_ops_block; ++op) {
+            double sc = score_op(block_offset + op, s);
+            if (sc > best_score) {
+                best_score = sc;
+                best_op = op;
+            }
+        }
+        return best_op;
+    }
+
+    int select_from_snapshot_masked(const std::array<double, 7>& s, double epsilon,
+                                    int n_ops_block, int excluded_local_op,
+                                    int block_offset = 0) const {
+        if (n_ops_block <= 0) return 0;
+        int allowed = 0;
+        for (int op = 0; op < n_ops_block; ++op) {
+            if (op != excluded_local_op) ++allowed;
+        }
+        if (allowed <= 0) return 0;
+
+        double r = (double)rand() / RAND_MAX;
+        if (r < epsilon) {
+            int pick = rand() % allowed;
+            for (int op = 0; op < n_ops_block; ++op) {
+                if (op == excluded_local_op) continue;
+                if (pick == 0) return op;
+                --pick;
+            }
+        }
+        return select_best_from_snapshot_masked(s, n_ops_block, excluded_local_op, block_offset);
+    }
+
+    int select_best_from_snapshot_masked(const std::array<double, 7>& s,
+                                         int n_ops_block,
+                                         int excluded_local_op,
+                                         int block_offset = 0) const {
+        if (n_ops_block <= 0) return 0;
+        double best_score = -1e30;
+        int best_op = 0;
+        bool found = false;
+        for (int op = 0; op < n_ops_block; ++op) {
+            if (op == excluded_local_op) continue;
+            double sc = score_op(block_offset + op, s);
+            if (!found || sc > best_score) {
+                best_score = sc;
+                best_op = op;
+                found = true;
+            }
+        }
+        return found ? best_op : 0;
+    }
+};
+
+struct DeferredBanditUpdate {
+    std::array<double, 7> state;
+    int op;
+    double reward;
 };
 
 //=============================================================================
@@ -327,6 +461,65 @@ struct BlockPopulation {
         }
         return total_var / block_len;
     }
+
+    double compute_global_diversity() const {
+        return compute_diversity(0, popsize);
+    }
+
+    double compute_intra_island_diversity() const {
+        if (nSubpop <= 1) return compute_global_diversity();
+        double total = 0.0;
+        int valid = 0;
+        for (int isl = 0; isl < nSubpop; ++isl) {
+            int p_start, p_end;
+            get_island_range(isl, p_start, p_end);
+            if (p_end <= p_start) continue;
+            total += compute_diversity(p_start, p_end);
+            ++valid;
+        }
+        return valid > 0 ? total / (double)valid : 0.0;
+    }
+
+    double compute_inter_island_diversity() const {
+        if (nSubpop <= 1 || block_len <= 0) return 0.0;
+
+        std::vector<std::vector<double>> centroids;
+        centroids.reserve(nSubpop);
+        for (int isl = 0; isl < nSubpop; ++isl) {
+            int p_start, p_end;
+            get_island_range(isl, p_start, p_end);
+            const int island_size = p_end - p_start;
+            if (island_size <= 0) continue;
+
+            centroids.emplace_back(block_len, 0.0);
+            std::vector<double>& centroid = centroids.back();
+            for (int i = p_start; i < p_end; ++i) {
+                for (int j = 0; j < block_len; ++j) {
+                    centroid[j] += pop[i][j];
+                }
+            }
+            for (int j = 0; j < block_len; ++j) {
+                centroid[j] /= (double)island_size;
+            }
+        }
+
+        if (centroids.size() <= 1) return 0.0;
+
+        double total_var = 0.0;
+        for (int j = 0; j < block_len; ++j) {
+            double mean = 0.0;
+            for (const auto& centroid : centroids) mean += centroid[j];
+            mean /= (double)centroids.size();
+
+            double var = 0.0;
+            for (const auto& centroid : centroids) {
+                const double diff = centroid[j] - mean;
+                var += diff * diff;
+            }
+            total_var += var / (double)centroids.size();
+        }
+        return total_var / (double)block_len;
+    }
     
     void update_block_gbest() {
         const size_t bytes = block_len * sizeof(double);
@@ -383,6 +576,47 @@ struct BlockPopulation {
         recent_success_count[isl] += success;
         recent_improve_sum[isl] += improve_norm;
         recent_pos[isl] = (pos + 1) % recent_k;
+    }
+};
+
+struct DEArchive {
+    std::vector<std::vector<double>> buf;
+    int max_size;
+    int dim;
+    int count;
+    int next_slot;
+
+    DEArchive() : max_size(0), dim(0), count(0), next_slot(0) {}
+
+    void init(int max_sz, int d) {
+        max_size = max_sz > 0 ? max_sz : 0;
+        dim = d > 0 ? d : 0;
+        count = 0;
+        next_slot = 0;
+        buf.assign(max_size, std::vector<double>(dim, 0.0));
+    }
+
+    void add(const double* sol) {
+        if (max_size <= 0 || dim <= 0 || sol == nullptr) {
+            return;
+        }
+        std::copy(sol, sol + dim, buf[next_slot].begin());
+        next_slot = (next_slot + 1) % max_size;
+        if (count < max_size) {
+            count++;
+        }
+    }
+
+    const double* random_get() const {
+        if (count <= 0) {
+            return nullptr;
+        }
+        int idx = rand() % count;
+        return buf[idx].data();
+    }
+
+    bool empty() const {
+        return count <= 0;
     }
 };
 
@@ -492,9 +726,16 @@ public:
     bool use_blocks;
     bool enable_intra_migration;
     bool use_bandit;
+    bool shared_bandit_mode;
     bool fixed_ops_per_block;
     OperatorSelectionMode op_selection_mode;
     std::vector<int> round_robin_counters;
+    // Per-island shared bandits: each island's bandit is shared across all
+    // 3 blocks so that cross-block interference is present while keeping
+    // per-island data density identical to the full (independent) baseline.
+    std::vector<ContextualBanditSelector> shared_cb_selectors;          // [nSubpop]
+    std::vector<BanditSnapshot> shared_snapshots;                       // [nSubpop]
+    std::vector<std::vector<DeferredBanditUpdate>> shared_island_deferred; // [nSubpop]
 
     // Operator stats logging
     bool op_stats_enabled;
@@ -507,6 +748,9 @@ public:
     std::vector<long long> op_counts_dev;
     std::vector<long long> op_counts_overall;
     std::vector<long long> op_counts_full;
+    DEArchive archive_offload;
+    DEArchive archive_dev;
+    DEArchive archive_full;
     std::vector<double> migration_buffer;      // [nSubpop * block_len]
     std::vector<double> migration_fit_buffer;  // [nSubpop]
 
@@ -525,11 +769,23 @@ public:
     std::string reward_log_path;
     std::ofstream reward_log_out;
 
+    // Reward variance logging
+    bool reward_variance_log_enabled;
+    std::string reward_variance_log_path;
+    std::ofstream reward_variance_log_out;
+
     // Global stats logging
     bool global_stats_enabled;
     int global_stats_every;
     std::string global_stats_path;
     std::ofstream global_stats_out;
+
+    // Diversity logging
+    bool diversity_log_enabled;
+    int diversity_log_every;
+    std::string diversity_log_path;
+    std::string diversity_log_config_name;
+    std::ofstream diversity_log_out;
     
     CC_HIHH_Solver(MultiMet* s, int psize, int nsub, int ncircle, double pelite = 0.8);
     ~CC_HIHH_Solver();
@@ -550,22 +806,28 @@ public:
     void SetUseBlocks(bool v) { use_blocks = v; }
     void SetMigrationEnabled(bool v) { enable_intra_migration = v; }
     void SetUseBandit(bool v) { use_bandit = v; }
+    void SetSharedBanditMode(bool v) { shared_bandit_mode = v; }
     void SetFixedOpsPerBlock(bool v) { fixed_ops_per_block = v; }
     void SetSelectionMode(OperatorSelectionMode mode) { op_selection_mode = mode; }
     void SetOpStats(const std::string& path, int every);
     void SetWeightLogging(const std::string& offload_path, const std::string& seq_path, const std::string& dev_path, int every);
     void SetRewardLogging(const std::string& path);
+    void SetRewardVarianceLogging(const std::string& path);
     void SetGlobalStatsLogging(const std::string& path, int every);
+    void SetDiversityLogging(const std::string& path, int every);
     
     void Init();
     void RunGeneration(int gen);
     void LogOpStatsIfNeeded(int gen, bool is_last);
     void LogWeightsIfNeeded(int gen, bool is_last);
     void LogGlobalStatsIfNeeded(int gen, bool is_last);
+    void LogDiversityIfNeeded(int gen, bool is_last);
     void CloseOpStats();
     void CloseWeightLogging();
     void CloseRewardLogging();
+    void CloseRewardVarianceLogging();
     void CloseGlobalStatsLogging();
+    void CloseDiversityLogging();
     void MigrationWithinBlock(BlockPopulation& bp, int dispara);
     
     // Operator application
@@ -614,19 +876,32 @@ private:
     double ComputeEpsilon(int gen) const;
     double ComputeLearningRate(const ContextualBanditSelector& sel) const;
     bool IsResampleOp(int op, int block_id) const;
+    bool ShouldBlockResample(const BlockPopulation& bp, int isl, int gen, double diversity) const;
     double LevyFlight(double beta);
+    int SelectBestNonResampleOp(int block_id,
+                                const std::array<double, 7>& state,
+                                ContextualBanditSelector* selector,
+                                const BanditSnapshot* snapshot) const;
+    void ApplyGateBlockedPenalty(ContextualBanditSelector* selector,
+                                 const std::array<double, 7>& state,
+                                 int blocked_op,
+                                 double clip_val);
 
     void InitOpStats();
     void ResetOpStatsInterval();
     void RecordOpSelection(int block_id, int op_id);
     void InitWeightLogging();
     void InitRewardLogging();
+    void InitRewardVarianceLogging();
     void InitGlobalStatsLogging();
+    void InitDiversityLogging();
     void LogReward(int gen, int block_id, int island_id, int op_id, double reward, double improvement, double div_change);
+    void LogRewardVariance(int generation, int block_id, const std::vector<double>& rewards);
     int SelectOperatorRandom(int block_id) const;
     int SelectOperatorRoundRobin(int block_id);
     double ComputeGlobalAvgFitness() const;
     double ComputeGlobalDiversity() const;
+    void WriteDiversityRow(int generation, const char* block_name, double intra_raw, double global_raw, double inter_raw);
 };
 
 #endif // CC_HIHH_H

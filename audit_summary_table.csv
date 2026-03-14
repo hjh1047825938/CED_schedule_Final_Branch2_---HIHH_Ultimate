@@ -1,0 +1,11 @@
+topic,current_paper_claim,actual_code_or_data_finding,consistent_flag,risk_level,recommended_action
+统计检验,所有 pairwise comparison 都是 n=10 双侧 Wilcoxon signed-rank,仓库中存在大量 Mann-Whitney 产表脚本，且若干论文 p 值不可能来自 n=10 双侧 exact Wilcoxon,False,高,重做统计表并统一检验说明
+预算公平性,默认比较公平,不是相同 generations、不是相同 total evaluations、也不是相同 wall-clock time,False,高,正文明确预算口径并重构 baseline 对比
+epsilon 公式,公式与实现一致且能体现明显衰减,公式形式一致，但主程序默认 eps_k=0.01 时几乎不衰减；构造函数默认还是 2.0，存在双默认值,False,中,正文和参数表必须澄清
+目标函数 makespan,f1 是整体完工时间,代码中 `time_max` 仅取 CE_ET 最大值，不是 CE+MFG overall completion time,False,高,改正文中的 f1 定义
+PPO 协议,固定策略重复评估，std≈0,表格非零 std 来自不同 seed 重新训练；图注与表格不能同时成立,False,高,二选一修正协议描述
+DSAC-DE 实现,简化为每 10 代更新、batch=32、仅输出层更新,代码实际为每 2 次触发更新、batch=256、全网络更新,False,高,改成 simplified re-implementation 的真实说明
+制造加工时间模型,加工时间依赖设备,"代码为 `MTask_Time[CJ*M_OPTnum+CO]`，即 p_{j,k}",False,中,修正符号与模型说明
+device gene 语义,设备块可独立解释为按工序分配,当前编码按 execution-order rank 映射，和 sequence 强耦合,False,高,在编码设计段落加限定
+normalization refs,shared across all methods and fixed across runs,refs 在 `ComputeReferenceValues()` 中按当前 run 初始化种群重新计算，至少不 fixed across runs,False,高,重写 normalization 协议
+复杂度/profiling,runtime 受各模块支配关系已说明,缺少模块级 profiling；现有 figure provenance 还显示 DSAC-DE runtime 曾被按指令放大,False,高,补 profiling 或删除强结论

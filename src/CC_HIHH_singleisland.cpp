@@ -7,6 +7,98 @@
 #include <iomanip>
 #include <utility>
 
+namespace {
+
+constexpr double kPi = 3.14159265358979323846;
+
+double unit_open(double u) {
+    if (u <= 0.0) return 1e-10;
+    if (u >= 1.0) return 1.0 - 1e-10;
+    return u;
+}
+
+void segment_shift_values(double* values, int block_len, int seg_len) {
+    if (values == nullptr || block_len < 2) {
+        return;
+    }
+    seg_len = std::max(1, std::min(seg_len, block_len));
+    if (seg_len >= block_len) {
+        return;
+    }
+
+    int seg_start = rand() % (block_len - seg_len + 1);
+    int remaining = block_len - seg_len;
+    int insert_pos = rand() % (remaining + 1);
+
+    std::vector<double> segment(seg_len);
+    std::vector<double> temp;
+    temp.reserve(remaining);
+
+    for (int s = 0; s < seg_len; ++s) {
+        segment[s] = values[seg_start + s];
+    }
+    for (int j = 0; j < block_len; ++j) {
+        if (j < seg_start || j >= seg_start + seg_len) {
+            temp.push_back(values[j]);
+        }
+    }
+
+    int wi = 0;
+    for (int j = 0; j < block_len; ++j) {
+        if (j >= insert_pos && j < insert_pos + seg_len) {
+            values[j] = segment[j - insert_pos];
+        } else {
+            values[j] = temp[wi++];
+        }
+    }
+}
+
+void apply_vns_neighborhood(double* values, int block_len, int k) {
+    if (values == nullptr || block_len < 2) {
+        return;
+    }
+
+    if (k == 1) {
+        int j1 = rand() % block_len;
+        int j2 = rand() % block_len;
+        if (j1 != j2) {
+            std::swap(values[j1], values[j2]);
+        }
+        return;
+    }
+
+    if (k == 2) {
+        if (block_len < 2) {
+            return;
+        }
+        int j = rand() % (block_len - 1);
+        std::swap(values[j], values[j + 1]);
+        return;
+    }
+
+    if (k == 3) {
+        int seg_len = std::min(block_len, 2 + rand() % 3);
+        int start = rand() % (block_len - seg_len + 1);
+        std::reverse(values + start, values + start + seg_len);
+        return;
+    }
+
+    if (k == 4) {
+        int seg_len = std::min(block_len, 2 + rand() % 2);
+        segment_shift_values(values, block_len, seg_len);
+        return;
+    }
+
+    int seg_len = std::min(block_len, 3 + rand() % 3);
+    int start = rand() % (block_len - seg_len + 1);
+    for (int t = seg_len - 1; t > 0; --t) {
+        int r = rand() % (t + 1);
+        std::swap(values[start + t], values[start + r]);
+    }
+}
+
+}  // namespace
+
 //=============================================================================
 // CC_HIHH_Solver Implementation
 //=============================================================================
@@ -64,6 +156,7 @@ CC_HIHH_Solver::CC_HIHH_Solver(MultiMet* s, int psize, int nsub, int ncircle, do
     use_blocks = true;
     enable_intra_migration = true;
     use_bandit = true;
+    shared_bandit_mode = false;
     fixed_ops_per_block = false;
     op_selection_mode = MODE_CONTEXTUAL_BANDIT;
     round_robin_counters.assign(4, 0);
@@ -75,8 +168,12 @@ CC_HIHH_Solver::CC_HIHH_Solver(MultiMet* s, int psize, int nsub, int ncircle, do
     weight_log_enabled = false;
     weight_log_every = 50;
     reward_log_enabled = false;
+    reward_variance_log_enabled = false;
     global_stats_enabled = false;
     global_stats_every = 50;
+    diversity_log_enabled = false;
+    diversity_log_every = 50;
+    diversity_log_config_name.clear();
     
     var_full.resize(Nvar);
     gbest.resize(Nvar);
@@ -87,7 +184,9 @@ CC_HIHH_Solver::~CC_HIHH_Solver()
     CloseOpStats();
     CloseWeightLogging();
     CloseRewardLogging();
+    CloseRewardVarianceLogging();
     CloseGlobalStatsLogging();
+    CloseDiversityLogging();
     P_offload.destroy();
     P_seq.destroy();
     P_dev.destroy();
@@ -113,9 +212,13 @@ void CC_HIHH_Solver::Init()
               << ", nSubpop=" << nSubpop << std::endl;
 
     if (!use_blocks) {
+        shared_cb_selectors.clear();
         int full_start = 0;
         int full_len = Nvar;
         P_full.init(0, full_start, full_len, popsize, nSubpop, num_ops_full, state_dim, recent_k);
+        archive_full.init(std::max(1, popsize / nSubpop), full_len);
+        archive_offload.init(0, 0);
+        archive_dev.init(0, 0);
 
         for (int i = 0; i < popsize && i < solver->Popsize; i++) {
             std::copy(solver->pop[i], solver->pop[i] + full_len, P_full.pop[i]);
@@ -137,8 +240,26 @@ void CC_HIHH_Solver::Init()
         if (op_stats_enabled) InitOpStats();
         if (weight_log_enabled) InitWeightLogging();
         if (reward_log_enabled) InitRewardLogging();
+        if (reward_variance_log_enabled) InitRewardVarianceLogging();
         if (global_stats_enabled) InitGlobalStatsLogging();
+        if (diversity_log_enabled) InitDiversityLogging();
         return;
+    }
+
+    if (shared_bandit_mode) {
+        const int shared_ops = std::max(num_ops_offload, std::max(num_ops_seq, num_ops_dev));
+        shared_cb_selectors.resize(nSubpop);
+        shared_snapshots.resize(nSubpop);
+        shared_island_deferred.resize(nSubpop);
+        for (int i = 0; i < nSubpop; i++) {
+            shared_cb_selectors[i].init(shared_ops, state_dim);
+            shared_snapshots[i].clear();
+            shared_island_deferred[i].clear();
+        }
+    } else {
+        shared_cb_selectors.clear();
+        shared_snapshots.clear();
+        shared_island_deferred.clear();
     }
     
     // Initialize context
@@ -158,6 +279,10 @@ void CC_HIHH_Solver::Init()
     int dev_start = 2 * CE_Tnum + ops;
     int dev_len = ops;
     P_dev.init(2, dev_start, dev_len, popsize, nSubpop, num_ops_dev, state_dim, recent_k);
+    int archive_size = std::max(1, popsize / nSubpop);
+    archive_offload.init(archive_size, offload_len);
+    archive_dev.init(archive_size, dev_len);
+    archive_full.init(0, 0);
     
     std::cout << "  Block 0 (offload): start=" << offload_start << ", len=" << offload_len << std::endl;
     std::cout << "  Block 1 (seq): start=" << seq_start << ", len=" << seq_len << std::endl;
@@ -205,19 +330,24 @@ void CC_HIHH_Solver::Init()
     if (op_stats_enabled) InitOpStats();
     if (weight_log_enabled) InitWeightLogging();
     if (reward_log_enabled) InitRewardLogging();
+    if (reward_variance_log_enabled) InitRewardVarianceLogging();
     if (global_stats_enabled) InitGlobalStatsLogging();
+    if (diversity_log_enabled) InitDiversityLogging();
 }
 
 void CC_HIHH_Solver::RunGeneration(int gen)
 {
     if (!use_blocks) {
         BlockPopulation& bp = P_full;
+        std::vector<double> generation_rewards;
+        if (reward_variance_log_enabled) generation_rewards.reserve(nSubpop);
         for (int isl = 0; isl < nSubpop; isl++) {
             int p_start, p_end;
             bp.get_island_range(isl, p_start, p_end);
 
             double old_best_fit = bp.get_island_best_fit(p_start, p_end);
             double old_diversity = bp.compute_diversity(p_start, p_end);
+            bool gate_blocks_resample = ShouldBlockResample(bp, isl, gen, old_diversity);
 
             int op_sel = 0;
             std::array<double, 7> state{};
@@ -231,10 +361,11 @@ void CC_HIHH_Solver::RunGeneration(int gen)
                 op_sel = SelectOperatorRandom(-1);
             }
             int op_exec = op_sel;
-            if (gate_enabled && op_sel == FULL_OP_BLOCK_RESAMPLE &&
-                bp.island_stagnation[isl] < resample_gate) {
+            if (gate_blocks_resample && op_sel == FULL_OP_BLOCK_RESAMPLE) {
                 gate_blocked_total++;
-                op_exec = FULL_OP_DE;
+                op_exec = SelectBestNonResampleOp(-1, state, &bp.cb_selectors[isl], nullptr);
+                ApplyGateBlockedPenalty(&bp.cb_selectors[isl], state, op_sel,
+                                        (stable_mode ? stable_reward_clip : reward_clip) * 0.25);
                 gate_fallback_total++;
             }
 
@@ -258,6 +389,7 @@ void CC_HIHH_Solver::RunGeneration(int gen)
                 bp.cb_selectors[isl].update(state, op_exec, reward, lr);
             }
             LogReward(gen + 1, -1, isl, op_exec, reward, improvement_ratio, (new_diversity - old_diversity));
+            if (reward_variance_log_enabled) generation_rewards.push_back(reward);
 
             int success = (new_best_fit + 1e-12 < old_best_fit) ? 1 : 0;
             double improve_norm = improvement_ratio;
@@ -293,15 +425,30 @@ void CC_HIHH_Solver::RunGeneration(int gen)
         }
 
         prev_gbest_fit = gbest_fit;
+        LogRewardVariance(gen + 1, -1, generation_rewards);
         return;
     }
 
     // Process each block in round-robin fashion
     BlockPopulation* blocks[3] = {&P_offload, &P_seq, &P_dev};
     const char* block_names[3] = {"offload", "seq", "dev"};
+
+    // For shared bandit: record assembled fitness BEFORE block processing
+    // so we can compute a global reward (credit-assignment-free) at end of gen.
+    double old_assembled_fit = 0.0;
+    if (shared_bandit_mode) {
+        context.get_full(var_full.data());
+        old_assembled_fit = solver->Eval(var_full.data());
+        for (int i = 0; i < nSubpop; i++) {
+            shared_snapshots[i].take_snapshot(shared_cb_selectors[i]);
+            shared_island_deferred[i].clear();
+        }
+    }
     
     for (int b = 0; b < 3; b++) {
         BlockPopulation& bp = *blocks[b];
+        std::vector<double> block_rewards;
+        if (reward_variance_log_enabled) block_rewards.reserve(nSubpop);
         
         // Process each island
         for (int isl = 0; isl < nSubpop; isl++) {
@@ -311,11 +458,13 @@ void CC_HIHH_Solver::RunGeneration(int gen)
             // Record pre-application statistics
             double old_best_fit = bp.get_island_best_fit(p_start, p_end);
             double old_diversity = bp.compute_diversity(p_start, p_end);
+            bool gate_blocks_resample = ShouldBlockResample(bp, isl, gen, old_diversity);
             
             // Build contextual state and select operator
             std::array<double, 7> state{};
             int op_sel = 0;
             bool allow_bandit = (op_selection_mode == MODE_CONTEXTUAL_BANDIT) && use_bandit && !fixed_ops_per_block;
+            ContextualBanditSelector* selector = nullptr;
             if (fixed_ops_per_block) {
                 if (bp.block_id == 0) op_sel = OFF_OP_GA;
                 else if (bp.block_id == 1) op_sel = SEQ_OP_GA;
@@ -323,22 +472,33 @@ void CC_HIHH_Solver::RunGeneration(int gen)
             } else if (allow_bandit) {
                 state = ComputeState(bp, isl, gen, old_diversity);
                 double eps = ComputeEpsilon(gen);
-                op_sel = bp.cb_selectors[isl].select(state, eps);
+                if (shared_bandit_mode) {
+                    int n_ops_block = (bp.block_id == 0) ? num_ops_offload : ((bp.block_id == 1) ? num_ops_seq : num_ops_dev);
+                    selector = &shared_cb_selectors[isl];
+                    op_sel = shared_snapshots[isl].select_from_snapshot(state, eps, n_ops_block);
+                } else {
+                    selector = &bp.cb_selectors[isl];
+                    op_sel = selector->select(state, eps);
+                }
             } else if (op_selection_mode == MODE_ROUND_ROBIN) {
                 op_sel = SelectOperatorRoundRobin(bp.block_id);
             } else {
                 op_sel = SelectOperatorRandom(bp.block_id);
             }
             int op_exec = op_sel;
-            if (gate_enabled && IsResampleOp(op_sel, bp.block_id) &&
-                bp.island_stagnation[isl] < resample_gate) {
+            if (gate_blocks_resample && IsResampleOp(op_sel, bp.block_id)) {
                 gate_blocked_total++;
-                if (bp.block_id == 1) {
-                    op_exec = SEQ_OP_SWAP;
-                } else if (bp.block_id == 2) {
-                    op_exec = DEV_OP_GDE;
-                } else {
-                    op_exec = OFF_OP_DE;
+                op_exec = SelectBestNonResampleOp(bp.block_id, state, selector,
+                                                  shared_bandit_mode ? &shared_snapshots[isl] : nullptr);
+                if (!shared_bandit_mode) {
+                    double gate_penalty_scale = 1.0;
+                    if (bp.block_len >= 2000) {
+                        gate_penalty_scale = 0.20;
+                    } else if (bp.block_len >= 800) {
+                        gate_penalty_scale = 0.60;
+                    }
+                    ApplyGateBlockedPenalty(selector, state, op_sel,
+                                            (stable_mode ? stable_reward_clip : reward_clip) * gate_penalty_scale);
                 }
                 gate_fallback_total++;
             }
@@ -369,11 +529,16 @@ void CC_HIHH_Solver::RunGeneration(int gen)
             if (reward > clip_val) reward = clip_val;
             if (reward < -clip_val) reward = -clip_val;
 
-            if (allow_bandit) {
-                double lr = ComputeLearningRate(bp.cb_selectors[isl]);
-                bp.cb_selectors[isl].update(state, op_exec, reward, lr);
+            if (allow_bandit && selector != nullptr) {
+                if (shared_bandit_mode) {
+                    shared_island_deferred[isl].push_back({state, op_exec, reward});
+                } else {
+                    double lr = ComputeLearningRate(*selector);
+                    selector->update(state, op_exec, reward, lr);
+                }
             }
             LogReward(gen + 1, bp.block_id, isl, op_exec, reward, improvement_ratio, (new_diversity - old_diversity));
+            if (reward_variance_log_enabled) block_rewards.push_back(reward);
 
             int success = (new_best_fit + 1e-12 < old_best_fit) ? 1 : 0;
             double improve_norm = improvement_ratio;
@@ -400,7 +565,8 @@ void CC_HIHH_Solver::RunGeneration(int gen)
                 bp.get_island_range(isl, p_start, p_end);
                 double div_now = bp.compute_diversity(p_start, p_end);
                 std::array<double, 7> state_dbg = ComputeState(bp, isl, gen, div_now);
-                double lr_dbg = ComputeLearningRate(bp.cb_selectors[isl]);
+                const ContextualBanditSelector& dbg_sel = shared_bandit_mode ? shared_cb_selectors[isl] : bp.cb_selectors[isl];
+                double lr_dbg = ComputeLearningRate(dbg_sel);
                 std::cout << "[CB][Gen " << (gen + 1) << "][Block " << b << "][Island " << isl
                           << "] stag=" << bp.island_stagnation[isl]
                           << " eps=" << eps_dbg
@@ -408,10 +574,10 @@ void CC_HIHH_Solver::RunGeneration(int gen)
                           << " gate_blocked=" << gate_blocked_total
                           << " gate_fallback=" << gate_fallback_total
                           << " ";
-                for (int op = 0; op < (int)bp.cb_selectors[isl].selection_count.size(); op++) {
-                    int cnt = bp.cb_selectors[isl].selection_count[op];
-                    double avg = (cnt > 0) ? bp.cb_selectors[isl].total_reward[op] / cnt : 0.0;
-                    double sc = bp.cb_selectors[isl].score_op(op, state_dbg);
+                for (int op = 0; op < (int)dbg_sel.selection_count.size(); op++) {
+                    int cnt = dbg_sel.selection_count[op];
+                    double avg = (cnt > 0) ? dbg_sel.total_reward[op] / cnt : 0.0;
+                    double sc = dbg_sel.score_op(op, state_dbg);
                     std::cout << "op" << op << ":cnt=" << cnt << ",avg=" << avg << ",score=" << sc << " ";
                 }
                 std::cout << std::endl;
@@ -431,8 +597,33 @@ void CC_HIHH_Solver::RunGeneration(int gen)
         
         // Update context for this block
         context.update_block(bp.block_id, bp.block_gbest);
+        LogRewardVariance(gen + 1, bp.block_id, block_rewards);
     }
-    
+
+    if (shared_bandit_mode) {
+        // Compute global reward: assembled fitness change over the generation.
+        // This deliberately removes per-block credit assignment — the shared
+        // bandit cannot tell which block's operator caused the improvement.
+        context.get_full(var_full.data());
+        double new_assembled_fit = solver->Eval(var_full.data());
+        double global_reward = (old_assembled_fit - new_assembled_fit)
+                             / (std::abs(old_assembled_fit) + 1e-9);
+        double clip_val = stable_mode ? stable_reward_clip : reward_clip;
+        if (global_reward > clip_val) global_reward = clip_val;
+        if (global_reward < -clip_val) global_reward = -clip_val;
+
+        for (int i = 0; i < nSubpop; i++) {
+            for (auto& upd : shared_island_deferred[i]) {
+                upd.reward = global_reward;   // override per-block reward
+            }
+            for (const auto& upd : shared_island_deferred[i]) {
+                double lr = ComputeLearningRate(shared_cb_selectors[i]);
+                shared_cb_selectors[i].update(upd.state, upd.op, upd.reward, lr);
+            }
+            shared_island_deferred[i].clear();
+        }
+    }
+
     // Update global best
     context.get_full(var_full.data());
     double current_fit = solver->Eval(var_full.data());
@@ -474,6 +665,120 @@ bool CC_HIHH_Solver::IsResampleOp(int op, int block_id) const
     if (block_id == 0) return op == OFF_OP_BLOCK_RESAMPLE;
     if (block_id == 1) return op == SEQ_OP_BLOCK_RESAMPLE;
     return op == DEV_OP_BLOCK_RESAMPLE;
+}
+
+bool CC_HIHH_Solver::ShouldBlockResample(const BlockPopulation& bp, int isl, int gen, double diversity) const
+{
+    if (!gate_enabled) return false;
+    if (isl < 0 || isl >= (int)bp.island_stagnation.size()) return false;
+
+    double success_rate = 0.0;
+    if (bp.recent_count[isl] > 0) {
+        success_rate = (double)bp.recent_success_count[isl] / (double)bp.recent_count[isl];
+    }
+    const double diversity_norm = diversity / (diversity + 1.0);
+    const double gen_ratio = (max_generations > 0)
+        ? (double)(gen + 1) / (double)max_generations
+        : 0.0;
+
+    if (bp.block_len >= 2000) {
+        const int warmup_generations = std::max(5, max_generations / 50);
+        if (gen < warmup_generations && diversity_norm >= 0.05) {
+            return true;
+        }
+        if (gen_ratio < 0.06 &&
+            bp.island_stagnation[isl] < std::max(2, resample_gate / 4) &&
+            success_rate >= 0.30 &&
+            diversity_norm >= 0.15) {
+            return true;
+        }
+        return false;
+    }
+
+    if (bp.block_len >= 800) {
+        const bool offload_medium = (bp.block_id == 0);
+        const int warmup_generations = offload_medium
+            ? std::max(resample_gate * 4, max_generations / 12)
+            : std::max(resample_gate * 10, max_generations / 8);
+        if (gen < warmup_generations) {
+            return true;
+        }
+        if (gen_ratio < (offload_medium ? 0.22 : 0.35) &&
+            bp.island_stagnation[isl] < (offload_medium ? std::max(5, (2 * resample_gate) / 3) : resample_gate) &&
+            success_rate >= (offload_medium ? 0.18 : 0.15) &&
+            diversity_norm >= (offload_medium ? 0.10 : 0.08)) {
+            return true;
+        }
+        return false;
+    }
+
+    const int warmup_generations = std::max(resample_gate * 20, max_generations / 6);
+    if (gen < warmup_generations) {
+        return true;
+    }
+    if (bp.island_stagnation[isl] < resample_gate &&
+        success_rate >= 0.10 &&
+        diversity_norm >= 0.06) {
+        return true;
+    }
+    return false;
+}
+
+int CC_HIHH_Solver::SelectBestNonResampleOp(int block_id,
+                                            const std::array<double, 7>& state,
+                                            ContextualBanditSelector* selector,
+                                            const BanditSnapshot* snapshot) const
+{
+    if (block_id < 0) {
+        if (op_selection_mode == MODE_CONTEXTUAL_BANDIT && use_bandit && selector != nullptr) {
+            return selector->select_best_masked(state, FULL_OP_BLOCK_RESAMPLE);
+        }
+        if (op_selection_mode == MODE_ROUND_ROBIN) {
+            return FULL_OP_DE;
+        }
+        return rand() % FULL_OP_BLOCK_RESAMPLE;
+    }
+
+    const int excluded = 3;
+    if (op_selection_mode == MODE_CONTEXTUAL_BANDIT && use_bandit && !fixed_ops_per_block) {
+        if (shared_bandit_mode && snapshot != nullptr) {
+            const int n_ops_block = (block_id == 0) ? num_ops_offload : ((block_id == 1) ? num_ops_seq : num_ops_dev);
+            return snapshot->select_best_from_snapshot_masked(state, n_ops_block, excluded);
+        }
+        if (selector != nullptr) {
+            return selector->select_best_masked(state, excluded);
+        }
+    }
+
+    if (fixed_ops_per_block) {
+        if (block_id == 0) return OFF_OP_GA;
+        if (block_id == 1) return SEQ_OP_GA;
+        return DEV_OP_DE;
+    }
+
+    if (op_selection_mode == MODE_ROUND_ROBIN) {
+        if (block_id == 0) return OFF_OP_DE;
+        if (block_id == 1) return SEQ_OP_SWAP;
+        return DEV_OP_GDE;
+    }
+
+    return rand() % 3;
+}
+
+void CC_HIHH_Solver::ApplyGateBlockedPenalty(ContextualBanditSelector* selector,
+                                             const std::array<double, 7>& state,
+                                             int blocked_op,
+                                             double clip_val)
+{
+    if (selector == nullptr) return;
+    if (op_selection_mode != MODE_CONTEXTUAL_BANDIT || !use_bandit) return;
+    if (blocked_op < 0 || blocked_op >= selector->num_ops) return;
+
+    // Teach the bandit that resample is currently unavailable without letting
+    // the fixed fallback dominate the learning signal.
+    const double penalty = -0.5 * std::max(clip_val, 1e-6);
+    const double lr = 0.5 * ComputeLearningRate(*selector);
+    selector->update(state, blocked_op, penalty, lr);
 }
 
 std::array<double, 7> CC_HIHH_Solver::ComputeState(const BlockPopulation& bp, int isl, int gen, double diversity) const
@@ -595,66 +900,114 @@ void CC_HIHH_Solver::ApplyOperator(int op, BlockPopulation& bp, int p_start, int
 
 void CC_HIHH_Solver::ApplyGA(BlockPopulation& bp, int p_start, int p_end)
 {
-    double pc = 0.8;  // Crossover probability
-    double pm = 0.15; // Mutation probability
-    
-    // Selection (tournament)
-    for (int i = p_start; i < p_end; i++) {
-        int t1 = p_start + rand() % (p_end - p_start);
-        int t2 = p_start + rand() % (p_end - p_start);
-        int winner = (bp.pop_fit[t1] < bp.pop_fit[t2]) ? t1 : t2;
-        std::copy(bp.pop[winner], bp.pop[winner] + bp.block_len, bp.newpop[i]);
+    const int island_size = p_end - p_start;
+    const int block_len = bp.block_len;
+    if (block_len <= 0 || island_size <= 0) {
+        return;
     }
-    
-    // Crossover (blend crossover)
+
+    const double eta_c = 20.0;
+    const double eta_m = 20.0;
+    const double pc = 0.9;
+    const double pm = 1.0 / static_cast<double>(block_len);
+
+    for (int i = p_start; i < p_end; i++) {
+        int t1 = p_start + rand() % island_size;
+        int t2 = p_start + rand() % island_size;
+        int winner = (bp.pop_fit[t1] < bp.pop_fit[t2]) ? t1 : t2;
+        std::copy(bp.pop[winner], bp.pop[winner] + block_len, bp.newpop[i]);
+    }
+
     for (int i = p_start; i < p_end; i++) {
         if (randval(0, 1) < pc) {
-            int partner = p_start + rand() % (p_end - p_start);
-            if (partner == i) continue;
-            
-            int point = rand() % bp.block_len;
-            for (int j = 0; j < point; j++) {
-                double r = randval(0, 1);
-                double temp = bp.newpop[i][j] * r + (1 - r) * bp.newpop[partner][j];
-                bp.newpop[i][j] = clip01(temp);
+            int partner = p_start + rand() % island_size;
+            if (partner == i) {
+                continue;
+            }
+
+            for (int j = 0; j < block_len; j++) {
+                if (randval(0, 1) < 0.5) {
+                    double u = unit_open(randval(0, 1));
+                    double beta_q = (u <= 0.5)
+                        ? std::pow(2.0 * u, 1.0 / (eta_c + 1.0))
+                        : std::pow(1.0 / (2.0 * (1.0 - u)), 1.0 / (eta_c + 1.0));
+                    double c1 = 0.5 * ((1.0 + beta_q) * bp.newpop[i][j] + (1.0 - beta_q) * bp.newpop[partner][j]);
+                    bp.newpop[i][j] = clip01(c1);
+                }
             }
         }
     }
-    
-    // Mutation
+
     for (int i = p_start; i < p_end; i++) {
-        if (randval(0, 1) < pm) {
-            int r = rand() % bp.block_len;
-            bp.newpop[i][r] = randval(0, 1);
+        for (int j = 0; j < block_len; j++) {
+            if (randval(0, 1) < pm) {
+                double u = randval(0, 1);
+                double delta_q = (u < 0.5)
+                    ? std::pow(2.0 * u, 1.0 / (eta_m + 1.0)) - 1.0
+                    : 1.0 - std::pow(2.0 * (1.0 - u), 1.0 / (eta_m + 1.0));
+                bp.newpop[i][j] = clip01(bp.newpop[i][j] + delta_q);
+            }
         }
     }
 }
 
 void CC_HIHH_Solver::ApplyDE(BlockPopulation& bp, int p_start, int p_end)
 {
-    int island_size = p_end - p_start;
-    
-    // Safety check: DE requires at least 4 distinct individuals (target + 3 donors)
+    const int island_size = p_end - p_start;
     if (island_size < 4) {
-        ApplyGA(bp, p_start, p_end);  // Fallback to GA
+        ApplyGA(bp, p_start, p_end);
         return;
     }
-    
-    double F = 0.5;   // Scale factor
-    double CR = 0.5;  // Crossover rate
-    
+
+    const double F = 0.5;
+    const double CR = 0.5;
+    const double p = 0.1;
+    const int block_len = bp.block_len;
+    DEArchive* archive = nullptr;
+    if (!use_blocks) {
+        archive = &archive_full;
+    } else if (bp.block_id == 0) {
+        archive = &archive_offload;
+    } else if (bp.block_id == 2) {
+        archive = &archive_dev;
+    }
+
+    std::vector<std::pair<double, int>> fit_idx;
+    fit_idx.reserve(island_size);
+    for (int i = p_start; i < p_end; ++i) {
+        fit_idx.push_back({bp.pop_fit[i], i});
+    }
+    std::sort(fit_idx.begin(), fit_idx.end());
+    int p_count = std::max(1, static_cast<int>(std::floor(p * island_size)));
+
     for (int i = p_start; i < p_end; i++) {
-        // Select three distinct individuals from island
-        int r1, r2, r3;
-        do { r1 = p_start + rand() % island_size; } while (r1 == i);
-        do { r2 = p_start + rand() % island_size; } while (r2 == i || r2 == r1);
-        do { r3 = p_start + rand() % island_size; } while (r3 == i || r3 == r1 || r3 == r2);
-        
-        // Mutation and crossover
-        int jrand = rand() % bp.block_len;
-        for (int j = 0; j < bp.block_len; j++) {
+        int pbest_idx = fit_idx[rand() % p_count].second;
+        int r1;
+        do {
+            r1 = p_start + rand() % island_size;
+        } while (r1 == i);
+
+        const double* r2_vals = nullptr;
+        int archive_count = (archive != nullptr) ? archive->count : 0;
+        double archive_prob = (archive_count > 0)
+            ? static_cast<double>(archive_count) / static_cast<double>(island_size + archive_count)
+            : 0.0;
+        if (archive_count > 0 && randval(0, 1) < archive_prob) {
+            r2_vals = archive->random_get();
+        } else {
+            int r2_idx;
+            do {
+                r2_idx = p_start + rand() % island_size;
+            } while (r2_idx == i || r2_idx == r1);
+            r2_vals = bp.pop[r2_idx];
+        }
+
+        int jrand = rand() % block_len;
+        for (int j = 0; j < block_len; j++) {
             if (randval(0, 1) < CR || j == jrand) {
-                double v = bp.pop[r1][j] + F * (bp.pop[r2][j] - bp.pop[r3][j]);
+                double v = bp.pop[i][j]
+                    + F * (bp.pop[pbest_idx][j] - bp.pop[i][j])
+                    + F * (bp.pop[r1][j] - r2_vals[j]);
                 bp.newpop[i][j] = clip01(v);
             } else {
                 bp.newpop[i][j] = bp.pop[i][j];
@@ -665,30 +1018,48 @@ void CC_HIHH_Solver::ApplyDE(BlockPopulation& bp, int p_start, int p_end)
 
 void CC_HIHH_Solver::ApplyGDE(BlockPopulation& bp, int p_start, int p_end)
 {
-    int island_size = p_end - p_start;
-    
-    // Safety check: GDE requires at least 3 distinct individuals (best + 2 donors)
+    const int island_size = p_end - p_start;
     if (island_size < 3) {
-        ApplyGA(bp, p_start, p_end);  // Fallback to GA
+        ApplyGA(bp, p_start, p_end);
         return;
     }
-    
-    double F = randval(0.2, 0.8);
-    double CR = randval(0.1, 0.6);
-    
-    // Find island best for gbest-centric mutation
-    int best_idx = bp.get_island_best_idx(p_start, p_end);
-    
+
+    const double F = 0.5;
+    const double CR = 0.5;
+    const double p = 0.15;
+    const int block_len = bp.block_len;
+
+    std::vector<std::pair<double, int>> fit_idx;
+    fit_idx.reserve(island_size);
+    for (int i = p_start; i < p_end; ++i) {
+        fit_idx.push_back({bp.pop_fit[i], i});
+    }
+    std::sort(fit_idx.begin(), fit_idx.end());
+    int p_count = std::max(1, static_cast<int>(std::floor(p * island_size)));
+
     for (int i = p_start; i < p_end; i++) {
-        int r1, r2;
-        do { r1 = p_start + rand() % island_size; } while (r1 == i);
-        do { r2 = p_start + rand() % island_size; } while (r2 == i || r2 == r1);
-        
-        // Gbest-centric mutation
-        int jrand = rand() % bp.block_len;
-        for (int j = 0; j < bp.block_len; j++) {
+        int pbest_idx = fit_idx[rand() % p_count].second;
+        int cand1;
+        int cand2;
+        do {
+            cand1 = p_start + rand() % island_size;
+        } while (cand1 == i);
+        do {
+            cand2 = p_start + rand() % island_size;
+        } while (cand2 == i || cand2 == cand1);
+        int r1 = (bp.pop_fit[cand1] < bp.pop_fit[cand2]) ? cand1 : cand2;
+
+        int r2;
+        do {
+            r2 = p_start + rand() % island_size;
+        } while (r2 == i || r2 == r1);
+
+        int jrand = rand() % block_len;
+        for (int j = 0; j < block_len; j++) {
             if (randval(0, 1) < CR || j == jrand) {
-                double v = bp.pop[best_idx][j] + F * (bp.pop[r1][j] - bp.pop[r2][j]);
+                double v = bp.pop[i][j]
+                    + F * (bp.pop[pbest_idx][j] - bp.pop[i][j])
+                    + F * (bp.pop[r1][j] - bp.pop[r2][j]);
                 bp.newpop[i][j] = clip01(v);
             } else {
                 bp.newpop[i][j] = bp.pop[i][j];
@@ -699,28 +1070,22 @@ void CC_HIHH_Solver::ApplyGDE(BlockPopulation& bp, int p_start, int p_end)
 
 void CC_HIHH_Solver::ApplyBitFlip(BlockPopulation& bp, int p_start, int p_end)
 {
-    // For offload block: flip cloud/edge decision
-    // Offload block structure: [cloud/edge selection (CE_Tnum)] + [server assignment (CE_Tnum)]
-    // First half of offload block is cloud/edge selection
-    double pm = 0.1;  // Flip probability
-    int half_len = bp.block_len / 2;  // == CE_Tnum
-    
-    // Safety assertion: offload block should have even length
-    if (half_len * 2 != bp.block_len) {
-        std::cerr << "[CC-HIHH] Warning: offload block_len is odd, half_len may be inaccurate" << std::endl;
-    }
-    
+    const double p_flip = 0.1;
+    const double cauchy_scale = 0.1;
+    const int half_len = bp.block_len / 2;
+
     for (int i = p_start; i < p_end; i++) {
+        std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
         for (int j = 0; j < half_len; j++) {
-            if (randval(0, 1) < pm) {
-                // Flip: if < 0.5 (cloud), set to 0.75 (edge); else set to 0.25 (cloud)
+            if (randval(0, 1) < p_flip) {
                 bp.newpop[i][j] = (bp.newpop[i][j] < 0.5) ? 0.75 : 0.25;
             }
         }
-        // Small mutation on server selection (second half)
         for (int j = half_len; j < bp.block_len; j++) {
-            if (randval(0, 1) < pm) {
-                bp.newpop[i][j] = randval(0, 1);
+            if (randval(0, 1) < p_flip) {
+                double u = unit_open(randval(0, 1));
+                double cauchy_sample = cauchy_scale * std::tan(kPi * (u - 0.5));
+                bp.newpop[i][j] = clip01(bp.pop[i][j] + cauchy_sample);
             }
         }
     }
@@ -728,18 +1093,23 @@ void CC_HIHH_Solver::ApplyBitFlip(BlockPopulation& bp, int p_start, int p_end)
 
 void CC_HIHH_Solver::ApplySeqSwap(BlockPopulation& bp, int p_start, int p_end, int n_swaps)
 {
-    // For sequence block: swap a few pairs (local exploitation)
-    if (bp.block_len < 2) return;
-    if (n_swaps < 1) n_swaps = 1;
+    if (bp.block_len < 2) {
+        for (int i = p_start; i < p_end; ++i) {
+            if (bp.block_len > 0) {
+                std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
+            }
+        }
+        return;
+    }
+    if (n_swaps < 1) {
+        n_swaps = 1;
+    }
 
     for (int i = p_start; i < p_end; i++) {
-        int swaps = n_swaps;
-        for (int k = 0; k < swaps; k++) {
-            int j1 = rand() % bp.block_len;
-            int j2 = rand() % bp.block_len;
-            if (j1 != j2) {
-                std::swap(bp.newpop[i][j1], bp.newpop[i][j2]);
-            }
+        std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
+        for (int k = 0; k < n_swaps; k++) {
+            int seg_len = 1 + rand() % 3;
+            segment_shift_values(bp.newpop[i], bp.block_len, seg_len);
         }
     }
 }
@@ -778,13 +1148,7 @@ void CC_HIHH_Solver::ApplyVNS(BlockPopulation& bp, int p_start, int p_end)
         for (int k = 1; k <= vns_max_k; k++) {
             for (int sample = 0; sample < vns_samples_per_k; sample++) {
                 std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
-                for (int swap_count = 0; swap_count < k; swap_count++) {
-                    int j1 = rand() % bp.block_len;
-                    int j2 = rand() % bp.block_len;
-                    if (j1 != j2) {
-                        std::swap(bp.newpop[i][j1], bp.newpop[i][j2]);
-                    }
-                }
+                apply_vns_neighborhood(bp.newpop[i], bp.block_len, k);
             }
         }
     }
@@ -793,10 +1157,10 @@ void CC_HIHH_Solver::ApplyVNS(BlockPopulation& bp, int p_start, int p_end)
         int i = fit_idx[e].second;
         std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
         for (int k = 0; k < seq_swap_count; k++) {
-            int j1 = rand() % bp.block_len;
-            int j2 = rand() % bp.block_len;
-            if (j1 != j2) {
-                std::swap(bp.newpop[i][j1], bp.newpop[i][j2]);
+            int a = rand() % bp.block_len;
+            int b = rand() % bp.block_len;
+            if (a != b) {
+                std::swap(bp.newpop[i][a], bp.newpop[i][b]);
             }
         }
     }
@@ -826,8 +1190,9 @@ void CC_HIHH_Solver::ApplyLevy(BlockPopulation& bp, int p_start, int p_end)
         std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
         for (int k = 0; k < n_perturb; k++) {
             int j = rand() % bp.block_len;
-            double levy_step = LevyFlight(levy_beta);
-            double new_val = bp.pop[i][j] + levy_step_coeff * levy_step;
+            double u = unit_open(randval(0, 1));
+            double cauchy_sample = std::tan(kPi * (u - 0.5));
+            double new_val = bp.pop[i][j] + levy_step_coeff * cauchy_sample;
             bp.newpop[i][j] = clip01(new_val);
         }
     }
@@ -842,9 +1207,14 @@ void CC_HIHH_Solver::ApplyBlockResample(BlockPopulation& bp, int p_start, int p_
     if (count < 1) count = 1;
 
     for (int i = p_start; i < p_end; i++) {
+        std::copy(bp.pop[i], bp.pop[i] + bp.block_len, bp.newpop[i]);
         for (int k = 0; k < count; k++) {
             int idx = rand() % bp.block_len;
-            bp.newpop[i][idx] = clip01(randval(0, 1));
+            if (randval(0, 1) < 0.5) {
+                bp.newpop[i][idx] = clip01(1.0 - bp.pop[i][idx]);
+            } else {
+                bp.newpop[i][idx] = clip01(randval(0, 1));
+            }
         }
     }
 }
@@ -877,6 +1247,13 @@ void CC_HIHH_Solver::SelectionUpdate(BlockPopulation& bp, int p_start, int p_end
 {
     for (int i = p_start; i < p_end; i++) {
         if (bp.newpop_fit[i] < bp.pop_fit[i]) {
+            if (!use_blocks) {
+                archive_full.add(bp.pop[i]);
+            } else if (bp.block_id == 0) {
+                archive_offload.add(bp.pop[i]);
+            } else if (bp.block_id == 2) {
+                archive_dev.add(bp.pop[i]);
+            }
             std::copy(bp.newpop[i], bp.newpop[i] + bp.block_len, bp.pop[i]);
             bp.pop_fit[i] = bp.newpop_fit[i];
         }
@@ -905,11 +1282,34 @@ void CC_HIHH_Solver::SetRewardLogging(const std::string& path)
     reward_log_enabled = !reward_log_path.empty();
 }
 
+void CC_HIHH_Solver::SetRewardVarianceLogging(const std::string& path)
+{
+    reward_variance_log_path = path;
+    reward_variance_log_enabled = !reward_variance_log_path.empty();
+}
+
 void CC_HIHH_Solver::SetGlobalStatsLogging(const std::string& path, int every)
 {
     global_stats_path = path;
     global_stats_every = every > 0 ? every : 1;
     global_stats_enabled = !global_stats_path.empty();
+}
+
+void CC_HIHH_Solver::SetDiversityLogging(const std::string& path, int every)
+{
+    namespace fs = std::filesystem;
+    diversity_log_path = path;
+    diversity_log_every = every > 0 ? every : 1;
+    diversity_log_enabled = !diversity_log_path.empty();
+    diversity_log_config_name = "unknown";
+    if (!diversity_log_path.empty()) {
+        std::string stem = fs::path(diversity_log_path).stem().string();
+        const std::string prefix = "diversity_log_";
+        size_t start = stem.rfind(prefix, 0) == 0 ? prefix.size() : 0;
+        size_t end = stem.find("_seed", start);
+        if (end == std::string::npos) end = stem.size();
+        if (end > start) diversity_log_config_name = stem.substr(start, end - start);
+    }
 }
 
 void CC_HIHH_Solver::InitOpStats()
@@ -1014,6 +1414,26 @@ void CC_HIHH_Solver::CloseRewardLogging()
     if (reward_log_out.is_open()) reward_log_out.close();
 }
 
+void CC_HIHH_Solver::InitRewardVarianceLogging()
+{
+    if (reward_variance_log_path.empty()) return;
+    namespace fs = std::filesystem;
+    fs::path p = fs::path(reward_variance_log_path).parent_path();
+    if (!p.empty()) fs::create_directories(p);
+    reward_variance_log_out.open(reward_variance_log_path, std::ios::out | std::ios::trunc);
+    if (!reward_variance_log_out.is_open()) {
+        std::cerr << "[CC-HIHH] Warning: failed to open reward variance log file: " << reward_variance_log_path << std::endl;
+        reward_variance_log_enabled = false;
+        return;
+    }
+    reward_variance_log_out << "generation,block_id,reward_mean,reward_variance,reward_min,reward_max\n";
+}
+
+void CC_HIHH_Solver::CloseRewardVarianceLogging()
+{
+    if (reward_variance_log_out.is_open()) reward_variance_log_out.close();
+}
+
 void CC_HIHH_Solver::InitGlobalStatsLogging()
 {
     if (global_stats_path.empty()) return;
@@ -1034,6 +1454,26 @@ void CC_HIHH_Solver::CloseGlobalStatsLogging()
     if (global_stats_out.is_open()) global_stats_out.close();
 }
 
+void CC_HIHH_Solver::InitDiversityLogging()
+{
+    if (diversity_log_path.empty()) return;
+    namespace fs = std::filesystem;
+    fs::path p = fs::path(diversity_log_path).parent_path();
+    if (!p.empty()) fs::create_directories(p);
+    diversity_log_out.open(diversity_log_path, std::ios::out | std::ios::trunc);
+    if (!diversity_log_out.is_open()) {
+        std::cerr << "[CC-HIHH] Warning: failed to open diversity log file: " << diversity_log_path << std::endl;
+        diversity_log_enabled = false;
+        return;
+    }
+    diversity_log_out << "generation,block,config,intra_diversity,global_diversity,inter_diversity\n";
+}
+
+void CC_HIHH_Solver::CloseDiversityLogging()
+{
+    if (diversity_log_out.is_open()) diversity_log_out.close();
+}
+
 void CC_HIHH_Solver::LogReward(int gen, int block_id, int island_id, int op_id, double reward, double improvement, double div_change)
 {
     if (!reward_log_enabled || !reward_log_out.is_open()) return;
@@ -1044,6 +1484,32 @@ void CC_HIHH_Solver::LogReward(int gen, int block_id, int island_id, int op_id, 
                    << std::setprecision(16) << reward << ","
                    << std::setprecision(16) << improvement << ","
                    << std::setprecision(16) << div_change << "\n";
+}
+
+void CC_HIHH_Solver::LogRewardVariance(int generation, int block_id, const std::vector<double>& rewards)
+{
+    if (!reward_variance_log_enabled || !reward_variance_log_out.is_open() || rewards.empty()) return;
+    double sum = 0.0;
+    double min_reward = rewards[0];
+    double max_reward = rewards[0];
+    for (double reward : rewards) {
+        sum += reward;
+        min_reward = std::min(min_reward, reward);
+        max_reward = std::max(max_reward, reward);
+    }
+    const double mean = sum / (double)rewards.size();
+    double variance = 0.0;
+    for (double reward : rewards) {
+        const double diff = reward - mean;
+        variance += diff * diff;
+    }
+    variance /= (double)rewards.size();
+    reward_variance_log_out << generation << ","
+                            << block_id << ","
+                            << std::setprecision(16) << mean << ","
+                            << std::setprecision(16) << variance << ","
+                            << std::setprecision(16) << min_reward << ","
+                            << std::setprecision(16) << max_reward << "\n";
 }
 
 void CC_HIHH_Solver::RecordOpSelection(int block_id, int op_id)
@@ -1188,12 +1654,26 @@ double CC_HIHH_Solver::ComputeGlobalAvgFitness() const
 double CC_HIHH_Solver::ComputeGlobalDiversity() const
 {
     if (!use_blocks) {
-        return P_full.compute_diversity(0, P_full.popsize);
+        return P_full.compute_global_diversity();
     }
-    double d0 = P_offload.compute_diversity(0, P_offload.popsize);
-    double d1 = P_seq.compute_diversity(0, P_seq.popsize);
-    double d2 = P_dev.compute_diversity(0, P_dev.popsize);
+    double d0 = P_offload.compute_global_diversity();
+    double d1 = P_seq.compute_global_diversity();
+    double d2 = P_dev.compute_global_diversity();
     return (d0 + d1 + d2) / 3.0;
+}
+
+void CC_HIHH_Solver::WriteDiversityRow(int generation, const char* block_name, double intra_raw, double global_raw, double inter_raw)
+{
+    if (!diversity_log_out.is_open()) return;
+    const double intra_diversity = intra_raw / (intra_raw + 1.0);
+    const double global_diversity = global_raw / (global_raw + 1.0);
+    const double inter_diversity = inter_raw / (inter_raw + 1.0);
+    diversity_log_out << generation << ","
+                      << block_name << ","
+                      << diversity_log_config_name << ","
+                      << std::setprecision(16) << intra_diversity << ","
+                      << std::setprecision(16) << global_diversity << ","
+                      << std::setprecision(16) << inter_diversity << "\n";
 }
 
 void CC_HIHH_Solver::LogWeightsIfNeeded(int gen, bool is_last)
@@ -1204,18 +1684,32 @@ void CC_HIHH_Solver::LogWeightsIfNeeded(int gen, bool is_last)
     if (!(weight_log_out_offload.is_open() && weight_log_out_seq.is_open() && weight_log_out_dev.is_open())) return;
 
     auto log_block = [&](std::ofstream& out, const BlockPopulation& bp, int num_ops) {
-        if (bp.cb_selectors.empty()) return;
+        if (!shared_bandit_mode && bp.cb_selectors.empty()) return;
         for (int op = 0; op < num_ops; ++op) {
             std::vector<double> avg_w(state_dim, 0.0);
-            for (int isl = 0; isl < (int)bp.cb_selectors.size(); ++isl) {
-                const auto& sel = bp.cb_selectors[isl];
-                int base = op * sel.feat_dim;
-                for (int k = 0; k < state_dim && k < sel.feat_dim; ++k) {
-                    avg_w[k] += sel.weights[base + k];
+            int denom = 0;
+            if (shared_bandit_mode) {
+                for (int sisl = 0; sisl < (int)shared_cb_selectors.size(); ++sisl) {
+                    const auto& sel = shared_cb_selectors[sisl];
+                    int base = op * sel.feat_dim;
+                    for (int k = 0; k < state_dim && k < sel.feat_dim; ++k) {
+                        avg_w[k] += sel.weights[base + k];
+                    }
                 }
+                denom = (int)shared_cb_selectors.size();
+            } else {
+                for (int isl = 0; isl < (int)bp.cb_selectors.size(); ++isl) {
+                    const auto& sel = bp.cb_selectors[isl];
+                    int base = op * sel.feat_dim;
+                    for (int k = 0; k < state_dim && k < sel.feat_dim; ++k) {
+                        avg_w[k] += sel.weights[base + k];
+                    }
+                }
+                denom = (int)bp.cb_selectors.size();
             }
+            if (denom < 1) denom = 1;
             for (int k = 0; k < state_dim; ++k) {
-                avg_w[k] /= (double)bp.cb_selectors.size();
+                avg_w[k] /= (double)denom;
             }
             double norm = 0.0;
             for (int k = 0; k < state_dim; ++k) norm += avg_w[k] * avg_w[k];
@@ -1255,4 +1749,39 @@ void CC_HIHH_Solver::LogGlobalStatsIfNeeded(int gen, bool is_last)
                      << stagnation_count << ","
                      << gate_blocked_total << ","
                      << gate_fallback_total << "\n";
+}
+
+void CC_HIHH_Solver::LogDiversityIfNeeded(int gen, bool is_last)
+{
+    if (!diversity_log_enabled || !diversity_log_out.is_open()) return;
+    const bool flush = ((gen + 1) % diversity_log_every == 0) || is_last;
+    if (!flush) return;
+
+    if (!use_blocks) {
+        const double global = P_full.compute_global_diversity();
+        WriteDiversityRow(gen + 1, "full", global, global, 0.0);
+        return;
+    }
+
+    WriteDiversityRow(
+        gen + 1,
+        "offload",
+        P_offload.compute_intra_island_diversity(),
+        P_offload.compute_global_diversity(),
+        P_offload.compute_inter_island_diversity()
+    );
+    WriteDiversityRow(
+        gen + 1,
+        "seq",
+        P_seq.compute_intra_island_diversity(),
+        P_seq.compute_global_diversity(),
+        P_seq.compute_inter_island_diversity()
+    );
+    WriteDiversityRow(
+        gen + 1,
+        "dev",
+        P_dev.compute_intra_island_diversity(),
+        P_dev.compute_global_diversity(),
+        P_dev.compute_inter_island_diversity()
+    );
 }

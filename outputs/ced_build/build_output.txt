@@ -1,0 +1,23 @@
+﻿适用于 .NET Framework MSBuild 版本 17.14.18+a338add32
+
+  Multimethod.cpp
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(204,8): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(210,20): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(211,12): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(220,20): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(569,59): warning C4244: “参数”: 从“T”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(569,59): warning C4244:         with [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(569,59): warning C4244:         [ [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(569,59): warning C4244:             T=double [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(569,59): warning C4244:         ] [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(1276,16): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(1286,22): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(1291,45): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(1307,62): error C2065: “PI”: 未声明的标识符 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2252,39): warning C4244: “=”: 从“T”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2252,39): warning C4244:         with [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2252,39): warning C4244:         [ [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2252,39): warning C4244:             T=double [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2252,39): warning C4244:         ] [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2286,13): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(3628,40): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]

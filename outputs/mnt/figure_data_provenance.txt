@@ -1,0 +1,10 @@
+Data provenance for generated figures
+
+boxplot_fitness.pdf: real per-seed final fitness parsed from outputs/results/cchihh_ablation_suite/baseline and outputs/results/dsac_de_multiscale.
+runtime_comparison.pdf: real per-seed runtime parsed from the same logs, with DSAC-DE adjusted by x3 at T100 and x6 at T200/T500 per user instruction.
+operator_selection_dynamics.pdf: real operator-selection frequencies averaged over 10 CCHIHH T500 opstats CSV files.
+makespan_energy_scatter.pdf: inferred from alpha=0.2 and alpha=0.8 runs because raw f1/f2 per best solution were not saved in logs.
+communication_time.pdf: estimated from inferred energy using Problems.cpp communication-energy term (QN/1000 * t_comm), because standalone communication time was not logged.
+
+Algorithms in boxplot/runtime: ['CCHIHH', 'CGA', 'DSAC-DE', 'IMOMA']
+Algorithms in scatter/comm: ['CCHIHH', 'CGA', 'DSAC-DE', 'IMOMA']

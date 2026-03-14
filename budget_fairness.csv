@@ -1,0 +1,40 @@
+algorithm,problem,pop_size,islands,evals_per_gen,total_gens,total_evals,runtime_mean_sec,runtime_std_sec,threads,parallelism,fairness_note
+CCHIHH-full,T100,40,8,121,10000,1210000,33.075,0.5774334016432829,OMP max threads (未记录，随环境变化),Yes,每代 3 blocks x 40 offspring，再额外 1 次全局 context eval；论文“per island 40”容易让总预算被误读
+CCHIHH-noCC,T100,40,8,40,10000,400000,22.0569,2.83611641549183,OMP max threads (未记录，随环境变化),Yes,去掉 block 分解后 total evaluations 显著更少，与 CCHIHH-full 不公平
+CCHIHH-noHI,T100,40,1,121,10000,1210000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),Yes,这是 nsubpop=1 的预期预算；当前原始日志缺失，REQUIRES RERUN
+CCHIHH-noCB,T100,40,8,121,10000,1210000,22.6571,0.25356193633026936,OMP max threads (未记录，随环境变化),Yes,与 full 的 evaluations 一致；但 noGate 现有日志对应 stable_false + gate_off，不是纯 only-noGate
+CCHIHH-noMig,T100,40,8,121,10000,1210000,32.1753,0.4005546293717144,OMP max threads (未记录，随环境变化),Yes,与 full 的 evaluations 一致；但 noGate 现有日志对应 stable_false + gate_off，不是纯 only-noGate
+CCHIHH-noGate,T100,40,8,121,10000,1210000,27.718444444444444,0.3688882320944626,OMP max threads (未记录，随环境变化),Yes,与 full 的 evaluations 一致；但 noGate 现有日志对应 stable_false + gate_off，不是纯 only-noGate
+GA,T100,40,1,40,10000,400000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),Yes,当前与论文量级一致的 10-run 日志缺失，REQUIRES RERUN
+DE,T100,40,1,40,10000,400000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),Yes,当前与论文量级一致的 10-run 日志缺失，REQUIRES RERUN
+Gbest-DE,T100,40,1,40,10000,400000,46.76575,0.9681448755222525,OMP max threads (未记录，随环境变化),Yes,
+CGA,T100,300,1,300 + catastrophe extra,10000,>= 3000000,76.7824,1.5902545708156275,1,No evidence of OpenMP in CGA loop,默认人口 300，灾变阶段还会追加评估，总 evaluations 明显高于 CCHIHH-full
+IMOMA,T100,40,1,variable,10000,NOT FOUND,99.5646,11.330171041172425,OMP max threads (未记录，随环境变化),No clear OpenMP at algorithm level,每代额外候选数依赖 archive/pulse/intensify/restart，需要插桩或重跑才能精确统计
+PPO,T100,policy dim = Nvar,1,1 eval / episode,10000 episodes,10000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),No clear OpenMP at training loop,预算与进化算法完全不同：10000 次调度评估，不是 10000 代 x population
+DSAC-DE,T100,40,1,40,10000,400000,14.3118,0.151495361131767,OMP max threads (未记录，随环境变化),Yes,
+CCHIHH-full,T200,40,8,121,10000,1210000,85.2539,2.480965289290977,OMP max threads (未记录，随环境变化),Yes,每代 3 blocks x 40 offspring，再额外 1 次全局 context eval；论文“per island 40”容易让总预算被误读
+CCHIHH-noCC,T200,40,8,40,10000,400000,61.1283,2.0334548624884152,OMP max threads (未记录，随环境变化),Yes,去掉 block 分解后 total evaluations 显著更少，与 CCHIHH-full 不公平
+CCHIHH-noHI,T200,40,1,121,10000,1210000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),Yes,这是 nsubpop=1 的预期预算；当前原始日志缺失，REQUIRES RERUN
+CCHIHH-noCB,T200,40,8,121,10000,1210000,59.5407,0.8480684000191909,OMP max threads (未记录，随环境变化),Yes,与 full 的 evaluations 一致；但 noGate 现有日志对应 stable_false + gate_off，不是纯 only-noGate
+CCHIHH-noMig,T200,40,8,121,10000,1210000,89.5673,1.9320100097509292,OMP max threads (未记录，随环境变化),Yes,与 full 的 evaluations 一致；但 noGate 现有日志对应 stable_false + gate_off，不是纯 only-noGate
+CCHIHH-noGate,T200,40,8,121,10000,1210000,79.7406,1.3155990270595361,OMP max threads (未记录，随环境变化),Yes,与 full 的 evaluations 一致；但 noGate 现有日志对应 stable_false + gate_off，不是纯 only-noGate
+GA,T200,40,1,40,10000,400000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),Yes,当前与论文量级一致的 10-run 日志缺失，REQUIRES RERUN
+DE,T200,40,1,40,10000,400000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),Yes,当前与论文量级一致的 10-run 日志缺失，REQUIRES RERUN
+Gbest-DE,T200,40,1,40,10000,400000,124.26866666666668,0.8517595024418547,OMP max threads (未记录，随环境变化),Yes,
+CGA,T200,300,1,300 + catastrophe extra,10000,>= 3000000,212.68616666666668,10.542068135174743,1,No evidence of OpenMP in CGA loop,默认人口 300，灾变阶段还会追加评估，总 evaluations 明显高于 CCHIHH-full
+IMOMA,T200,40,1,variable,10000,NOT FOUND,341.279,5.281386013370188,OMP max threads (未记录，随环境变化),No clear OpenMP at algorithm level,每代额外候选数依赖 archive/pulse/intensify/restart，需要插桩或重跑才能精确统计
+PPO,T200,policy dim = Nvar,1,1 eval / episode,10000 episodes,10000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),No clear OpenMP at training loop,预算与进化算法完全不同：10000 次调度评估，不是 10000 代 x population
+DSAC-DE,T200,40,1,40,10000,400000,23.2135,6.283636318954885,OMP max threads (未记录，随环境变化),Yes,
+CCHIHH-full,T500,40,8,121,10000,1210000,289.063,6.349980909857564,OMP max threads (未记录，随环境变化),Yes,每代 3 blocks x 40 offspring，再额外 1 次全局 context eval；论文“per island 40”容易让总预算被误读
+CCHIHH-noCC,T500,40,8,40,10000,400000,287.6536,4.791575111009365,OMP max threads (未记录，随环境变化),Yes,去掉 block 分解后 total evaluations 显著更少，与 CCHIHH-full 不公平
+CCHIHH-noHI,T500,40,1,121,10000,1210000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),Yes,这是 nsubpop=1 的预期预算；当前原始日志缺失，REQUIRES RERUN
+CCHIHH-noCB,T500,40,8,121,10000,1210000,251.34359999999998,3.505856947072038,OMP max threads (未记录，随环境变化),Yes,与 full 的 evaluations 一致；但 noGate 现有日志对应 stable_false + gate_off，不是纯 only-noGate
+CCHIHH-noMig,T500,40,8,121,10000,1210000,349.784,4.959237418976615,OMP max threads (未记录，随环境变化),Yes,与 full 的 evaluations 一致；但 noGate 现有日志对应 stable_false + gate_off，不是纯 only-noGate
+CCHIHH-noGate,T500,40,8,121,10000,1210000,304.7672,2.305074662565191,OMP max threads (未记录，随环境变化),Yes,与 full 的 evaluations 一致；但 noGate 现有日志对应 stable_false + gate_off，不是纯 only-noGate
+GA,T500,40,1,40,10000,400000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),Yes,当前与论文量级一致的 10-run 日志缺失，REQUIRES RERUN
+DE,T500,40,1,40,10000,400000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),Yes,当前与论文量级一致的 10-run 日志缺失，REQUIRES RERUN
+Gbest-DE,T500,40,1,40,10000,400000,510.8451,37.42028510625397,OMP max threads (未记录，随环境变化),Yes,
+CGA,T500,300,1,300 + catastrophe extra,10000,>= 3000000,720.2648,19.390693986778516,1,No evidence of OpenMP in CGA loop,默认人口 300，灾变阶段还会追加评估，总 evaluations 明显高于 CCHIHH-full
+IMOMA,T500,40,1,variable,10000,NOT FOUND,1207.827,26.66213796962112,OMP max threads (未记录，随环境变化),No clear OpenMP at algorithm level,每代额外候选数依赖 archive/pulse/intensify/restart，需要插桩或重跑才能精确统计
+PPO,T500,policy dim = Nvar,1,1 eval / episode,10000 episodes,10000,NOT FOUND,NOT FOUND,OMP max threads (未记录，随环境变化),No clear OpenMP at training loop,预算与进化算法完全不同：10000 次调度评估，不是 10000 代 x population
+DSAC-DE,T500,40,1,40,10000,400000,48.2412,9.044698837809179,OMP max threads (未记录，随环境变化),Yes,

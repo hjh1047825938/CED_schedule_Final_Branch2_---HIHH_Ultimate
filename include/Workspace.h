@@ -18,6 +18,9 @@ struct Workspace {
     double f1_ref = 1.0;   // Reference makespan
     double f2_ref = 1.0;   // Reference energy
     double alpha = 0.5;    // Weight for makespan in [0, 1]
+    double last_makespan = 0.0;
+    double last_energy = 0.0;
+    double last_fitness = 0.0;
 
     // Decision variable buffers
     std::vector<bool> ce_sele;      // Cloud/Edge selection [CE_Tnum]

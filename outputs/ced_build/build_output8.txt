@@ -1,0 +1,75 @@
+﻿CMake is re-running because C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp is out-of-date.
+  the file 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build_output7.txt'
+  is newer than 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp.depend'
+  result='-1'
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+-- Configuring done (0.1s)
+-- Generating done (0.1s)
+-- Build files have been written to: C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build
+适用于 .NET Framework MSBuild 版本 17.14.18+a338add32
+
+  1>Checking Build System
+  CMake is re-running because C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp is out-of-date.
+    the file 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build_output8.txt'
+    is newer than 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+  -- Configuring done (0.1s)
+  -- Generating done (0.1s)
+  -- Build files have been written to: C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build
+  Building Custom Rule C:/Users/Hu/Desktop/CED_schedule/CED_schedule/CMakeLists.txt
+  CMake is re-running because C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp is out-of-date.
+    the file 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build_output8.txt'
+    is newer than 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+  -- Configuring done (0.1s)
+  -- Generating done (0.1s)
+  -- Build files have been written to: C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build
+  Multimethod.cpp
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(207,8): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(213,20): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(214,12): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(223,20): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(583,59): warning C4244: “参数”: 从“T”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(583,59): warning C4244:         with [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(583,59): warning C4244:         [ [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(583,59): warning C4244:             T=double [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(583,59): warning C4244:         ] [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(1290,16): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(1300,22): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(1305,45): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2407,39): warning C4244: “=”: 从“T”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2407,39): warning C4244:         with [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2407,39): warning C4244:         [ [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2407,39): warning C4244:             T=double [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2407,39): warning C4244:         ] [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(2441,13): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(3783,40): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Population.h(118,18): warning C4244: “=”: 从“time_t”转换到“long”，可能丢失数据 [C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\CED_Schedule.vcxproj]
+  (编译源文件“../Multimethod.cpp”)
+      C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Population.h(118,18):
+      模板实例化上下文(最早的实例化上下文)为
+          C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.h(23,25):
+          查看对正在编译的 类 模板 实例化“Population<double>”的引用
+          C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Population.h(76,2):
+          在编译 类 模板 成员函数“Population<double>::Population(int,int,T,T)”时
+          with
+          [
+              T=double
+          ]
+              C:\Users\Hu\Desktop\CED_schedule\CED_schedule\Multimethod.cpp(46,14):
+              请参阅 "MultiMet::MultiMet" 中对 "Population<double>::Population" 的第一个引用
+  
+  main.cpp
+  正在生成代码...
+  CED_Schedule.vcxproj -> C:\Users\Hu\Desktop\CED_schedule\CED_schedule\build\Release\CED_Schedule.exe
+  Building Custom Rule C:/Users/Hu/Desktop/CED_schedule/CED_schedule/CMakeLists.txt
+  CMake is re-running because C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp is out-of-date.
+    the file 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build_output8.txt'
+    is newer than 'C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+  -- Configuring done (0.0s)
+  -- Generating done (0.1s)
+  -- Build files have been written to: C:/Users/Hu/Desktop/CED_schedule/CED_schedule/build

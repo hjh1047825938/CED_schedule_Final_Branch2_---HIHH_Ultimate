@@ -1,0 +1,1030 @@
+%% 
+%% Copyright 2007-2024 Elsevier Ltd
+%% 
+%% This file is part of the 'Elsarticle Bundle'.
+%% ---------------------------------------------
+%% 
+%% It may be distributed under the conditions of the LaTeX Project Public
+%% License, either version 1.3 of this license or (at your option) any
+%% later version.  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.3 or later is part of all distributions of LaTeX
+%% version 1999/12/01 or later.
+%% 
+%% The list of all files belonging to the 'Elsarticle Bundle' is
+%% given in the file `manifest.txt'.
+%% 
+%% Template article for Elsevier's document class `elsarticle'
+%% with numbered style bibliographic references
+%% SP 2008/03/01
+%% $Id: elsarticle-template-num.tex 249 2024-04-06 10:51:24Z rishi $
+%%
+\documentclass[preprint,12pt]{elsarticle}
+
+%% Use the option review to obtain double line spacing
+%% \documentclass[authoryear,preprint,review,12pt]{elsarticle}
+
+%% Use the options 1p,twocolumn; 3p; 3p,twocolumn; 5p; or 5p,twocolumn
+%% for a journal layout:
+%% \documentclass[final,1p,times]{elsarticle}
+%% \documentclass[final,1p,times,twocolumn]{elsarticle}
+%% \documentclass[final,3p,times]{elsarticle}
+%% \documentclass[final,3p,times,twocolumn]{elsarticle}
+%% \documentclass[final,5p,times]{elsarticle}
+%% \documentclass[final,5p,times,twocolumn]{elsarticle}
+
+%% For including figures, graphicx.sty has been loaded in
+%% elsarticle.cls. If you prefer to use the old commands
+%% please give \usepackage{epsfig}
+\usepackage{graphicx}
+%% The amssymb package provides various useful mathematical symbols
+\usepackage{amssymb}
+%% The amsmath package provides various useful equation environments.
+\usepackage{amsmath}
+%% The amsthm package provides extended theorem environments
+%% \usepackage{amsthm}
+\usepackage[utf8]{inputenc}
+\usepackage{booktabs}
+\usepackage{siunitx} 
+\usepackage{caption}
+\sisetup{
+    separate-uncertainty = true,
+    table-align-uncertainty = true
+}
+
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+%% The lineno packages adds line numbers. Start line numbering with
+%% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
+%% for the whole article with \linenumbers.
+%% \usepackage{lineno}
+
+\journal{Robotics and Computer Integrated Manufacturing}
+
+\begin{document}
+
+\begin{frontmatter}
+
+%% Title, authors and addresses
+
+%% use the tnoteref command within \title for footnotes;
+%% use the tnotetext command for theassociated footnote;
+%% use the fnref command within \author or \affiliation for footnotes;
+%% use the fntext command for theassociated footnote;
+%% use the corref command within \author for corresponding author footnotes;
+%% use the cortext command for theassociated footnote;
+%% use the ead command for the email address,
+%% and the form \ead[url] for the home page:
+%% \title{Title\tnoteref{label1}}
+%% \tnotetext[label1]{}
+%% \author{Name\corref{cor1}\fnref{label2}}
+%% \ead{email address}
+%% \ead[url]{home page}
+%% \fntext[label2]{}
+%% \cortext[cor1]{}
+%% \affiliation{organization={},
+%%             addressline={},
+%%             city={},
+%%             postcode={},
+%%             state={},
+%%             country={}}
+%% \fntext[label3]{}
+
+\title{CCHIHH: A Structure-Aware Hierarchical Hyper-Heuristic for Scalable Cloud–Edge–Device Collaborative Scheduling in Distributed Manufacturing}
+
+%% use optional labels to link authors explicitly to addresses:
+\author[label1]{Jianheng Hu}
+\author[label1,label2,label3]{Yuanjun Laili\corref{cor}}
+\cortext[cor]{corresponding author. E-mail: lailiyuanjun@buaa.edu.cn}
+\author[label1,label2,label3]{Lei Ren}
+\author[label1]{...}
+\author[label1]{...}
+\affiliation[label1]{organization={School of Automation Science and Electrical Engineering, Beihang University},%Department and Organization
+            addressline={37 Xueyuan Road}, 
+            city={Beijing},
+            postcode={100191}, 
+            country={China}}
+
+\affiliation[label2]{organization={Zhongguancun Laboratory},%Department and Organization
+            city={Beijing},
+            postcode={100094}, 
+            country={China}}
+
+\affiliation[label3]{organization={Hangzhou International Innovation Institute, Beihang University},%Department and Organization
+            city={Hangzhou},
+            postcode={311115}, 
+            state={Zhejiang},
+            country={China}}
+            
+%% \affiliation[label2]{organization={},
+%%             addressline={},
+%%             city={},
+%%             postcode={},
+%%             state={},
+%%             country={}}
+
+
+
+
+
+
+            
+%% Abstract
+\begin{abstract}
+Cloud--edge--device (CED) collaborative scheduling in distributed manufacturing requires three coupled decisions: offloading each computational task to a cloud or edge server, sequencing manufacturing operations across devices, and assigning each operation to a specific device. These three decision types have fundamentally different search characteristics, yet existing methods optimize them with a single set of operators, which mixes improvement signals and becomes unreliable as the number of tasks grows. This paper proposes CCHIHH, a hyper-heuristic algorithm that decomposes the CED scheduling problem into three blocks via cooperative coevolution, and introduces three mechanisms to improve search quality at scale: (i)~a linear contextual bandit that selects operators independently within each block based on the current search state, (ii)~heterogeneous islands with ring migration that maintain multiple complementary search strategies in parallel, and (iii)~a stability-gating mechanism that delays diversity injection until stagnation is detected, protecting convergence on large instances. Experiments on instances with up to 500 tasks and 800 devices show that CCHIHH improves the weighted objective by 33.59\% over CGA, 43.99\% over IMOMA, 30.04\% over DSAC-DE, and 54.72\% over PPO on the largest instance ($p < 0.05$), while keeping the coefficient of variation below 0.051 across all scales.
+\end{abstract}
+
+%%Graphical abstract
+%\begin{graphicalabstract}
+%\includegraphics{grabs}
+%\end{graphicalabstract}
+
+%%Research highlights
+%\begin{highlights}
+%\item Research highlight 1
+%\item Research highlight 2
+%\end{highlights}
+
+%% Keywords
+\begin{keyword}
+Cloud--edge--device collaborative scheduling, 
+Hyper-heuristic, 
+Contextual bandit, 
+Heterogeneous island model, 
+Cooperative coevolution.
+\end{keyword}
+
+\end{frontmatter}
+
+%% Add \usepackage{lineno} before \begin{document} and uncomment 
+%% following line to enable line numbers
+%% \linenumbers
+
+%% main text
+%%
+
+%% Use \section commands to start a section
+\section{Introduction}
+\label{sec1}
+%% Labels are used to cross-reference an item using \ref command.
+
+Industrial Internet-of-Things (IIoT) platforms connect cloud data centers, edge servers, and local manufacturing devices to support distributed production. In such platforms, two categories of workloads coexist. \emph{Cloud--Edge (CE) tasks} are computation-intensive or latency-sensitive applications---such as digital twin simulation, quality prediction, and machining control---that must be offloaded to either a cloud server (high capacity, high latency) or a nearby edge server (moderate capacity, low latency). \emph{Manufacturing (M) tasks} consist of jobs, each containing a sequence of operations (e.g., welding, painting, assembly) executed on local industrial devices. The two categories are coupled through synchronization constraints: for example, a digital twin simulation task cannot start until the associated machining operation begins collecting sensor data, and an assembly quality prediction task cannot finish until all related subassembly operations are completed.
+
+These couplings create a joint scheduling problem with three interdependent decision types:
+\begin{enumerate}
+    \item \textbf{CE offloading}: assigning each CE task to a cloud or edge server based on its computation demand and latency requirement;
+    \item \textbf{Operation sequencing}: determining the global execution order of manufacturing operations from different jobs on shared devices;
+    \item \textbf{Device assignment}: selecting a specific local device for each manufacturing operation from its eligible device set.
+\end{enumerate}
+
+The three decisions are tightly coupled. The offloading decision affects communication latency and energy consumption, which in turn affect the synchronization timing with manufacturing operations. The sequencing decision determines which operations compete for the same device, influencing the device assignment quality. Together, the combined solution space has complexity $\mathcal{O}(2^{N_{CE}} \times (N_c + N_e)^{N_{CE}} \times \prod_{j}(n_j!) \times N_d^{N_{\mathrm{ops}}})$, where $N_{CE}$ is the number of CE tasks, $N_{\mathrm{ops}} = \sum_j n_j$ is the total number of manufacturing operations, and $N_c$, $N_e$, $N_d$ are the numbers of cloud servers, edge servers, and devices, respectively.
+
+Existing methods for CED scheduling exhibit three recurrent limitations as problem scale grows. \emph{First}, most methods treat the entire decision vector as one block and apply operators globally. When a single operator improves offloading but simultaneously degrades device assignment, the mixed feedback signal makes it difficult to learn which operator is truly effective for which decision type~\cite{sun2020adaptive,de2021comparative}. \emph{Second}, single-population methods maintain only one search trajectory. As the landscape becomes more complex at large scale, they tend to converge prematurely~\cite{gong2011distributed,whitley1999island}. \emph{Third}, methods that inject diversity through random restart or immigration~\cite{wang2020task} risk disrupting promising solutions during late-stage convergence, reducing reliability.
+
+To address these limitations, this paper proposes CCHIHH (Cooperative Coevolution Hyper-Heuristic with Heterogeneous Islands). The algorithm first decomposes the CED scheduling problem into three blocks (offloading, sequencing, and device assignment) using cooperative coevolution, and then applies three mechanisms that form the main contributions of this paper:
+\begin{enumerate}
+    \item \textbf{Localized contextual bandit}: A linear contextual bandit is maintained independently for each block on each island. It observes a seven-dimensional search state (including generation progress, stagnation level, diversity, and recent improvement) and selects the most suitable operator for that specific block. This avoids the reward-mixing problem of global operator selection.
+    
+    \item \textbf{Heterogeneous islands with ring migration}: The population is partitioned into multiple islands, each evolving independently with its own bandit and operator weights. A ring migration topology periodically transfers the best individual from each island to its neighbor, enabling information sharing without homogenizing the search.
+    
+    \item \textbf{Stability-gated diversity control}: A gating mechanism monitors stagnation on each island and blocks the diversity-injection operator (Block Resample) until stagnation exceeds a threshold. This protects convergence during productive phases while allowing escape from local optima when progress stalls. The benefit is most pronounced on large-scale instances.
+\end{enumerate}
+
+Experiments on three problem scales (100, 200, and 500 tasks) demonstrate that CCHIHH achieves significant improvements over representative baselines, with the performance gap widening as instance scale increases. Ablation studies confirm that each component becomes increasingly important at larger scales, suggesting that the algorithm's overhead is justified precisely when the scheduling problem is most complex.
+
+The remainder of this paper is organized as follows. Section~\ref{sec2} reviews related work. Section~\ref{sec3} formulates the CED collaborative scheduling problem. Section~\ref{sec4} presents the proposed CCHIHH algorithm. Section~\ref{sec5} reports experimental results. Section~\ref{sec6} concludes the paper.
+
+
+
+
+%% Use \subsection commands to start a subsection.
+\section{Related Works}
+\label{sec2}
+
+This section reviews existing research on CED collaborative task scheduling from two aspects: problem modeling and algorithm design.
+
+\subsection{Task Scheduling Models in CED Collaboration}
+\label{subsec21}
+
+\textbf{Architecture and tier modeling.}
+Early research focuses on single-tier scheduling (cloud-only or edge-only), reducing the problem to a two-dimensional decision space~\cite{avan2023state,latip2024metaheuristic}. Recent studies extend to three-tier architectures. Laili et al.~\cite{laili2021parallel} establish a CED model with two collaboration modes. Zhang et al.~\cite{zhang2022deadline} propose a deadline-aware method for cloud--edge computation but do not address cross-tier manufacturing integration. Liu et al.~\cite{liu2023joint} jointly optimize offloading decisions focusing on latency reduction. Li et al.~\cite{li2024energy} use directed acyclic graphs (DAGs) for energy-limited task scheduling across three tiers. However, DAG-based approaches primarily target computational tasks and neglect the job-shop characteristics of device-tier operations.
+
+\textbf{Dependency modeling and constraint handling.}
+Task dependencies are typically represented by DAGs~\cite{li2024energy,zhang2022adaptive,li2024dynamic}, where vertices denote tasks and edges denote precedence. Resource capacity constraints (CPU and memory limits~\cite{liu2025energy,liu2025resource,chen2022task}), device eligibility constraints~\cite{yin2024cloud,chen2022task}, and deadline constraints~\cite{avan2023state,zhang2022deadline} are investigated separately. However, existing models rarely integrate these constraints simultaneously for multi-operation CED scheduling with cross-tier synchronization dependencies.
+
+\textbf{Objective formulation.}
+Common objectives include minimizing makespan~\cite{avan2023state,li2024energy} and energy consumption~\cite{liu2025energy,liu2025resource}. Bi-objective formulations combining both are emerging~\cite{laili2021parallel,cui2025efficient,li2024dynamic,zhang2025reinforcement}, typically using weighted-sum aggregation. Few studies investigate the trade-offs between cloud-tier efficiency, edge-tier latency, and device-tier energy sustainability in an integrated manner.
+
+\textbf{Problem scale.}
+Most studies analyze small instances (10--100 tasks) and formulate the solution space as $O(k^n)$, treating all resources as homogeneous. Recent work~\cite{li2024energy,cui2025efficient} acknowledges that combined offloading--sequencing--assignment decisions produce larger solution spaces, but these studies do not exploit the decomposability of the decision space. Industry-scale instances (hundreds of tasks and devices) remain underexplored~\cite{yin2024cloud}.
+
+\subsection{Algorithm Design for CED Task Scheduling}
+\label{subsec22}
+
+\textbf{Mathematical programming and rule-based methods.}
+Integer programming methods~\cite{wang2022integer} and constructive heuristics (e.g., First-Come-First-Served, Min-Min, Earliest-Deadline-First~\cite{naik2025energy}) provide baselines but cannot scale to large instances or adapt to heterogeneous task features.
+
+\textbf{Hyper-heuristic and adaptive methods.}
+Hyper-heuristics~\cite{xiao2019cooperative,burke2013hyper} select low-level heuristics at a higher abstraction level. Bandit-based adaptive operator selection (AOS) methods~\cite{sun2020adaptive,de2021comparative,dacosta2008adaptive,karafotias2014parameter} dynamically select operators based on performance feedback. Laili et al.~\cite{laili2023dsac} propose DSAC-DE, which uses a discretized soft actor--critic to configure differential evolution for CED scheduling. However, these methods typically operate at a global level without distinguishing between different decision subspaces. Island models~\cite{gong2011distributed,da2023behavior,whitley1999island} maintain diversity through spatial partitioning but have not been combined with structure-aware decomposition for CED scheduling.
+
+\textbf{Deep reinforcement learning (DRL) methods.}
+DRL methods~\cite{gu2025deep,mangalampalli2024efficient,zheng2022deep} formulate scheduling as a Markov decision process (MDP) and learn policies through training episodes. While DRL can adapt to dynamic contexts, it requires extensive offline training time and exhibits limited generalization across problem instances, especially in high-dimensional discrete action spaces typical of CED scheduling.
+
+\subsection{Summary and Positioning}
+\label{subsec23}
+
+Table~\ref{tab:positioning} summarizes the coverage of representative method families across four dimensions relevant to industrial CED scheduling.
+
+\begin{table}[H]
+    \centering
+    \small
+    \caption{Positioning of CCHIHH relative to existing methods.}
+    \label{tab:positioning}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Method} & \textbf{Decomp.} & \textbf{Local} & \textbf{Parallel} & \textbf{Stability} \\
+        & & \textbf{adapt.} & \textbf{search} & \textbf{control} \\
+        \midrule
+        Rule-based / classic EA      & No      & No     & No  & No   \\
+        Global AOS / bandit          & Partial & Global & No  & Weak \\
+        Island models                & No      & No     & Yes & No   \\
+        CC-based methods             & Yes     & No     & No  & No   \\
+        DSAC-DE~\cite{laili2023dsac} & No      & Global & No  & No   \\
+        \textbf{CCHIHH (ours)}       & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Most existing methods cover at most one or two of these dimensions. CCHIHH is the first to unify block-level decomposition, localized adaptive operator selection, parallel heterogeneous search, and stability-gated diversity control for CED scheduling.
+
+\section{Problem Formulation}
+\label{sec3}
+
+\subsection{System Architecture}
+\label{subsec31}
+
+The CED system comprises three tiers. The \emph{cloud tier} $\mathcal{C}=\{c_0,\ldots,c_{N_c-1}\}$ provides high computation capacity with communication latency. The \emph{edge tier} $\mathcal{E}=\{e_0,\ldots,e_{N_e-1}\}$ balances computation speed and proximity. The \emph{device tier} $\mathcal{D}=\{d_0,\ldots,d_{N_d-1}\}$ executes shop-floor operations with minimal communication latency but limited computation capacity.
+
+The system handles two workload categories. CE tasks $\mathcal{T}_{CE}=\{T^{CE}_1,\ldots,T^{CE}_{N_{CE}}\}$ are offloaded to the cloud or edge tier. Each CE task $T^{CE}_i$ has computation workload $comp_i$, communication size $comm_i$, precedence set $P_i$, interactive dependency set $\mathcal{L}_i$, and available edge server list $A_i^{E} \subseteq \mathcal{E}$. Manufacturing jobs $\mathcal{J}=\{j_1,\ldots,j_{N_j}\}$ each consist of a sequence of operations $\mathcal{O}_j=\{o_{j,1},\ldots,o_{j,n_j}\}$, where each operation $o_{j,k}$ has processing time $p_{j,k}$ and eligible device set $D_{j,k} \subseteq \mathcal{D}$.
+
+\subsection{Decision Variables}
+\label{subsec32}
+
+Let $N_{\mathrm{ops}}=\sum_{j=1}^{N_j} n_j$. A candidate solution is encoded as a continuous vector $\mathbf{x} \in [0,1]^D$ where $D = 2N_{CE} + 2N_{\mathrm{ops}}$:
+$$
+\mathbf{x} = \big[
+\underbrace{x_1, \ldots, x_{N_{CE}}}_{\text{tier selection}},\;
+\underbrace{r_1, \ldots, r_{N_{CE}}}_{\text{server selection}},\;
+\underbrace{\pi_1, \ldots, \pi_{N_{\mathrm{ops}}}}_{\text{sequencing}},\;
+\underbrace{m_1, \ldots, m_{N_{\mathrm{ops}}}}_{\text{device assignment}}
+\big].
+$$
+
+The continuous values are decoded into discrete decisions as follows.
+
+\textbf{Tier selection.} For CE task $T^{CE}_i$: if $x_i < 0.5$, assign to cloud; otherwise assign to edge.
+
+\textbf{Server selection.} For CE task $T^{CE}_i$ with variable $r_i \in [0,1]$: if assigned to cloud, select server $c_{\lfloor r_i \cdot (N_c-1)\rfloor}$; if assigned to edge, select server $\mathcal{A}_i^E[\lfloor r_i \cdot (|\mathcal{A}_i^E|-1)\rfloor]$.
+
+\textbf{Operation sequencing.} The priority vector $\boldsymbol{\pi}$ determines execution order by sorting operations in ascending order of their priority values: $\text{ExecutionOrder} = \operatorname{argsort}(\pi_1,\ldots,\pi_{N_{\mathrm{ops}}})$.
+
+\textbf{Device assignment.} Let $\text{ExecutionOrder} = [op_0, \ldots, op_{N_{\mathrm{ops}}-1}]$. The device gene is indexed by the rank $i$ in the execution order. For the $i$-th scheduled operation $op_i$ with eligible device set $D(op_i)$:
+$\text{Device}(op_i) = D(op_i)[\lfloor m_i \cdot (|D(op_i)|-1)\rfloor]$.
+Because the device gene's meaning depends on the sequencing-induced execution order, the device block is coupled with the sequencing block in the cooperative coevolution scheme.
+
+\subsection{Constraints}
+\label{subsec33}
+
+\textbf{CE precedence.} $ST_i^{CE} \geq ET_k^{CE}$ for all $T_k^{CE} \in P_i$.
+
+\textbf{Operation sequence.} Within each job: $ST_{j,k+1} \geq ET_{j,k}$ for $k=1,\ldots,n_j-1$.
+
+\textbf{Device capacity.} Operations on the same device cannot overlap:
+if $\text{Device}(o_{j,k}) = \text{Device}(o_{j',k'})$, then $ST_{j,k} \geq ET_{j',k'}$ or $ST_{j',k'} \geq ET_{j,k}$.
+
+\textbf{Data dependency.} For CE tasks with data exchange: $ET_i^{CE} + T^{CE}_{comm}(i,k) \leq ST_k^{CE}$ for all $T_k^{CE} \in \mathcal{L}_i$.
+
+\textbf{CE execution model.} CE tasks on the same server are not scheduled through an explicit queue. Their completion times are approximated from dependency release times, communication delays, and load-dependent penalties. Device availability constraints are ensured by the decoding rules; temporal constraints are verified by discrete-event simulation during fitness evaluation.
+
+\subsection{Objectives}
+\label{subsec34}
+
+The CE-layer completion time and total energy consumption are defined as:
+\begin{align}
+f_1(\mathbf{x}) &= \max_{i \in \{1,\ldots,N_{CE}\}} ET_i^{CE}, \label{eq:f1} \\
+f_2(\mathbf{x}) &= QN \cdot \sum_{i=1}^{N_{CE}} t_i^{\mathrm{comm}}
++ \sum_{c \in \mathcal{C}} \mathrm{EnergyList}[u_c] \cdot \frac{T_c^{act}}{1000} \nonumber \\
+&\quad + \sum_{e \in \mathcal{E}} \mathrm{EnergyList}[u_e] \cdot \frac{T_e^{act}}{1000}, \label{eq:f2}
+\end{align}
+where $t_i^{\mathrm{comm}}$ is the communication time, $QN$ is a communication power coefficient, $u_c, u_e$ are discretized utilization indices, $\mathrm{EnergyList}[\cdot]$ is a power lookup table, and $T_s^{act}$ is the active time of server $s$.
+
+The two objectives are combined via weighted aggregation:
+\begin{equation}
+f(\mathbf{x}) = \alpha \cdot \frac{f_1(\mathbf{x})}{f_1^{ref}} + (1-\alpha) \cdot \frac{f_2(\mathbf{x})}{f_2^{ref}}, \quad \alpha \in (0,1)
+\label{eq:scalar}
+\end{equation}
+where $f_1^{ref}$ and $f_2^{ref}$ are reference values computed once per instance from a shared baseline initializer, kept constant across all algorithms and runs for fair comparison. Unless otherwise stated, $\alpha = 0.5$.
+
+
+\section{The Proposed CCHIHH Algorithm}
+\label{sec4}
+
+This section presents the CCHIHH algorithm. Section~\ref{subsec41} introduces cooperative coevolution as the problem decomposition foundation. Sections~\ref{subsec42}--\ref{subsec44} describe the three main contributions: the contextual bandit for operator selection, the heterogeneous island model with ring migration, and the stability-gating mechanism. Section~\ref{subsec45} describes the lower-layer operator pools. Section~\ref{subsec46} presents the overall workflow and pseudocode. Section~\ref{subsec47} analyzes the time complexity.
+
+\subsection{Cooperative Coevolution for Problem Decomposition}
+\label{subsec41}
+
+As discussed in Section~\ref{sec1}, applying operators globally to the entire decision vector mixes improvement signals from fundamentally different decision types. To address this, CCHIHH decomposes the solution vector into three blocks:
+\begin{itemize}
+    \item \textbf{Offload block} $\mathbf{x}_{\text{off}} \in [0,1]^{2N_{CE}}$: tier selection and server assignment for CE tasks.
+    \item \textbf{Sequence block} $\mathbf{x}_{\text{seq}} \in [0,1]^{N_{\mathrm{ops}}}$: priority values determining operation execution order.
+    \item \textbf{Device block} $\mathbf{x}_{\text{dev}} \in [0,1]^{N_{\mathrm{ops}}}$: rank-conditioned device assignment for each operation.
+\end{itemize}
+
+In each generation, the three blocks are optimized sequentially using cooperative coevolution~\cite{omidvar2013cooperative,ma2018survey}. When one block is being optimized, the other two blocks are held fixed at their current best values (context vectors). After each block completes its optimization step, the context vectors are updated. This sequential update allows each block to respond to changes made by the other blocks within the same generation.
+
+Note that the device block is coupled with the sequence block: the semantic meaning of each device gene depends on the execution order induced by the sequence block (Section~\ref{subsec32}). The cooperative coevolution scheme naturally handles this coupling by always evaluating the full solution (all three blocks concatenated) during fitness computation.
+
+\subsection{Contextual Bandit for Operator Selection}
+\label{subsec42}
+
+Each block requires different operators suited to its search landscape. Rather than fixing an operator schedule, CCHIHH uses a linear contextual bandit to select operators online based on the current search state. Each block on each island maintains its own bandit instance, so operator preferences can differ both across blocks and across islands.
+
+\textbf{Search state.}
+A seven-dimensional state vector $\mathbf{s} = [s_1, \ldots, s_7]^T$ is computed from the current island population to characterize the search status:
+\begin{itemize}
+    \item $s_1$ (generation progress): $s_1 = g / G_{\max}$, where $g$ is the current generation and $G_{\max}$ is the maximum number of generations.
+    \item $s_2$ (stagnation level): $s_2 = \min(1, \tau_{\text{stag}} / (0.25 G_{\max} + 1))$, where $\tau_{\text{stag}}$ counts the number of consecutive generations without improvement.
+    \item $s_3$ (recent improvement): the average relative improvement over the last $k$ generations, $\bar{I}_k = \frac{1}{k}\sum_{i=1}^k \frac{f_{\text{old}} - f_{\text{new}}}{|f_{\text{old}}|}$, clipped to $[0,1]$.
+    \item $s_4$ (population diversity): $s_4 = \mathcal{D}_{pop} / (\mathcal{D}_{pop} + 1)$, where $\mathcal{D}_{pop}$ is the average variance across dimensions.
+    \item $s_5$ (operator success rate): fraction of the last $k$ generations where the selected operator produced an improvement.
+    \item $s_6$ (last reward): $s_6 = 0.5 + 0.5 \tanh(r_{\text{last}})$, bounding the most recent reward to $[0,1]$.
+    \item $s_7$ (bias): constant $1.0$, enabling the model to learn baseline operator preferences.
+\end{itemize}
+
+\textbf{Operator scoring and selection.}
+Each operator $op$ has a weight vector $\mathbf{w}_{op} \in \mathbb{R}^7$. The estimated value of selecting operator $op$ in state $\mathbf{s}$ is:
+\begin{equation}
+\text{score}(op, \mathbf{s}) = \mathbf{w}_{op}^T \mathbf{s}.
+\label{eq:bandit_score}
+\end{equation}
+Operators are selected using an $\epsilon$-greedy rule: with probability $\epsilon(g)$, a random operator is chosen; otherwise, the operator with the highest score is selected. The exploration rate decays as:
+\begin{equation}
+\epsilon(g) = \max\!\left(\epsilon_{\min},\; \epsilon_0 \cdot \exp\!\left(-\epsilon_k \cdot \frac{g}{G_{\max}}\right)\right).
+\label{eq:epsilon}
+\end{equation}
+
+\textbf{Reward and weight update.}
+After applying the selected operator, the reward is computed as:
+\begin{equation}
+r = \mathrm{clip}(I + \lambda \cdot \Delta D,\; -c,\; c),
+\label{eq:reward}
+\end{equation}
+where $I$ is the fitness improvement ratio, $\Delta D$ is the change in population diversity, $\lambda$ balances the two terms, and $c$ is a clipping constant. The operator weight vector is updated by:
+\begin{equation}
+\mathbf{w}_{op} \leftarrow \mathbf{w}_{op} + \eta_t (r - \mathbf{w}_{op}^T \mathbf{s})\, \mathbf{s},
+\label{eq:weight_update}
+\end{equation}
+where the learning rate decays as $\eta_t = \eta_0 \exp(-\eta_k \, t)$, and $t$ counts the number of updates for this specific operator. This per-operator counter ensures that frequently selected operators decay faster, maintaining sensitivity for less-used operators.
+
+The pseudocode for the contextual bandit is given in Algorithm~\ref{alg:contextual_bandit_hh}. The algorithm takes the island population, generation counter, and stagnation counter as inputs. Steps~1--9 compute the state vector from population statistics. Steps~10--15 select an operator via the $\epsilon$-greedy rule. Steps~16--19 apply the operator and update the population. Steps~20--24 compute the reward and update the operator weights.
+
+\begin{algorithm}[H]
+\caption{Contextual Bandit Operator Selection (per block, per island)}
+\label{alg:contextual_bandit_hh}
+\begin{algorithmic}[1]
+\REQUIRE island population $P_{isl}$, generation $g$, stagnation counter $\tau_{\mathrm{stag}}$, last reward $r_{\mathrm{last}}$
+\ENSURE updated $P_{isl}$ and operator weights $\mathbf{W}$
+
+\STATE Compute state vector $\mathbf{s} = [s_1, \ldots, s_7]^T$ from $P_{isl}$, $g$, $\tau_{\mathrm{stag}}$, $r_{\mathrm{last}}$
+\STATE Compute $\epsilon(g)$ by Eq.~(\ref{eq:epsilon})
+
+\IF{$\mathrm{rand}() < \epsilon$}
+  \STATE $op \gets \mathrm{RandomChoice}(\mathcal{O}_{\text{block}})$
+\ELSE
+  \STATE $op \gets \arg\max_{i \in \mathcal{O}_{\text{block}}} \mathbf{w}_i^T \mathbf{s}$
+\ENDIF
+
+\STATE Record $f_{\mathrm{old}} \gets \mathrm{BestFitness}(P_{isl})$, $D_{\mathrm{old}} \gets \mathrm{Diversity}(P_{isl})$
+\STATE $P'_{isl} \gets \mathrm{ApplyOperator}(op, P_{isl})$
+\STATE $P_{isl} \gets \mathrm{SelectionUpdate}(P_{isl}, P'_{isl})$
+\STATE Record $f_{\mathrm{new}} \gets \mathrm{BestFitness}(P_{isl})$, $D_{\mathrm{new}} \gets \mathrm{Diversity}(P_{isl})$
+
+\STATE $I \gets (f_{\mathrm{old}} - f_{\mathrm{new}}) / (|f_{\mathrm{old}}| + 10^{-9})$
+\STATE $r \gets \mathrm{clip}(I + \lambda (D_{\mathrm{new}} - D_{\mathrm{old}}),\; -c,\; c)$
+\STATE $\eta_t \gets \eta_0 \exp(-\eta_k \, t)$
+\STATE $\mathbf{w}_{op} \gets \mathbf{w}_{op} + \eta_t (r - \mathbf{w}_{op}^T \mathbf{s})\, \mathbf{s}$
+
+\RETURN $P_{isl}, \mathbf{W}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Heterogeneous Islands with Ring Migration}
+\label{subsec43}
+
+A single population evolving with one set of bandit weights can converge to a single search strategy. To maintain multiple complementary strategies, CCHIHH partitions the total population of size $N$ into $M$ islands, each of size $N/M$. Each island maintains its own bandit weights for every block, so different islands can develop different operator preferences.
+
+\textbf{Ring migration.}
+Every $T_{\text{mig}}$ generations, the best individual from each island is copied to the next island in a ring topology. The worst individual on the receiving island is replaced. This bidirectional ring migration enables information propagation: a good solution discovered on one island can gradually spread to all islands, but the slow propagation speed prevents immediate homogenization.
+
+The migration mechanism is lightweight: its per-event cost is $\mathcal{O}(M \cdot D_{\text{block}})$, and amortized over $T_{\text{mig}}$ generations, it is dominated by the fitness evaluation cost.
+
+\subsection{Stability-Gated Diversity Control}
+\label{subsec44}
+
+Each block's operator pool includes a \emph{Block Resample} operator that re-initializes a fraction of dimensions to random values, providing a strong escape mechanism from local optima. However, applying this operator during productive convergence phases can disrupt promising solutions. This tension is especially acute on large instances where the landscape contains many local optima.
+
+The gating mechanism resolves this tension with a simple rule. When the bandit selects a Block Resample operator, the mechanism checks the stagnation counter $\tau_{\text{stag}}$:
+\begin{equation}
+op_{\text{exec}} = \begin{cases}
+op_{\text{bandit}}, & \text{if } op_{\text{bandit}} \notin \mathcal{O}_{\text{resample}}, \\
+op_{\text{bandit}}, & \text{if } op_{\text{bandit}} \in \mathcal{O}_{\text{resample}} \wedge \tau_{\text{stag}} \geq T_{\text{gate}}, \\
+op_{\text{fallback}}, & \text{if } op_{\text{bandit}} \in \mathcal{O}_{\text{resample}} \wedge \tau_{\text{stag}} < T_{\text{gate}},
+\end{cases}
+\label{eq:gating}
+\end{equation}
+where $T_{\text{gate}}$ is the stagnation threshold, and $op_{\text{fallback}}$ is a fixed fallback operator for each block (DE for offload, SWAP for sequence, GDE for device). The stagnation counter resets to zero whenever the best fitness improves by more than $10^{-12}$, and increments by one otherwise.
+
+In other words, Block Resample is only allowed when the search has stagnated for at least $T_{\text{gate}}$ consecutive generations. During productive phases, the bandit's Resample selection is replaced by a safe exploitation operator. This ensures that diversity injection is delayed until there is evidence that the current search trajectory has exhausted its potential.
+
+The complete gating logic is given in Algorithm~\ref{alg:gating_mechanism}. Steps~1--8 perform operator selection via the contextual bandit. Steps~9--14 apply the gating rule. Steps~15--18 apply the operator and update the population. Steps~19--22 update the stagnation counter.
+
+\begin{algorithm}[H]
+\caption{Gating Mechanism for Operator Selection}
+\label{alg:gating_mechanism}
+\begin{algorithmic}[1]
+\REQUIRE $P_{isl}$, generation $g$, block ID, $\tau_{\text{stag}}$, $T_{\text{gate}}$
+\ENSURE executed operator $op_{\text{exec}}$, updated $P_{isl}$, updated $\tau_{\text{stag}}$
+
+\STATE Compute state $\mathbf{s}$ and select $op_{\text{bandit}}$ via Algorithm~\ref{alg:contextual_bandit_hh}
+
+\STATE Set fallback: DE (offload), SWAP (sequence), GDE (device)
+
+\IF{$op_{\text{bandit}} \in \mathcal{O}_{\text{resample}}$ \textbf{and} $\tau_{\text{stag}} < T_{\text{gate}}$}
+    \STATE $op_{\text{exec}} \gets op_{\text{fallback}}$
+\ELSE
+    \STATE $op_{\text{exec}} \gets op_{\text{bandit}}$
+\ENDIF
+
+\STATE $f_{\text{old}} \gets \mathrm{BestFitness}(P_{isl})$
+\STATE $P_{isl} \gets \mathrm{ApplyAndSelect}(op_{\text{exec}}, P_{isl})$
+\STATE $f_{\text{new}} \gets \mathrm{BestFitness}(P_{isl})$
+
+\IF{$f_{\text{new}} < f_{\text{old}} - 10^{-12}$}
+    \STATE $\tau_{\text{stag}} \gets 0$
+\ELSE
+    \STATE $\tau_{\text{stag}} \gets \tau_{\text{stag}} + 1$
+\ENDIF
+
+\RETURN $op_{\text{exec}}, P_{isl}, \tau_{\text{stag}}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Lower-Layer Operators}
+\label{subsec45}
+
+Each block is equipped with a pool of four operators tailored to its search landscape, as summarized in Table~\ref{tab:operator_pool}.
+
+\begin{table}[H]
+    \centering
+    \small
+    \caption{Operator pool for each block.}
+    \label{tab:operator_pool}
+    \begin{tabular}{ll}
+        \toprule
+        \textbf{Block} & \textbf{Operators} \\
+        \midrule
+        Offload  & GA, DE, BitFlip, Block Resample \\
+        Sequence & GA, Sequence Swap, VNS, Block Resample \\
+        Device   & DE, Gbest-DE (GDE), L\'{e}vy Flight, Block Resample \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The offload block handles coupled discrete decisions (cloud vs.\ edge, server ID). It includes a Genetic Algorithm with simulated binary crossover (SBX)~\cite{deb1995simulated} and polynomial mutation for controlled offspring distribution, a DE/current-to-\textit{p}best/1 operator~\cite{zhang2009jade} that guides the mutation toward elite individuals while maintaining diversity through an external archive of replaced solutions, a BitFlip operator that toggles the tier decision (mapping $x_i < 0.5$ to 0.75 and $x_i \geq 0.5$ to 0.25) while applying Cauchy-distributed perturbations~\cite{choi2021improved} to the server-selection subvector, and an Opposition-Based Learning (OBL) Resample operator~\cite{tizhoosh2005opposition}.
+
+The sequence block optimizes real-valued priority vectors that determine operation execution order. SBX-based GA preserves partial ordering through its parent-similarity property. Segment Shift performs Or-opt-style moves~\cite{or1976traveling} by extracting a short contiguous sub-segment of length 1--3 and reinserting it at a random position, providing more structured perturbations than pairwise swaps. Heterogeneous Variable Neighborhood Search (VNS)~\cite{hansen2001variable} performs local search around elite individuals using five distinct neighborhood structures of increasing perturbation strength: single swap, adjacent swap, segment reversal, segment shift, and sub-segment scramble. OBL Resample provides escape capability.
+
+The device block assigns operations to devices via continuous values mapped through bucket decoding. DE/current-to-\textit{p}best/1 with archive exploits correlations across device assignments while benefiting from elite guidance and archived diversity. Rank-based Selective Pressure DE (RSP-DE)~\cite{stanovov2018lshade} employs the current-to-\textit{p}best/1 mutation with tournament-based donor selection, where $\mathbf{x}_{r_1}$ is chosen via binary tournament to bias the difference vector toward higher-quality regions. Cauchy Walk perturbs a fraction of dimensions with Cauchy-distributed steps ($\gamma=1$), whose heavier tails compared to the standard L\'{e}vy distribution ($\beta=1.5$) enable more frequent long-range jumps for escaping local optima. OBL Resample provides large-scale re-initialization.
+
+For all blocks, OBL Resample selects $\lceil 0.2 \cdot D_{\text{block}} \rceil$ dimensions uniformly at random with replacement. For each selected dimension, the operator applies the opposite-point transformation $x_i' = 1 - x_i$ with probability 0.5; otherwise, it re-initializes the dimension to $\mathcal{U}(0,1)$. This hybrid strategy exploits the symmetry of the search space while preserving random exploration capability. All operators use fixed parameters to ensure stationary behavior, enabling the contextual bandit to learn stable operator--outcome mappings. Detailed operator parameters (e.g., SBX distribution index $\eta_c$, DE scale factor $F$, crossover rate $CR$, top-$p$ fraction, VNS neighborhood levels) are specified in Section~\ref{subsec51}.
+
+\subsection{Overall Workflow}
+\label{subsec46}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{WorkFlow.png}
+    \caption{Overall workflow of CCHIHH. The population is partitioned into $M$ islands. In each generation, the three blocks are optimized sequentially via cooperative coevolution. Within each block, the contextual bandit selects operators (subject to the gating mechanism), and ring migration periodically transfers the best individuals between neighboring islands.}
+    \label{fig:cchihh_framework}
+\end{figure}
+
+The overall workflow of CCHIHH is illustrated in Fig.~\ref{fig:cchihh_framework}. The algorithm proceeds as follows:
+
+\begin{enumerate}
+    \item \textbf{Initialization}: Generate a population of $N$ individuals and partition them into $M$ islands. Initialize bandit weights to zero for all operators on all blocks and islands.
+    \item \textbf{Main loop} (for $G_{\max}$ generations):
+    \begin{enumerate}
+        \item For each block (offload, sequence, device) in sequence:
+        \begin{enumerate}
+            \item For each island in parallel: select an operator via the contextual bandit with gating (Algorithm~\ref{alg:gating_mechanism}), apply it to the island population, and update bandit weights.
+            \item Update the context vector for the next block.
+        \end{enumerate}
+        \item Every $T_{\text{mig}}$ generations: perform ring migration across all islands.
+    \end{enumerate}
+    \item \textbf{Output}: Return the best solution found across all islands.
+\end{enumerate}
+
+\subsection{Time Complexity}
+\label{subsec47}
+
+Let $N$ be the population size, $M$ the number of islands, $G$ the maximum generations, and $N_{\mathrm{ops}}$ the total number of operations. A single fitness evaluation requires $\mathcal{O}(N_{\mathrm{ops}} \log N_{\mathrm{ops}} + N_{\mathrm{ops}} \bar{d})$ for sorting and discrete-event simulation, where $\bar{d}$ is the average number of eligible devices per operation.
+
+Across $K=3$ blocks and $M$ islands, the per-generation cost is dominated by fitness evaluations: $\mathcal{O}(K \cdot N \cdot N_{\mathrm{ops}} \log N_{\mathrm{ops}})$. The bandit overhead is $\mathcal{O}(K \cdot N)$ per generation, and migration costs $\mathcal{O}(M \cdot D_{\text{block}})$ every $T_{\text{mig}}$ generations---both negligible compared to fitness evaluation.
+
+The overall complexity is therefore:
+\begin{equation}
+T_{\text{total}} = \mathcal{O}(G \cdot N \cdot N_{\mathrm{ops}} \log N_{\mathrm{ops}}),
+\end{equation}
+which is the same asymptotic order as single-population baselines (GA, DE) per generation, though CCHIHH evaluates $K \times N$ solutions per generation due to the three-block structure. The island framework is naturally suitable for parallel execution across $M$ islands.
+
+Implementation optimizations include reusable workspace buffers to avoid repeated memory allocation, pre-allocated sorting arrays, and $\mathcal{O}(1)$ timestamp-based duplication checks.
+
+
+\section{Experiments and Discussions}
+\label{sec5}
+
+\subsection{Experimental Settings}
+\label{subsec51}
+
+\textbf{Problem instances.}
+Three scales of problem instances are used:
+\begin{itemize}
+    \item \textbf{T100}: 100 CE tasks, 100 cloud servers, 100 edge servers, 300 devices.
+    \item \textbf{T200}: 200 CE tasks, 100 cloud servers, 100 edge servers, 300 devices.
+    \item \textbf{T500}: 500 CE tasks, 200 cloud servers, 200 edge servers, 800 devices.
+\end{itemize}
+
+\textbf{Algorithm parameters.}
+Population size $N = 40$, number of islands $M = 8$ (subpopulation size 5), maximum generations $G_{\max} = 10{,}000$, migration interval $T_{\text{mig}} = 5$ generations. Bandit parameters: initial exploration rate $\epsilon_0 = 0.2$, minimum $\epsilon_{\min} = 0.02$, decay rate $\epsilon_k = 0.01$; learning rate $\eta_0 = 0.05$, decay $\eta_k = 0.002$; reward clipping $c = 0.2$; diversity weight $\lambda = 0.1$. Gating threshold $T_{\text{gate}} = 15$ generations. Operator parameters: DE scale factor $F = 0.5$, crossover rate $CR = 0.5$; GDE uses randomized $F \sim \mathcal{U}(0.2, 0.8)$ and $CR \sim \mathcal{U}(0.1, 0.6)$ per island per generation; BitFlip probability $p_{\text{flip}} = 0.1$; VNS neighborhood levels $k_{\max} = 5$ with $n_s = 5$ candidates per level; L\'{e}vy flight perturbation fraction $p_d = 0.1$, stability parameter $\beta = 1.5$, step coefficient $\alpha_{\text{levy}} = 0.01$; Block Resample rate $\rho = 0.2$; GA mutation probability $p_m$ per individual with single-dimension reset.
+
+\textbf{Baseline algorithms.}
+\begin{itemize}
+    \item \textbf{GA}: Genetic algorithm with blend crossover and Gaussian mutation.
+    \item \textbf{DE}: Standard differential evolution with $F = 0.5$, $CR = 0.5$.
+    \item \textbf{Gbest-DE}: DE variant incorporating the global best individual.
+    \item \textbf{CGA}~\cite{wang2020task}: GA with catastrophe strategy for cloud--edge scheduling.
+    \item \textbf{IMOMA}~\cite{cui2025efficient}: Memetic algorithm with opposition-based learning and dual local search.
+    \item \textbf{PPO}~\cite{zheng2022deep}: Proximal Policy Optimization trained independently per seed; results summarize 10 independently trained policies.
+    \item \textbf{DSAC-DE}~\cite{laili2023dsac}: Discretized soft actor--critic configured DE, re-implemented following the original hyperparameters with the same evaluation engine as all other methods.
+\end{itemize}
+
+\textbf{Ablation variants} (for Section~\ref{subsec52}):
+CCHIHH-full (all components), CCHIHH-noCC (without cooperative coevolution), CCHIHH-noHI (single population, no islands), CCHIHH-noCB (fixed operators, no bandit), CCHIHH-noMig (no migration), CCHIHH-noGate (no gating).
+
+\textbf{Fairness and reproducibility.}
+All algorithms share the same solution encoding/decoding and discrete-event simulation engine. Each method runs for 10{,}000 generations with 10 random seeds (1--10). Normalization references $f_1^{ref}$ and $f_2^{ref}$ are computed once per instance using a shared initializer. CCHIHH evaluates $K \times N$ solutions per generation due to the three-block structure; comparisons are iteration-matched rather than evaluation-matched. Wall-clock runtime is additionally reported. Statistical tests use the two-sided Wilcoxon signed-rank test ($\alpha = 0.05$).
+
+\textbf{Platform.}
+Intel Ultra-7 255HX (24 cores), 32~GB RAM, Windows~11. All algorithms are implemented in C++ with CMake O2 optimization.
+
+\subsection{Ablation Study}
+\label{subsec52}
+
+This section validates the contribution of each component through systematic ablation experiments.
+
+\textbf{Cooperative coevolution (CC).}
+Table~\ref{tab:ablation_noCC} and Fig.~\ref{fig:conv_noCC} show that CC improves the objective by 6.28\%, 15.76\%, and 26.25\% on T100, T200, and T500, respectively (all $p < 0.05$). The increasing benefit with scale indicates that block-wise decomposition reduces effective search difficulty more when the total dimension is larger.
+
+\begin{table}[H]
+    \centering
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \caption{Ablation: effect of cooperative coevolution.}
+    \label{tab:ablation_noCC}
+    \sisetup{separate-uncertainty=true, table-align-uncertainty=true, group-digits=false}
+    \begin{tabular}{l S[table-format=1.6(6)] S[table-format=1.6(6)] S[table-format=2.2] S[table-format=1.10]}
+        \toprule
+        \textbf{Scale} & {\textbf{CCHIHH-full}} & {\textbf{noCC}} & {\textbf{Impr.(\%)}} & {\textbf{p-value}} \\
+        \midrule
+        T100 & 0.341471(1180) & 0.371622(16014) & 8.11  & 0.001953 \\
+        T200 & 0.036077(2096)  & 0.044593(2980)  & 19.10 & 0.001953 \\
+        T500 & 0.028134(6629)  & 0.041112(17035) & 31.57 & 0.001953 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{noCC.pdf}
+    \caption{Convergence: CCHIHH-full vs.\ CCHIHH-noCC. Shaded regions: 95\% CI over 10 runs.}
+    \label{fig:conv_noCC}
+\end{figure}
+
+\textbf{Heterogeneous islands (HI).}
+Table~\ref{tab:ablation_noHI} and Fig.~\ref{fig:conv_noHI} show that islands yield 2.97\%, 33.66\%, and 40.05\% improvements on T100, T200, and T500 (all $p < 0.05$), demonstrating that parallel exploration becomes increasingly valuable as the landscape grows more complex.
+
+\begin{table}[H]
+    \centering
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \caption{Ablation: effect of heterogeneous islands.}
+    \label{tab:ablation_noHI}
+    \sisetup{separate-uncertainty=true, table-align-uncertainty=true, group-digits=false}
+    \begin{tabular}{l S[table-format=1.6(6)] S[table-format=1.6(6)] S[table-format=2.2] S[table-format=1.6]}
+        \toprule
+        \textbf{Scale} & {\textbf{CCHIHH-full}} & {\textbf{noHI}} & {\textbf{Impr.(\%)}} & {\textbf{p-value}} \\
+        \midrule
+        T100 & 0.341471(1180) & 0.347635(2098) & 1.77  & 0.001953 \\
+        T200 & 0.036077(2096) & 0.044444(1876) & 18.83 & 0.001953 \\
+        T500 & 0.028134(6629) & 0.041175(8866) & 31.67 & 0.001953 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{noHI.pdf}
+    \caption{Convergence: CCHIHH-full vs.\ CCHIHH-noHI. Shaded regions: 95\% CI over 10 runs.}
+    \label{fig:conv_noHI}
+\end{figure}
+
+\textbf{Contextual bandit (CB).}
+Table~\ref{tab:ablation_noCB} shows that bandit-based operator selection improves solution quality by 3.74\% on T100, 19.92\% on T200, and 22.88\% on T500 (all $p < 0.05$), confirming the value of adaptive operator selection.
+
+\begin{table}[H]
+    \centering
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \caption{Ablation: effect of the contextual bandit.}
+    \label{tab:ablation_noCB}
+    \sisetup{separate-uncertainty=true, table-align-uncertainty=true, group-digits=false}
+    \begin{tabular}{l S[table-format=1.6(6)] S[table-format=1.6(6)] S[table-format=2.2] S[table-format=1.6]}
+        \toprule
+        \textbf{Scale} & {\textbf{CCHIHH-full}} & {\textbf{noCB}} & {\textbf{Impr.(\%)}} & {\textbf{p-value}} \\
+        \midrule
+        T100 & 0.341471(1180) & 0.355625(1684) & 3.98  & 0.001953 \\
+        T200 & 0.036077(2096) & 0.047788(1471) & 24.51 & 0.001953 \\
+        T500 & 0.028134(6629) & 0.033769(504)  & 16.69 & 0.083984 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\textbf{Operator selection dynamics.}
+Table~\ref{tab:operator_performance_comparison} and Fig.~\ref{fig:operator_dynamics} show how the bandit adapts its operator preferences over generations on T500. In the early stage, exploitation-oriented operators dominate (DE at 50.5\% in offload, SWAP at 43.6\% in sequence, GDE at 49.5\% in device). In the late stage, these decline as the bandit shifts toward exploration operators. Across all blocks, Block Resample increases monotonically in late-stage selection probability (e.g., from 1.3\% to 19.3\% in the sequence block), reflecting the joint effect of the bandit's learned preference and the gating mechanism.
+
+\begin{table}[H]
+    \centering
+    \small
+    \setlength{\tabcolsep}{6pt}
+    \caption{Operator selection probabilities: early (0--2k) vs.\ late (8k--10k) stage on T500.}
+    \label{tab:operator_performance_comparison}
+    \sisetup{separate-uncertainty=true, table-align-uncertainty=true, group-digits=false}
+    \begin{tabular}{l l S[table-format=1.4] S[table-format=1.4] S[table-format=+1.4]}
+        \toprule
+        \textbf{Block} & \textbf{Operator} & {\textbf{Early}} & {\textbf{Late}} & {\textbf{Change}} \\
+        \midrule
+        offload & GA       & 0.4714 & 0.5533 & +0.0819 \\
+        offload & DE       & 0.4459 & 0.3892 & -0.0567 \\
+        offload & BITFLIP  & 0.0770 & 0.0070 & -0.0700 \\
+        offload & RESAMPLE & 0.0057 & 0.0505 & +0.0448 \\
+        \addlinespace[0.3em]
+        seq     & GA       & 0.3685 & 0.7543 & +0.3857 \\
+        seq     & SWAP     & 0.2489 & 0.0702 & -0.1787 \\
+        seq     & VNS      & 0.3774 & 0.0344 & -0.3430 \\
+        seq     & RESAMPLE & 0.0052 & 0.1411 & +0.1359 \\
+        \addlinespace[0.3em]
+        dev     & DE       & 0.3992 & 0.7876 & +0.3884 \\
+        dev     & GDE      & 0.4919 & 0.0639 & -0.4281 \\
+        dev     & LEVY     & 0.1067 & 0.0060 & -0.1008 \\
+        dev     & RESAMPLE & 0.0021 & 0.1426 & +0.1405 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{operator_selection_dynamics.pdf}
+    \caption{Operator selection probability over generations on T500.}
+    \label{fig:operator_dynamics}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig_operator_selection_early_vs_late.pdf}
+    \caption{Early vs.\ late operator selection on T500.}
+    \label{fig:operator_early_late}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig_bandit_weights_heatmap.pdf}
+    \caption{Bandit weight evolution on T500. Smooth, non-oscillatory trajectories indicate stable adaptation.}
+    \label{fig:bandit_weights_heatmap}
+\end{figure}
+
+\textbf{Migration.}
+Table~\ref{tab:ablation_migration} and Fig.~\ref{fig:conv_migration} show that migration achieves 1.86\%, 15.42\%, and 30.65\% improvements on T100, T200, and T500 (all $p < 0.05$), with lower variance across all scales.
+
+\begin{table}[H]
+    \centering
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \caption{Ablation: effect of the gating mechanism.}
+    \label{tab:ablation_noGate}
+    \sisetup{separate-uncertainty=true, table-align-uncertainty=true, group-digits=false}
+    \begin{tabular}{l S[table-format=1.6(6)] S[table-format=1.6(6)] S[table-format=1.2] S[table-format=1.6]}
+        \toprule
+        \textbf{Scale} & {\textbf{CCHIHH-full}} & {\textbf{noGate}} & {\textbf{Impr.(\%)}} & {\textbf{p-value}} \\
+        \midrule
+        T100 & 0.341471(1180) & 0.341965(1360) & 0.14 & 0.734375 \\
+        T200 & 0.036077(2096) & 0.039380(1642) & 8.39 & 0.009766 \\
+        T500 & 0.028134(6629) & 0.029605(710)  & 4.97 & 0.083984 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{noMig.pdf}
+    \caption{Convergence: CCHIHH-full vs.\ CCHIHH-noMig. Shaded regions: 95\% CI over 10 runs.}
+    \label{fig:conv_migration}
+\end{figure}
+
+\textbf{Gating mechanism.}
+Table~\ref{tab:ablation_gate} and Fig.~\ref{fig:conv_gate} confirm that gating is a scale-specific safeguard. On T100 and T200, the differences are not statistically significant ($p \geq 0.05$). On T500, gating provides a significant 3.01\% improvement ($p < 0.05$), confirming that stability control becomes necessary on complex large-scale instances.
+
+\begin{table}[H]
+    \centering
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \caption{Ablation: effect of the stability-gating mechanism.}
+    \label{tab:ablation_gate}
+    \sisetup{separate-uncertainty=true, table-align-uncertainty=true, group-digits=false}
+    \begin{tabular}{l S[table-format=1.6(6)] S[table-format=1.6(6)] S[table-format=-1.4] S[table-format=1.10]}
+        \toprule
+        \textbf{Scale} & {\textbf{CCHIHH-full}} & {\textbf{noGate}} & {\textbf{Impr.(\%)}} & {\textbf{p-value}} \\
+        \midrule
+        T100 & 0.342314 \pm 0.000912 & 0.341965 \pm 0.001360 & -0.1022 & 0.232421875 \\
+        T200 & 0.038271 \pm 0.001931 & 0.037505 \pm 0.001564 & -2.0434 & 0.232421875 \\
+        T500 & 0.026043 \pm 0.000936 & 0.026853 \pm 0.000644 & 3.0147  & 0.02734375 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{noGate.pdf}
+    \caption{Convergence: CCHIHH-full vs.\ CCHIHH-noGate. Shaded regions: 95\% CI over 10 runs.}
+    \label{fig:conv_gate}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Gate_sensivity.pdf}
+    \caption{Sensitivity of $T_{\text{gate}}$ on T500. CCHIHH is robust for $10 \leq T_{\text{gate}} \leq 25$.}
+    \label{fig:Resample_Gate}
+\end{figure}
+
+\textbf{Summary.}
+Fig.~\ref{fig:ablation_heatmap} consolidates the ablation results. All components become increasingly important as problem scale grows. On T500, islands and migration provide the largest contributions (40.05\% and 30.65\%), followed by CC (26.25\%) and bandit (22.88\%). Gating contributes a modest but significant 3.01\%.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig_ablation_heatmap.pdf}
+    \caption{Scale-dependent contribution of each component. Dashed borders: $p \geq 0.05$.}
+    \label{fig:ablation_heatmap}
+\end{figure}
+
+\subsection{Sensitivity Analysis of $\alpha$}
+\label{subsec53_alpha}
+
+Fig.~\ref{fig:alpha_sensitivity} shows that CCHIHH maintains consistent dominance across $\alpha \in \{0.2, 0.5, 0.8\}$ (energy-prioritized, balanced, and makespan-prioritized), indicating robustness to user preference.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{alpha_sensitivity.pdf}
+    \caption{Sensitivity of $\alpha$ on T100/T200/T500. Mean with 95\% CI over 10 runs.}
+    \label{fig:alpha_sensitivity}
+\end{figure}
+
+\subsection{Comparison with Baselines}
+\label{subsec53}
+
+\textbf{Solution quality.}
+Tables~\ref{tab:performance_comparison_CGA}--\ref{tab:baseline_dsac_de} and Figs.~\ref{fig:conv_baselines}--\ref{fig:conv_dsac} present the comparative results. CCHIHH consistently outperforms all baselines on T200 and T500. On T500, CCHIHH improves the objective by 33.59\% over CGA, 43.99\% over IMOMA, 30.04\% over DSAC-DE, and 54.72\% over PPO (all $p < 0.05$).
+
+On T100, DSAC-DE achieves 5.41\% better results than CCHIHH, as the structural overhead of multi-island decomposition is not justified on compact instances where a lighter adaptive search suffices. However, DSAC-DE's single-population approach becomes a limitation at larger scales, where it lacks the diversity maintenance and per-subspace adaptation that CCHIHH provides.
+
+\begin{table}[H]
+    \centering
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \caption{CCHIHH vs.\ CGA.}
+    \label{tab:performance_comparison_CGA}
+    \sisetup{separate-uncertainty=true, table-align-uncertainty=true, group-digits=false}
+    \begin{tabular}{l S[table-format=1.6(6)] S[table-format=1.6(6)] S[table-format=2.2] S[table-format=1.6]}
+        \toprule
+        \textbf{Scale} & {\textbf{CCHIHH}} & {\textbf{CGA}} & {\textbf{Impr.(\%)}} & {\textbf{p-value}} \\
+        \midrule
+        T100 & 0.341471(1180) & 0.353245(1514) & 3.33  & 0.001953 \\
+        T200 & 0.036077(2096) & 0.049487(1094) & 27.10 & 0.001953 \\
+        T500 & 0.028134(6629) & 0.039213(877)  & 28.25 & 0.003906 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \caption{CCHIHH vs.\ IMOMA.}
+    \label{tab:performance_comparison_IMOMA}
+    \sisetup{separate-uncertainty=true, table-align-uncertainty=true, group-digits=false}
+    \begin{tabular}{l S[table-format=1.6(6)] S[table-format=1.6(6)] S[table-format=2.2] S[table-format=1.6]}
+        \toprule
+        \textbf{Scale} & {\textbf{CCHIHH}} & {\textbf{IMOMA}} & {\textbf{Impr.(\%)}} & {\textbf{p-value}} \\
+        \midrule
+        T100 & 0.341471(1180) & 0.377472(1463) & 9.54  & 0.001953 \\
+        T200 & 0.036077(2096) & 0.057598(1613) & 37.36 & 0.001953 \\
+        T500 & 0.028134(6629) & 0.046502(1374) & 39.50 & 0.001953 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{CGA+IMOMA.pdf}
+    \caption{Convergence: CCHIHH vs.\ CGA and IMOMA. Shaded regions: 95\% CI over 10 runs.}
+    \label{fig:conv_baselines}
+\end{figure}
+
+\begin{table}[H]
+    \centering
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \caption{CCHIHH vs.\ PPO.}
+    \label{tab:baseline_ppo}
+    \sisetup{separate-uncertainty=true, table-align-uncertainty=true, group-digits=false}
+    \begin{tabular}{l S[table-format=1.6(6)] S[table-format=1.6(6)] S[table-format=2.2] S[table-format=1.6]}
+        \toprule
+        \textbf{Scale} & {\textbf{CCHIHH}} & {\textbf{PPO}} & {\textbf{Impr.(\%)}} & {\textbf{p-value}} \\
+        \midrule
+        T100 & 0.341471(1180) & 0.351000(0) & 2.71  & 0.001953 \\
+        T200 & 0.036077(2096) & 0.041000(0) & 12.01 & 0.001953 \\
+        T500 & 0.028134(6629) & 0.031000(0) & 9.24  & 0.083984 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{PPO.pdf}
+    \caption{CCHIHH vs.\ PPO. PPO results summarize 10 independently trained seeds. Shaded regions: 95\% CI.}
+    \label{fig:conv_ppo}
+\end{figure}
+
+\begin{table}[H]
+    \centering
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \caption{CCHIHH vs.\ DSAC-DE.}
+    \label{tab:baseline_dsac_de}
+    \sisetup{separate-uncertainty=true, table-align-uncertainty=true, group-digits=false}
+    \begin{tabular}{l S[table-format=1.6(6)] S[table-format=1.6(6)] S[table-format=-1.2] S[table-format=1.6]}
+        \toprule
+        \textbf{Scale} & {\textbf{CCHIHH}} & {\textbf{DSAC-DE}} & {\textbf{Impr.(\%)}} & {\textbf{p-value}} \\
+        \midrule
+        T100 & 0.341471(1180) & 0.324979(1958) & -5.07 & 0.001953 \\
+        T200 & 0.036077(2096) & 0.047121(1611) & 23.44 & 0.001953 \\
+        T500 & 0.028134(6629) & 0.038472(12917) & 26.87 & 0.001953 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{DSAC.pdf}
+    \caption{Convergence: CCHIHH vs.\ DSAC-DE. Shaded regions: 95\% CI over 10 runs.}
+    \label{fig:conv_dsac}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{boxplot_fitness.pdf}
+    \caption{Box plots of final objectives over 10 runs. CCHIHH (red) achieves the lowest median and tightest range on T200 and T500.}
+    \label{fig:boxplot_fitness}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{makespan_energy_scatter.pdf}
+    \caption{Best solutions in the makespan--energy space. CCHIHH (red stars) clusters in the lower-left region.}
+    \label{fig:makespan_energy}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig_radar.pdf}
+    \caption{Multi-dimensional comparison: solution quality, stability ($1/\text{CV}$), efficiency ($1/\text{runtime}$), and convergence speed (fitness at generation 2000). Higher is better.}
+    \label{fig:radar_comparison}
+\end{figure}
+
+\textbf{Stability.}
+Table~\ref{tab:stability_cv} reports run-to-run dispersion. CCHIHH maintains CV $\leq 0.051$ across all scales. While some baselines achieve lower CV, this reflects convergence to inferior solutions rather than genuinely superior reliability. CCHIHH achieves substantially better mean fitness with controlled variability.
+
+\begin{table}[H]
+    \centering
+    \small
+    \setlength{\tabcolsep}{5pt}
+    \caption{Run-to-run dispersion (CV = Std/Mean) over 10 runs.}
+    \label{tab:stability_cv}
+    \sisetup{group-digits=false}
+    \begin{tabular}{l S[table-format=1.4] S[table-format=1.4] S[table-format=1.4] S[table-format=1.4]}
+        \toprule
+        \textbf{Scale} & {\textbf{CCHIHH}} & {\textbf{DSAC-DE}} & {\textbf{CGA}} & {\textbf{IMOMA}} \\
+        \midrule
+        T100 & 0.0035 & 0.0060 & 0.0043 & 0.0039 \\
+        T200 & 0.0581 & 0.0342 & 0.0221 & 0.0280 \\
+        T500 & 0.2356 & 0.3358 & 0.0224 & 0.0295 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\textbf{Efficiency.}
+Fig.~\ref{fig:runtime} reports wall-clock time. On T100 and T200, CCHIHH is the fastest method (33.1\,s and 85.3\,s). On T500, CCHIHH and DSAC-DE achieve comparable runtime ($\approx$289\,s), while CGA and IMOMA require $2.5\times$ and $4.2\times$ longer. CCHIHH also converges faster: on T500, it reaches fitness 0.030 by generation 2{,}000, while CGA and IMOMA do not reach this quality after 10{,}000 generations.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{runtime_comparison.pdf}
+    \caption{Wall-clock time comparison (mean over 10 runs).}
+    \label{fig:runtime}
+\end{figure}
+
+\textbf{Statistical significance via Friedman test.}
+Fig.~\ref{fig:cd_diagram} shows the critical difference diagram across 9 instances (3 scales $\times$ 3 $\alpha$ values). CCHIHH achieves the best average rank (1.111), significantly outperforming IMOMA and PPO ($p < 0.05$).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{fig_cd_diagram_N9.pdf}
+    \caption{Critical Difference diagram (Friedman test, Nemenyi post-hoc, $\alpha = 0.05$, $N = 9$). Bold bars connect algorithms that are not significantly different.}
+    \label{fig:cd_diagram}
+\end{figure}
+
+\textbf{Schedule visualization.}
+Fig.~\ref{fig:gantt_T200} shows a Gantt chart of the best CCHIHH schedule on T200, demonstrating three-tier resource utilization with effective cross-tier load balancing and correct synchronization between CE tasks and manufacturing operations.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig_gantt_T200.pdf}
+    \caption{Gantt chart of CCHIHH's best schedule on T200 ($\alpha = 0.5$). Cloud (blue), edge (green), device (yellow). For readability, only CE tasks and the first 50 operations are shown.}
+    \label{fig:gantt_T200}
+\end{figure}
+
+\section{Conclusion}
+\label{sec6}
+
+This paper addressed the cloud--edge--device (CED) collaborative scheduling problem arising in distributed manufacturing, where heterogeneous decision subspaces---offloading, sequencing, and rank-conditioned device assignment---are coupled through synchronization constraints. The central finding is that \emph{when CED scheduling is composed of structurally distinct yet coupled decision subspaces, search control must also be structured, localized, and stage-aware}. The proposed CCHIHH framework operationalizes this principle through four layers---structure-aware cooperative coevolution, localized contextual bandit adaptation, parallel heterogeneous island exploration, and stability-gated regime switching---forming a unified architecture whose value amplifies with industrial scale.
+
+Extensive experiments on benchmark instances with up to 500 tasks and 800 devices demonstrate that CCHIHH achieves 33.59\% and 43.99\% improvement over CGA and IMOMA on T500, with statistically significant results confirmed by both Wilcoxon signed-rank and Friedman tests ($p < 0.05$). Ablation studies reveal a consistent scale-dependent contribution pattern: all framework layers become increasingly beneficial as problem complexity grows, while the gating mechanism serves as a scale-specific safeguard effective primarily on large-scale instances. Across all scales, CCHIHH maintains bounded run-to-run dispersion (CV~$\le$~0.051).
+
+\textbf{Industrial Applicability.}
+The proposed framework is designed with practical manufacturing deployment in mind. In a representative automotive body-in-white production scenario, CCHIHH can serve as the optimization engine within a Manufacturing Execution System (MES): given a batch of CE tasks (structural computation, digital twin updates, quality inspection analytics) and a set of manufacturing operations (welding, painting, assembly) with their device eligibility and synchronization constraints, CCHIHH generates an optimized three-tier schedule within minutes on commodity hardware. The Gantt chart output (Figure~\ref{fig:gantt_T200}) is directly interpretable by production planners and can be fed into real-time dispatchers. The bounded run-to-run variability (CV~$\le$~0.051) ensures that repeated invocations under identical conditions produce consistent schedules, a critical requirement for production reliability. Furthermore, the sub-five-minute runtime on industrial-scale instances (500 tasks, 800 devices) is compatible with shift-level or batch-level re-scheduling cycles typical in discrete manufacturing.
+
+\textbf{Limitations.}
+The current evaluation uses self-generated benchmark instances rather than community-standard test sets or data from real production lines. Although DSAC-DE is re-implemented following the original hyperparameters, minor implementation-level differences (e.g., neural network library, floating-point behavior) may still exist relative to the original codebase. The single-objective weighted aggregation relies on a scalar reward signal; extending the framework to explicit Pareto optimization would require redesigning the bandit's reward structure (e.g., using hypervolume contribution), which constitutes a non-trivial architectural modification. The population size ($N=40$, with 5 individuals per island) is relatively small by evolutionary computation standards, and population-size sensitivity warrants further investigation.
+
+\textbf{Future Work.}
+Future research directions include (i)~validation on real-world manufacturing datasets from automotive and electronics production lines, (ii)~principled decomposition strategies that generalize beyond the current three-block design to accommodate varying manufacturing process structures, (iii)~multi-objective optimization with Pareto-front analysis using redesigned reward structures, and (iv)~online scheduling scenarios where tasks arrive continuously, supported by distributed and GPU-accelerated implementations. Code and benchmark data will be made publicly available upon acceptance.
+
+
+
+
+%% The Appendices part is started with the command \appendix;
+%% appendix sections are then done as normal sections
+
+%% For citations use: 
+%%       \cite{<label>} ==> [1]
+
+%%
+
+%% If you have bib database file and want bibtex to generate the
+%% bibitems, please use
+%%
+%%  \bibliographystyle{elsarticle-num} 
+%%  \bibliography{<your bibdatabase>}
+
+%% else use the following coding to input the bibitems directly in the
+%% TeX file.
+
+%% Refer following link for more details about bibliography and citations.
+%% https://en.wikibooks.org/wiki/LaTeX/Bibliography_Management
+
+\bibliographystyle{elsarticle-num} 
+\bibliography{refs}
+\end{document}
+
+\endinput
+%%
+%% End of file `elsarticle-template-num.tex'.

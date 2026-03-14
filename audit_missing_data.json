@@ -1,0 +1,92 @@
+[
+  {
+    "algorithm": "CCHIHH-noHI",
+    "problem": "T100",
+    "status": "REQUIRES RERUN",
+    "reason": "仓库中未找到与当前论文量级一致的 10-run 原始日志"
+  },
+  {
+    "algorithm": "CCHIHH-noHI",
+    "problem": "T200",
+    "status": "REQUIRES RERUN",
+    "reason": "仓库中未找到与当前论文量级一致的 10-run 原始日志"
+  },
+  {
+    "algorithm": "CCHIHH-noHI",
+    "problem": "T500",
+    "status": "REQUIRES RERUN",
+    "reason": "仓库中未找到与当前论文量级一致的 10-run 原始日志"
+  },
+  {
+    "algorithm": "CCHIHH-noGate",
+    "problem": "T100",
+    "status": "REQUIRES RERUN",
+    "reason": "仅找到 9 个有效 seed 日志"
+  },
+  {
+    "algorithm": "CCHIHH-noGate",
+    "problem": "T200",
+    "status": "REQUIRES RERUN",
+    "reason": "仅找到 5 个有效 seed 日志"
+  },
+  {
+    "algorithm": "CCHIHH-noGate",
+    "problem": "T500",
+    "status": "REQUIRES RERUN",
+    "reason": "仅找到 5 个有效 seed 日志"
+  },
+  {
+    "algorithm": "GA",
+    "problem": "T100",
+    "status": "REQUIRES RERUN",
+    "reason": "仓库中未找到与当前论文量级一致的 10-run 原始日志"
+  },
+  {
+    "algorithm": "GA",
+    "problem": "T200",
+    "status": "REQUIRES RERUN",
+    "reason": "仓库中未找到与当前论文量级一致的 10-run 原始日志"
+  },
+  {
+    "algorithm": "GA",
+    "problem": "T500",
+    "status": "REQUIRES RERUN",
+    "reason": "仓库中未找到与当前论文量级一致的 10-run 原始日志"
+  },
+  {
+    "algorithm": "DE",
+    "problem": "T100",
+    "status": "REQUIRES RERUN",
+    "reason": "仓库中未找到与当前论文量级一致的 10-run 原始日志"
+  },
+  {
+    "algorithm": "DE",
+    "problem": "T200",
+    "status": "REQUIRES RERUN",
+    "reason": "仓库中未找到与当前论文量级一致的 10-run 原始日志"
+  },
+  {
+    "algorithm": "DE",
+    "problem": "T500",
+    "status": "REQUIRES RERUN",
+    "reason": "仓库中未找到与当前论文量级一致的 10-run 原始日志"
+  },
+  {
+    "algorithm": "Gbest-DE",
+    "problem": "T100",
+    "status": "REQUIRES RERUN",
+    "reason": "仅找到 8 个有效 seed 日志"
+  },
+  {
+    "algorithm": "Gbest-DE",
+    "problem": "T200",
+    "status": "REQUIRES RERUN",
+    "reason": "仅找到 9 个有效 seed 日志"
+  },
+  {
+    "algorithm": "CGA",
+    "problem": "T200",
+    "status": "REQUIRES RERUN",
+    "reason": "仅找到 6 个有效 seed 日志"
+  }
+]

@@ -1,0 +1,549 @@
+{
+  "missing_files": [],
+  "parse_failures": [],
+  "non_monotonic_logs": [
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\results\\rerun_ablation\\cchihh_noGate_T200_s1.log"
+  ],
+  "bad_numeric_logs": [
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed1.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed1.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed1.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed2.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed2.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed2.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed3.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed3.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed3.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed4.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed4.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed4.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed5.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed5.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed5.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed6.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed6.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed6.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed7.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed7.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed7.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed8.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed8.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed8.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed9.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed9.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed9.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed10.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed10.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed10.txt"
+  ],
+  "counts": [
+    {
+      "variant": "CCHIHH-full",
+      "scale": "T100",
+      "alpha": 0.2,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full",
+      "scale": "T100",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full",
+      "scale": "T100",
+      "alpha": 0.8,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full",
+      "scale": "T200",
+      "alpha": 0.2,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full",
+      "scale": "T200",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full",
+      "scale": "T200",
+      "alpha": 0.8,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full",
+      "scale": "T500",
+      "alpha": 0.2,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full",
+      "scale": "T500",
+      "alpha": 0.8,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full-old",
+      "scale": "T100",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full-old",
+      "scale": "T100",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full-old",
+      "scale": "T100",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full-old",
+      "scale": "T200",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full-old",
+      "scale": "T200",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full-old",
+      "scale": "T200",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full-old",
+      "scale": "T500",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full-old",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-full-old",
+      "scale": "T500",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noCB",
+      "scale": "T100",
+      "alpha": 0.5,
+      "source": "old_noCB",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noCB",
+      "scale": "T200",
+      "alpha": 0.5,
+      "source": "old_noCB",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noCB",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "old_noCB",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noCC",
+      "scale": "T100",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noCC",
+      "scale": "T200",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noCC",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noGate",
+      "scale": "T100",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noGate",
+      "scale": "T200",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noGate",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noHI",
+      "scale": "T100",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noHI",
+      "scale": "T200",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noHI",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noMig",
+      "scale": "T100",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noMig",
+      "scale": "T200",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-noMig",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-tgate10",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-tgate15",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-tgate20",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-tgate25",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CCHIHH-tgate5",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "new_rerun",
+      "count": 10
+    },
+    {
+      "variant": "CGA",
+      "scale": "T100",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "CGA",
+      "scale": "T100",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "CGA",
+      "scale": "T100",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "CGA",
+      "scale": "T200",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "CGA",
+      "scale": "T200",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "CGA",
+      "scale": "T200",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "CGA",
+      "scale": "T500",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "CGA",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "CGA",
+      "scale": "T500",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "DSAC-DE",
+      "scale": "T100",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "DSAC-DE",
+      "scale": "T100",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "DSAC-DE",
+      "scale": "T100",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "DSAC-DE",
+      "scale": "T200",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "DSAC-DE",
+      "scale": "T200",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "DSAC-DE",
+      "scale": "T200",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "DSAC-DE",
+      "scale": "T500",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "DSAC-DE",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "DSAC-DE",
+      "scale": "T500",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "IMOMA",
+      "scale": "T100",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "IMOMA",
+      "scale": "T100",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "IMOMA",
+      "scale": "T100",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "IMOMA",
+      "scale": "T200",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "IMOMA",
+      "scale": "T200",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "IMOMA",
+      "scale": "T200",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "IMOMA",
+      "scale": "T500",
+      "alpha": 0.2,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "IMOMA",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "IMOMA",
+      "scale": "T500",
+      "alpha": 0.8,
+      "source": "old_alpha_runs",
+      "count": 10
+    },
+    {
+      "variant": "PPO",
+      "scale": "T100",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "PPO",
+      "scale": "T200",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    },
+    {
+      "variant": "PPO",
+      "scale": "T500",
+      "alpha": 0.5,
+      "source": "old_baseline",
+      "count": 10
+    }
+  ],
+  "incomplete_logs": [
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed1.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed2.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed3.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed4.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed5.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed6.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed7.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed8.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed9.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T100\\PPO_seed10.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed1.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed2.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed3.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed4.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed5.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed6.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed7.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed8.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed9.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T200\\PPO_seed10.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed1.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed2.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed3.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed4.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed5.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed6.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed7.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed8.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed9.txt",
+    "C:\\Users\\Hu\\Desktop\\CED_schedule_Final - 副本\\outputs\\results\\cchihh_ablation_suite\\baseline\\T500\\PPO_seed10.txt"
+  ]
+}
