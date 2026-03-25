@@ -44,7 +44,7 @@ Options:
   --seed <n>           Random seed (default: 42)
   --pini <f>           Heuristic init probability 0-1 (default: 0.4)
   --alpha <f>          Weight for makespan vs energy (default: 0.5, range: [0,1])
-  --solver <name>      Solver: GA, DE, GDE, CCHIHH, QHH, GA-SLHH (default: GA)
+  --solver <name>      Solver: GA, DE, GDE, CCHIHH, QHH, GA-SLHH, rde (default: GA)
   --cnum <n>           Number of cloud servers (default: 100)
   --enum <n>           Number of edge servers (default: 100)
   --dnum <n>           Number of devices (default: 300)
@@ -98,9 +98,16 @@ Options:
 | GA | Genetic Algorithm (default) |
 | DE | Differential Evolution |
 | GDE | Gbest-centric DE with rollback crossover |
+| rde | Reconstructed Differential Evolution baseline with archive, SHADE memory, and linear population reduction |
 | CCHIHH | Cooperative Co-evolution + Hyper-Heuristic (bandit) |
 | GA-SLHH | GA-based self-learning hyper-heuristic |
 | QHH / QPHH | Q-learning population hyper-heuristic (QPHH) |
+
+RDE example:
+
+```powershell
+.\build\Release\CED_Schedule.exe --solver rde --seed 1 --data_dir .\data --data_file data_matrix_100.txt
+```
 
 ## QPHH speed preset (面向速度的参数)
 

@@ -1,0 +1,4 @@
+group,variant,scale,alpha,num_seeds,mean_final_best_fitness,std_final_best_fitness,min_final_best_fitness,max_final_best_fitness
+cchihh,cchihh_full,T300,0.5,10,0.03994916,0.0189390006472359,0.0322907,0.0937598
+cchihh,cchihh_full,T400,0.5,10,0.02923406,0.0017054805475942,0.0271333,0.0323442
+cchihh,cchihh_full,T50,0.5,10,0.1339898,0.00311001289029125,0.126094,0.136739

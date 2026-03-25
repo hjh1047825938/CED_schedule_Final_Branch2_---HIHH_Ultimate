@@ -1,0 +1,10 @@
+^C:\USERS\HU\DESKTOP\CED_SCHEDULE_FINAL\BUILD_STRESS\CMAKEFILES\092F5CA23047432569701A0274E9B44F\GENERATE.STAMP.RULE
+setlocal
+"D:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Hu/Desktop/CED_schedule_Final -BC:/Users/Hu/Desktop/CED_schedule_Final/build_stress --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/Hu/Desktop/CED_schedule_Final/build_stress/CED_Schedule.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

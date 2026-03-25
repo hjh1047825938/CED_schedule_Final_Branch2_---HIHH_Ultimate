@@ -45,6 +45,10 @@ double CED_Schedule(const double* var, Workspace& ws, int Cnum, int Enum, int Dn
     }
 
     const int ops = M_Jnum * M_OPTnum;
+    const double cloud_capacity_scale = std::max(ws.stress.cloud_capacity_scale, 1e-9);
+    const double edge_capacity_scale = std::max(ws.stress.edge_capacity_scale, 1e-9);
+    const double device_capacity_scale = std::max(ws.stress.device_capacity_scale, 1e-9);
+    const double communication_scale = std::max(ws.stress.communication_scale, 1e-9);
     vector<bool>& ce_sele = ws.ce_sele;
     vector<int>& cevar = ws.cevar;
     vector<int>& mvar = ws.mvar;
@@ -124,7 +128,9 @@ double CED_Schedule(const double* var, Workspace& ws, int Cnum, int Enum, int Dn
         int Cprev = CO - 1;
         double* st_row = ST[CJ];
         double* et_row = ET[CJ];
-        double mtask_time = MTask_Time[CJ * M_OPTnum + CO];
+        // Device-side stress is injected as an equivalent processing slow-down so
+        // feasibility is preserved and the existing decoding/simulation logic stays unchanged.
+        double mtask_time = MTask_Time[CJ * M_OPTnum + CO] / device_capacity_scale;
         
         if (Cprev < 0)
         {
@@ -319,12 +325,12 @@ double CED_Schedule(const double* var, Workspace& ws, int Cnum, int Enum, int Dn
             {
                 int dev = task_devs[base + k];
                 int near_edge = nearest_edge[dev];
-                double cur_comm = comm_factor / Edge_smallest_rate[near_edge];
+                double cur_comm = (comm_factor * communication_scale) / Edge_smallest_rate[near_edge];
                 energy += cur_comm * qn_energy_factor;
                 if (cur_comm > t_comm)
                     t_comm = cur_comm;
             }
-            t_comp = CETask_Property[i].Computation / CLOUD_COMP_SPEED;
+            t_comp = CETask_Property[i].Computation / (CLOUD_COMP_SPEED * cloud_capacity_scale);
         }
         else
         {
@@ -335,16 +341,16 @@ double CED_Schedule(const double* var, Workspace& ws, int Cnum, int Enum, int Dn
             for (int k = 0; k < tcount; k ++)
             {
                 int dev = task_devs[base + k];
-                double cur_comm = comm_factor / Edge_Device_comm[edge_base + dev];
+                double cur_comm = (comm_factor * communication_scale) / Edge_Device_comm[edge_base + dev];
                 energy += cur_comm * qn_energy_factor;
                 if (cur_comm > t_comm)
                     t_comm = cur_comm;
             }
             
             if (edge_load_size < 6)
-                t_comp = CETask_Property[i].Computation / EDGE_COMP_SPEED_NO_LOAD;
+                t_comp = CETask_Property[i].Computation / (EDGE_COMP_SPEED_NO_LOAD * edge_capacity_scale);
             else
-                t_comp = CETask_Property[i].Computation / EDGE_COMP_SPEED_NO_LOAD * edge_load_size;
+                t_comp = CETask_Property[i].Computation / (EDGE_COMP_SPEED_NO_LOAD * edge_capacity_scale) * edge_load_size;
         }
 
         double max_Prec_EndTime = 0, max_Start_StartTime = 0, max_End_EndTime = 0, max_Iter_EndTime = 0;

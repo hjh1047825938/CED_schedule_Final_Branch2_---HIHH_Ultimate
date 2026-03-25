@@ -50,6 +50,8 @@ static void PrintUsage(const char* prog) {
     cout << "  --mopt <n>              Operations per task (default: 5)\n";
     cout << "  --scale_tag <name>      Output prefix tag (default: infer from tnum, e.g. T100)\n";
     cout << "  --results_dir <path>    Output directory (default: results/PPO)\n";
+    cout << "  --time_budget_seconds <f>  Wall-clock budget in seconds (default: 0, disabled)\n";
+    cout << "  --convergence_csv <path>   Explicit per-seed wall-clock CSV output path\n";
     cout << "  --help                  Show this help\n";
 }
 
@@ -68,6 +70,22 @@ static bool WriteCurve(const filesystem::path& path, const vector<double>& curve
     ofs.setf(std::ios::fixed);
     ofs << setprecision(10);
     for (double v : curve) ofs << v << '\n';
+    return true;
+}
+
+static bool WriteWallclockCurveCsv(const filesystem::path& path, const vector<PPOCurvePoint>& curve) {
+    ofstream ofs(path);
+    if (!ofs.is_open()) return false;
+    ofs.setf(std::ios::fixed);
+    ofs << setprecision(10);
+    ofs << "time_seconds,generation,best_fitness,best_f1,best_f2\n";
+    for (const auto& row : curve) {
+        ofs << row.time_seconds << ','
+            << row.generation << ','
+            << row.best_fitness << ','
+            << row.best_f1 << ','
+            << row.best_f2 << '\n';
+    }
     return true;
 }
 
@@ -93,6 +111,7 @@ int main(int argc, char* argv[]) {
     filesystem::path data_dir = "./data";
     string data_file = "data_matrix_100.txt";
     filesystem::path results_dir = "results/PPO";
+    filesystem::path convergence_csv;
 
     int episodes = DEFAULT_EPISODES;
     int seed = DEFAULT_SEED;
@@ -126,6 +145,8 @@ int main(int argc, char* argv[]) {
             data_file = argv[++i];
         } else if (strcmp(argv[i], "--results_dir") == 0 && i + 1 < argc) {
             results_dir = argv[++i];
+        } else if (strcmp(argv[i], "--convergence_csv") == 0 && i + 1 < argc) {
+            convergence_csv = argv[++i];
         } else if (strcmp(argv[i], "--episodes") == 0 && i + 1 < argc) {
             episodes = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--seed") == 0 && i + 1 < argc) {
@@ -152,6 +173,8 @@ int main(int argc, char* argv[]) {
             cfg.entropy_coef = atof(argv[++i]);
         } else if (strcmp(argv[i], "--max_grad_norm") == 0 && i + 1 < argc) {
             cfg.max_grad_norm = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--time_budget_seconds") == 0 && i + 1 < argc) {
+            cfg.time_budget_seconds = atof(argv[++i]);
         } else if (strcmp(argv[i], "--alpha") == 0 && i + 1 < argc) {
             objective_alpha = atof(argv[++i]);
         } else if (strcmp(argv[i], "--cnum") == 0 && i + 1 < argc) {
@@ -195,6 +218,9 @@ int main(int argc, char* argv[]) {
     cout << "Data: " << (data_dir / data_file) << endl;
     cout << "Scale tag: " << scale_tag << endl;
     cout << "Episodes: " << cfg.episodes << endl;
+    if (cfg.time_budget_seconds > 0.0) {
+        cout << "Time budget: " << cfg.time_budget_seconds << " s" << endl;
+    }
     cout << "Dims C/E/D/T/Mopt: " << Cnum << "/" << Enum << "/" << Dnum << "/" << Tnum << "/" << Mopt << endl;
     cout << "Seeds: " << seeds.front() << ".." << seeds.back() << endl;
     cout << "PPO update_every=" << cfg.update_every << " epochs=" << cfg.ppo_epochs
@@ -217,14 +243,29 @@ int main(int argc, char* argv[]) {
         PPOScheduler ppo(&solver, cfg, (uint32_t)run_seed);
         PPORunResult r = ppo.Train();
 
-        const filesystem::path out_curve = results_dir / (scale_tag + "_seed" + to_string(run_seed) + ".txt");
-        if (!WriteCurve(out_curve, r.best_curve)) {
-            cerr << "Error: failed to write curve file: " << out_curve << endl;
-            return 1;
+        if (cfg.time_budget_seconds > 0.0) {
+            filesystem::path out_curve = convergence_csv;
+            if (out_curve.empty()) {
+                out_curve = results_dir / (scale_tag + "_seed" + to_string(run_seed) + ".csv");
+            }
+            if (!WriteWallclockCurveCsv(out_curve, r.curve_points)) {
+                cerr << "Error: failed to write wall-clock curve file: " << out_curve << endl;
+                return 1;
+            }
+        } else {
+            const filesystem::path out_curve = results_dir / (scale_tag + "_seed" + to_string(run_seed) + ".txt");
+            if (!WriteCurve(out_curve, r.best_curve)) {
+                cerr << "Error: failed to write curve file: " << out_curve << endl;
+                return 1;
+            }
         }
 
         final_best_all.push_back(r.final_best);
-        cout << "Seed " << run_seed << " done. final_best=" << std::setprecision(10) << r.final_best << endl;
+        cout << "Seed " << run_seed << " done. final_best=" << std::setprecision(10) << r.final_best;
+        if (cfg.time_budget_seconds > 0.0) {
+            cout << " completed_episodes=" << r.completed_episodes;
+        }
+        cout << endl;
     }
 
     const auto ms = MeanStd(final_best_all);

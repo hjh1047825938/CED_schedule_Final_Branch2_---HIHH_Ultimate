@@ -34,6 +34,10 @@ public:
     double GetBestScalarFit() const { return best_scalar_fit; }
     int GetArchiveSize() const { return (int)archive.size(); }
     const std::vector<IMOMAIndividual>& GetArchive() const { return archive; }
+    const std::vector<double>& GetBestVar() const { return scalar_best_ind.var; }
+    double GetBestMakespan() const { return scalar_best_ind.makespan; }
+    double GetBestEnergy() const { return scalar_best_ind.energy; }
+    bool HasBest() const { return has_scalar_best; }
 
 private:
     MultiMet* solver;

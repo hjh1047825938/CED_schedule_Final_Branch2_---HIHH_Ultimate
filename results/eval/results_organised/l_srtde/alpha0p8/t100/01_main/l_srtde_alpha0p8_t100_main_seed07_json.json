@@ -1,0 +1,17 @@
+{
+  "kind": "alpha",
+  "solver": "L-SRTDE",
+  "solver_key": "l_srtde",
+  "scale": "T100",
+  "alpha": 0.8,
+  "seed": 7,
+  "scenario_family": "nominal",
+  "severity": "nominal",
+  "scenario_label": "alpha_0.8",
+  "eval_budget": 400000,
+  "final_fitness": 0.499322,
+  "wall_clock_seconds": 31.905,
+  "trace_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\traces\\l_srtde_T100_alpha0.8_seed7.csv",
+  "log_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\logs\\l_srtde_T100_alpha0.8_seed7.log",
+  "result_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\alpha\\l_srtde_T100_alpha0.8_seed7.json"
+}

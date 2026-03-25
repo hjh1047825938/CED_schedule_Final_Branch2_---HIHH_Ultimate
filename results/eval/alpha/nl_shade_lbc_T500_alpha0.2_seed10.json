@@ -1,0 +1,17 @@
+{
+  "kind": "alpha",
+  "solver": "NL-SHADE-LBC",
+  "solver_key": "nl_shade_lbc",
+  "scale": "T500",
+  "alpha": 0.2,
+  "seed": 10,
+  "scenario_family": "nominal",
+  "severity": "nominal",
+  "scenario_label": "alpha_0.2",
+  "eval_budget": 400000,
+  "final_fitness": 0.039394,
+  "wall_clock_seconds": 224.823,
+  "trace_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\traces\\nl_shade_lbc_T500_alpha0.2_seed10.csv",
+  "log_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\logs\\nl_shade_lbc_T500_alpha0.2_seed10.log",
+  "result_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\alpha\\nl_shade_lbc_T500_alpha0.2_seed10.json"
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "alpha",
+  "solver": "L-SRTDE",
+  "solver_key": "l_srtde",
+  "scale": "T500",
+  "alpha": 0.8,
+  "seed": 9,
+  "scenario_family": "nominal",
+  "severity": "nominal",
+  "scenario_label": "alpha_0.8",
+  "eval_budget": 400000,
+  "final_fitness": 0.055349,
+  "wall_clock_seconds": 235.635,
+  "trace_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\traces\\l_srtde_T500_alpha0.8_seed9.csv",
+  "log_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\logs\\l_srtde_T500_alpha0.8_seed9.log",
+  "result_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\alpha\\l_srtde_T500_alpha0.8_seed9.json"
+}

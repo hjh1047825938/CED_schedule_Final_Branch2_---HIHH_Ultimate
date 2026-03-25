@@ -1,0 +1,17 @@
+{
+  "kind": "alpha",
+  "solver": "RDE",
+  "solver_key": "rde",
+  "scale": "T100",
+  "alpha": 0.8,
+  "seed": 6,
+  "scenario_family": "nominal",
+  "severity": "nominal",
+  "scenario_label": "alpha_0.8",
+  "eval_budget": 400000,
+  "final_fitness": 0.510883,
+  "wall_clock_seconds": 29.144,
+  "trace_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\traces\\rde_T100_alpha0.8_seed6.csv",
+  "log_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\logs\\rde_T100_alpha0.8_seed6.log",
+  "result_path": "C:\\Users\\Hu\\Desktop\\CED_schedule_Final\\results\\eval\\alpha\\rde_T100_alpha0.8_seed6.json"
+}

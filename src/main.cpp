@@ -5,6 +5,9 @@
 #include "IMOMA.h"
 #include "CGA.h"
 #include "DSAC_DE.h"
+#include "L_SRTDE.h"
+#include "NL_SHADE_LBC.h"
+#include "solver_rde.h"
 #include "Rng.h"
 #include <iostream>
 #include <fstream>
@@ -34,6 +37,7 @@ using namespace std;
 #define DEFAULT_PINI 0.4
 #define DEFAULT_SEED 42
 #define DEFAULT_CGA_VM_RATIO 0.35
+#define DEFAULT_RDE_EVAL_BUDGET 400000ull
 
 void print_usage(const char* prog_name) {
     cout << "Usage: " << prog_name << " [OPTIONS]\n";
@@ -45,7 +49,7 @@ void print_usage(const char* prog_name) {
     cout << "  --seed <n>           Random seed (default: " << DEFAULT_SEED << ")\n";
     cout << "  --pini <f>           Heuristic init probability 0-1 (default: " << DEFAULT_PINI << ")\n";
     cout << "  --alpha <f>          Weight for makespan vs energy (default: 0.5, range: [0,1])\n";
-    cout << "  --solver <name>      Solver: GA, DE, GDE, DSAC-DE, CCHIHH, QHH, GA-SLHH, IMOMA, CGA (default: GA)\n";
+    cout << "  --solver <name>      Solver: GA, DE, GDE, DSAC-DE, CCHIHH, CCHIHH_shared_bandit, QHH, GA-SLHH, L-SRTDE, NL-SHADE-LBC, rde (default: GA)\n";
     cout << "  --cnum <n>           Number of cloud servers (default: " << DEFAULT_CNUM << ")\n";
     cout << "  --enum <n>           Number of edge servers (default: " << DEFAULT_ENUM << ")\n";
     cout << "  --dnum <n>           Number of devices (default: " << DEFAULT_DNUM << ")\n";
@@ -54,7 +58,21 @@ void print_usage(const char* prog_name) {
     cout << "  --migration          Enable rotated-ring subpopulation migration\n";
     cout << "  --nsubpop <n>        Number of subpopulations for migration (default: 8)\n";
     cout << "  --log_every <n>      Log best_fit every n generations (or evals if --max_evals is set, default: 50)\n";
+    cout << "  --time_budget_seconds <f>  Wall-clock budget in seconds (default: 0, disabled)\n";
+    cout << "  --convergence_csv <p>      Write wall-clock convergence CSV to path\n";
     cout << "  --max_evals <n>      Stop after N evaluation calls (0 = disabled)\n";
+    cout << "  --rde_eval_budget <n> RDE evaluation budget (default: 400000)\n";
+    cout << "  --rde_np_max <n>     RDE initial population size (default: min(max(18*dim,36),300))\n";
+    cout << "  --rde_np_min <n>     RDE minimum population size (default: 4)\n";
+    cout << "  --rde_h <n>          RDE SHADE memory size (default: 5)\n";
+    cout << "  --rde_archive_rate <f> RDE archive size ratio (default: 1.0)\n";
+    cout << "  --rde_p_max <f>      RDE max p-best fraction (default: 0.25)\n";
+    cout << "  --rde_rank_pressure <f> RDE order-pbest rank pressure (default: 3.0)\n";
+    cout << "  --rde_gamma1 <f>     RDE initial share for current-to-pbest (default: 0.5)\n";
+    cout << "  --rde_gamma2 <f>     RDE initial share for current-to-order-pbest (default: 0.5)\n";
+    cout << "  --rde_eta_gamma <f>  RDE strategy-share smoothing (default: 0.2)\n";
+    cout << "  --rde_init_mf <f>    RDE initial mean F memory (default: 0.3)\n";
+    cout << "  --rde_init_mcr <f>   RDE initial mean CR memory (default: 0.8)\n";
     cout << "  --qphh_p0_factor <n> QPHH init pool multiplier P0 = P * n (default: 3)\n";
     cout << "  --qphh_tasksn <n>    QPHH greedy-insert tasks per LS (default: 1)\n";
     cout << "  --qphh_gi_cap <n>    QPHH greedy-insert position cap (0=all, default: 30)\n";
@@ -96,6 +114,12 @@ void print_usage(const char* prog_name) {
     cout << "  --eps_k <f>          Stable epsilon decay k (default: 0.01)\n";
     cout << "  --lr0 <f>            Stable learning rate start (default: 0.05)\n";
     cout << "  --lr_k <f>           Stable learning rate decay k (default: 0.002)\n";
+    cout << "  --stress_cloud_scale <f>  Cloud effective capacity scale (default: 1.0)\n";
+    cout << "  --stress_edge_scale <f>   Edge effective capacity scale (default: 1.0)\n";
+    cout << "  --stress_device_scale <f> Device effective capacity scale (default: 1.0)\n";
+    cout << "  --stress_comm_scale <f>   Communication-time scale (default: 1.0)\n";
+    cout << "  --stress_family <name>    Scenario family label for logging (default: nominal)\n";
+    cout << "  --stress_severity <name>  Severity label for logging (default: nominal)\n";
     cout << "  --bench_eval <n>     Run evaluation benchmark with N iterations\n";
     cout << "  --init_only          Only run initialization and print Pini comparisons\n";
     cout << "  --synthetic          Run synthetic phi encoding/decoding self-check\n";
@@ -172,6 +196,71 @@ static void RunSynthetic(unsigned int seed)
     cout << "=== Synthetic 2N phi decode check ===" << endl;
     cout << "N=" << N << ", pop=" << pop << ", seed=" << seed << endl;
     cout << "Best synthetic fitness (1 round): " << best << endl;
+}
+
+struct ConvergenceRow {
+    uint64_t eval_count = 0;
+    double time_seconds = 0.0;
+    int generation = 0;
+    double best_fitness = 0.0;
+    double best_f1 = 0.0;
+    double best_f2 = 0.0;
+};
+
+struct WallClockController {
+    double budget_seconds = 0.0;
+    std::chrono::steady_clock::time_point start_time{};
+    bool started = false;
+
+    bool enabled() const { return budget_seconds > 0.0; }
+
+    void start() {
+        start_time = std::chrono::steady_clock::now();
+        started = true;
+    }
+
+    double elapsed_seconds() const {
+        if (!started) return 0.0;
+        return std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count();
+    }
+
+    bool can_start_generation() const {
+        return !enabled() || elapsed_seconds() < budget_seconds;
+    }
+};
+
+static void EnsureParentDir(const std::filesystem::path& out_path)
+{
+    const auto parent = out_path.parent_path();
+    if (parent.empty()) return;
+    std::error_code ec;
+    std::filesystem::create_directories(parent, ec);
+}
+
+static bool WriteConvergenceCsv(const std::filesystem::path& out_path, const std::vector<ConvergenceRow>& rows)
+{
+    EnsureParentDir(out_path);
+    std::ofstream out(out_path, std::ios::out | std::ios::trunc);
+    if (!out.is_open()) return false;
+    out << std::fixed << std::setprecision(10);
+    out << "eval_count,time_seconds,generation,best_fitness,best_f1,best_f2\n";
+    for (const auto& row : rows) {
+        out << row.eval_count << ','
+            << row.time_seconds << ','
+            << row.generation << ','
+            << row.best_fitness << ','
+            << row.best_f1 << ','
+            << row.best_f2 << '\n';
+    }
+    return true;
+}
+
+static ConvergenceRow MeasureBestRow(MultiMet& solver, const double* var, int generation, double elapsed_seconds)
+{
+    Workspace ws;
+    ws.resize(solver.Cnum, solver.CE_Tnum, solver.M_Jnum, solver.M_OPTnum, solver.Enum, solver.Dnum);
+    const double fitness = solver.EvalWithWorkspace(var, ws);
+    return {solver.GetEvalCount(), elapsed_seconds, generation, fitness, ws.last_makespan, ws.last_energy};
 }
 
 static bool LoadCGAInputFile(const std::string& file_path,
@@ -469,7 +558,9 @@ int main(int argc, char* argv[])
     bool migration_enabled = false;
     int nsubpop = 8;
     int log_every = 50;
+    double time_budget_seconds = 0.0;
     uint64_t max_evals = 0;
+    RDEConfig rde_config;
     bool init_only = false;
     bool synthetic_mode = false;
     bool stable_mode = false;
@@ -492,6 +583,7 @@ int main(int argc, char* argv[])
     int cchihh_diversity_log_every = 50;
     string reward_variance_log_path;
     string schedule_export_path;
+    string convergence_csv_path;
     int resample_gate = 15;
     double stable_reward_clip = 0.2;
     double eps0 = 0.2;
@@ -499,6 +591,9 @@ int main(int argc, char* argv[])
     double eps_k = 0.01;
     double lr0 = 0.05;
     double lr_k = 0.002;
+    Workspace::StressConfig stress_config;
+    string stress_family = "nominal";
+    string stress_severity = "nominal";
     int Cnum = DEFAULT_CNUM;
     int Enum = DEFAULT_ENUM;
     int Dnum = DEFAULT_DNUM;
@@ -603,8 +698,40 @@ int main(int argc, char* argv[])
         } else if (strcmp(argv[i], "--log_every") == 0 && i + 1 < argc) {
             log_every = atoi(argv[++i]);
             if (log_every < 1) log_every = 1;
+        } else if (strcmp(argv[i], "--time_budget_seconds") == 0 && i + 1 < argc) {
+            time_budget_seconds = atof(argv[++i]);
+            if (time_budget_seconds < 0.0) {
+                cerr << "Error: --time_budget_seconds must be >= 0" << endl;
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--convergence_csv") == 0 && i + 1 < argc) {
+            convergence_csv_path = argv[++i];
         } else if (strcmp(argv[i], "--max_evals") == 0 && i + 1 < argc) {
             max_evals = (uint64_t)atoll(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_eval_budget") == 0 && i + 1 < argc) {
+            rde_config.eval_budget = (uint64_t)atoll(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_np_max") == 0 && i + 1 < argc) {
+            rde_config.np_max = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_np_min") == 0 && i + 1 < argc) {
+            rde_config.np_min = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_h") == 0 && i + 1 < argc) {
+            rde_config.memory_size = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_archive_rate") == 0 && i + 1 < argc) {
+            rde_config.archive_rate = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_p_max") == 0 && i + 1 < argc) {
+            rde_config.p_max = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_rank_pressure") == 0 && i + 1 < argc) {
+            rde_config.rank_pressure = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_gamma1") == 0 && i + 1 < argc) {
+            rde_config.gamma1 = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_gamma2") == 0 && i + 1 < argc) {
+            rde_config.gamma2 = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_eta_gamma") == 0 && i + 1 < argc) {
+            rde_config.eta_gamma = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_init_mf") == 0 && i + 1 < argc) {
+            rde_config.init_memory_f = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--rde_init_mcr") == 0 && i + 1 < argc) {
+            rde_config.init_memory_cr = atof(argv[++i]);
         } else if (strcmp(argv[i], "--stable") == 0) {
             stable_mode = true;
         } else if (strcmp(argv[i], "--cchihh_no_migration") == 0) {
@@ -678,6 +805,34 @@ int main(int argc, char* argv[])
             lr0 = atof(argv[++i]);
         } else if (strcmp(argv[i], "--lr_k") == 0 && i + 1 < argc) {
             lr_k = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--stress_cloud_scale") == 0 && i + 1 < argc) {
+            stress_config.cloud_capacity_scale = atof(argv[++i]);
+            if (stress_config.cloud_capacity_scale <= 0.0) {
+                cerr << "Error: --stress_cloud_scale must be > 0" << endl;
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--stress_edge_scale") == 0 && i + 1 < argc) {
+            stress_config.edge_capacity_scale = atof(argv[++i]);
+            if (stress_config.edge_capacity_scale <= 0.0) {
+                cerr << "Error: --stress_edge_scale must be > 0" << endl;
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--stress_device_scale") == 0 && i + 1 < argc) {
+            stress_config.device_capacity_scale = atof(argv[++i]);
+            if (stress_config.device_capacity_scale <= 0.0) {
+                cerr << "Error: --stress_device_scale must be > 0" << endl;
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--stress_comm_scale") == 0 && i + 1 < argc) {
+            stress_config.communication_scale = atof(argv[++i]);
+            if (stress_config.communication_scale <= 0.0) {
+                cerr << "Error: --stress_comm_scale must be > 0" << endl;
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--stress_family") == 0 && i + 1 < argc) {
+            stress_family = argv[++i];
+        } else if (strcmp(argv[i], "--stress_severity") == 0 && i + 1 < argc) {
+            stress_severity = argv[++i];
         } else if (strcmp(argv[i], "--init_only") == 0) {
             init_only = true;
         } else if (strcmp(argv[i], "--synthetic") == 0) {
@@ -688,6 +843,21 @@ int main(int argc, char* argv[])
         }
     }
     
+    const bool is_rde_solver = (solver_name == "RDE" || solver_name == "rde");
+    if (is_rde_solver) {
+        const int rde_default_np = std::min(std::max(18 * (Tnum * 2 + Tnum * Mopt_num * 2), 36), 300);
+        if (!popsize_set) popsize = rde_default_np;
+        if (rde_config.np_max <= 0) rde_config.np_max = popsize;
+        if (max_evals == 0) max_evals = rde_config.eval_budget;
+    }
+
+    const bool is_cchihh_solver =
+        (solver_name == "CCHIHH" || solver_name == "CCHIHH_shared_bandit");
+    const bool use_shared_bandit_solver =
+        (solver_name == "CCHIHH_shared_bandit");
+    const bool cchihh_shared_bandit_enabled =
+        (shared_bandit || use_shared_bandit_solver);
+
     // Print configuration
     cout << "=== CED_Schedule Configuration ===" << endl;
     cout << "Data directory: " << data_dir << endl;
@@ -697,12 +867,36 @@ int main(int argc, char* argv[])
     cout << "Random seed: " << seed << endl;
     cout << "Pini (heuristic prob): " << pini << endl;
     cout << "Objective alpha: " << objective_alpha << endl;
+    cout << "Stress family: " << stress_family << endl;
+    cout << "Stress severity: " << stress_severity << endl;
+    cout << "Stress scales [cloud/edge/device/comm]: "
+         << stress_config.cloud_capacity_scale << "/"
+         << stress_config.edge_capacity_scale << "/"
+         << stress_config.device_capacity_scale << "/"
+         << stress_config.communication_scale << endl;
     cout << "Solver: " << solver_name << endl;
     cout << "Cnum/Enum/Dnum/Tnum/Mopt: " << Cnum << "/" << Enum << "/" << Dnum
          << "/" << Tnum << "/" << Mopt_num << endl;
     cout << "Migration: " << (migration_enabled ? "enabled" : "disabled") << endl;
     if (migration_enabled) cout << "  Subpopulations: " << nsubpop << endl;
-    if (solver_name == "CCHIHH" && stable_mode) {
+    if (time_budget_seconds > 0.0) {
+        cout << "Time budget: " << time_budget_seconds << " s" << endl;
+    }
+    if (!convergence_csv_path.empty()) {
+        cout << "Convergence CSV: " << convergence_csv_path << endl;
+    }
+    if (is_rde_solver) {
+        cout << "RDE eval budget: " << max_evals << endl;
+        cout << "RDE np_max/np_min/H: " << rde_config.np_max << "/" << rde_config.np_min
+             << "/" << rde_config.memory_size << endl;
+        cout << "RDE archive/p_max/rank_pressure: " << rde_config.archive_rate
+             << "/" << rde_config.p_max << "/" << rde_config.rank_pressure << endl;
+        cout << "RDE gamma1/gamma2/eta: " << rde_config.gamma1
+             << "/" << rde_config.gamma2 << "/" << rde_config.eta_gamma << endl;
+        cout << "RDE M_F/M_CR init: " << rde_config.init_memory_f
+             << "/" << rde_config.init_memory_cr << endl;
+    }
+    if (is_cchihh_solver && stable_mode) {
         cout << "Stable mode: enabled" << endl;
         cout << "  resample_gate=" << resample_gate
              << " reward_clip=" << stable_reward_clip
@@ -712,12 +906,12 @@ int main(int argc, char* argv[])
              << " lr0=" << lr0
              << " lr_k=" << lr_k << endl;
     }
-    if (solver_name == "CCHIHH") {
+    if (is_cchihh_solver) {
         if (cchihh_random_ops) cchihh_op_mode = "random";
         cout << "CCHIHH gate: " << (resample_gate > 0 ? "enabled" : "disabled") << endl;
         cout << "CCHIHH blocks: " << (cchihh_no_blocks ? "disabled" : "enabled") << endl;
         cout << "CCHIHH migration: " << (cchihh_migration ? "enabled" : "disabled") << endl;
-        cout << "CCHIHH shared bandit: " << (shared_bandit ? "enabled" : "disabled") << endl;
+        cout << "CCHIHH shared bandit: " << (cchihh_shared_bandit_enabled ? "enabled" : "disabled") << endl;
         cout << "CCHIHH op mode: " << cchihh_op_mode << endl;
         cout << "CCHIHH fixed ops: " << (cchihh_fixed_ops ? "enabled" : "disabled") << endl;
         if (!cchihh_op_stats_path.empty()) {
@@ -755,7 +949,7 @@ int main(int argc, char* argv[])
              << " arc_ratio=" << imoma_arc_ratio
              << " generations=" << max_generations << endl;
     }
-    if (solver_name == "CGA") {
+    if (solver_name == "LEGACY-CGA") {
         int cga_vm_default = (int)std::lround(DEFAULT_CGA_VM_RATIO * (double)Tnum);
         if (cga_vm_default < 1) cga_vm_default = 1;
         if (cga_vm_default > Enum) cga_vm_default = Enum;
@@ -790,6 +984,7 @@ int main(int argc, char* argv[])
             solver_a.SetSeed(s);
             solver_a.SetPini(1.0);
             solver_a.workspace.set_alpha(objective_alpha);
+            solver_a.workspace.set_stress_config(stress_config);
             solver_a.Initial();
             double best_a = solver_a.gbest_fit;
 
@@ -799,6 +994,7 @@ int main(int argc, char* argv[])
             solver_b.SetSeed(s);
             solver_b.SetPini(DEFAULT_PINI);
             solver_b.workspace.set_alpha(objective_alpha);
+            solver_b.workspace.set_stress_config(stress_config);
             solver_b.Initial();
             double best_b = solver_b.gbest_fit;
 
@@ -870,6 +1066,7 @@ int main(int argc, char* argv[])
         cga_solver.SetSeed(seed);
         cga_solver.SetPini(pini);
         cga_solver.workspace.set_alpha(objective_alpha);
+        cga_solver.workspace.set_stress_config(stress_config);
         cga_solver.Initial();
         cga_solver.ResetEvalCount();
 
@@ -937,7 +1134,18 @@ int main(int argc, char* argv[])
              << ", pc=0.75, pm(early/late)=0.03/0.01, cat=150, cat_apply_gen<=5000" << endl;
 
         clock_t cga_t1 = clock();
-        for (int gen = 1; gen <= cga_gen; ++gen) {
+        WallClockController wallclock{time_budget_seconds};
+        std::vector<ConvergenceRow> convergence_rows;
+        if (time_budget_seconds > 0.0 || !convergence_csv_path.empty()) {
+            wallclock.start();
+            convergence_rows.push_back(MeasureBestRow(cga_solver, gbest.var.data(), 0, 0.0));
+        }
+
+        int completed_generations = 0;
+        uint64_t next_log_eval = (uint64_t)log_every;
+        for (int gen = 1; gen <= cga_gen && (max_evals == 0 || cga_solver.GetEvalCount() < max_evals); ++gen) {
+            if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && !wallclock.can_start_generation()) break;
+            if (max_evals > 0 && cga_solver.GetEvalCount() + (uint64_t)cga_pop > max_evals) break;
             std::vector<CGA_MM_Ind> next;
             next.reserve(cga_pop);
             next.push_back(gbest);  // elitism
@@ -1017,20 +1225,37 @@ int main(int argc, char* argv[])
             }
 
             pop.swap(next);
-            if (log_every > 0 && (gen % log_every == 0 || gen == cga_gen)) {
-                cout << "Gen " << gen << ": best_fit = " << gbest.fit << endl;
+            completed_generations = gen;
+            if (time_budget_seconds > 0.0 || !convergence_csv_path.empty()) {
+                convergence_rows.push_back(
+                    MeasureBestRow(cga_solver, gbest.var.data(), completed_generations, wallclock.elapsed_seconds()));
+            }
+            if (max_evals > 0) {
+                while (cga_solver.GetEvalCount() >= next_log_eval) {
+                    cout << "Eval " << next_log_eval << ": best_fit = " << gbest.fit << endl;
+                    next_log_eval += (uint64_t)log_every;
+                }
+            } else if (log_every > 0 && (completed_generations % log_every == 0 || gen == cga_gen)) {
+                cout << "Gen " << completed_generations << ": best_fit = " << gbest.fit << endl;
             }
         }
         clock_t cga_t2 = clock();
 
         cout << "\n=== Final Results (CGA) ===" << endl;
         cout << "Solver: CGA" << endl;
-        cout << "Generations = " << cga_gen << endl;
+        cout << "Generations = " << completed_generations << endl;
         cout << "Best generation = " << best_gen << endl;
         cout << "Catastrophe triggers = " << cat_count << endl;
         cout << "Best fitness = " << gbest.fit << endl;
         cout << "The best solution = " << gbest.fit << endl;
         cout << "Time = " << (double)(cga_t2 - cga_t1) / CLOCKS_PER_SEC << " s" << endl;
+        if (!convergence_csv_path.empty()) {
+            if (WriteConvergenceCsv(convergence_csv_path, convergence_rows)) {
+                cout << "Convergence CSV written to " << convergence_csv_path << endl;
+            } else {
+                cout << "Convergence CSV failed for " << convergence_csv_path << endl;
+            }
+        }
         cout << "\nexit code 0" << endl;
         return 0;
     }
@@ -1044,8 +1269,9 @@ int main(int argc, char* argv[])
     solver.SetSeed(seed);
     solver.SetPini(pini);
     solver.workspace.set_alpha(objective_alpha);
-    solver.Initial();
+    solver.workspace.set_stress_config(stress_config);
     solver.ResetEvalCount();
+    solver.Initial();
     
     // Initialize migration if enabled (nG=nsubpop, nCircle=5, pElitist=0.8)
     if (migration_enabled) {
@@ -1088,7 +1314,7 @@ int main(int argc, char* argv[])
     clock_t t1 = clock();
     
     // CC-HIHH-UCB Solver (Cooperative Coevolution + Heterogeneous Island Hyper-Heuristic + UCB1)
-    if (solver_name == "CCHIHH") {
+    if (is_cchihh_solver) {
         cout << "\n=== Running CC-HIHH-UCB Solver ===" << endl;
         if (cchihh_random_ops) cchihh_op_mode = "random";
         
@@ -1098,7 +1324,7 @@ int main(int argc, char* argv[])
         cc_solver.SetUseBlocks(!cchihh_no_blocks);
         cc_solver.SetMigrationEnabled(cchihh_migration);
         cc_solver.SetUseBandit(cchihh_op_mode == "bandit");
-        cc_solver.SetSharedBanditMode(shared_bandit);
+        cc_solver.SetSharedBanditMode(cchihh_shared_bandit_enabled);
         if (cchihh_op_mode == "roundrobin") cc_solver.SetSelectionMode(MODE_ROUND_ROBIN);
         else if (cchihh_op_mode == "random") cc_solver.SetSelectionMode(MODE_RANDOM);
         else cc_solver.SetSelectionMode(MODE_CONTEXTUAL_BANDIT);
@@ -1134,23 +1360,35 @@ int main(int argc, char* argv[])
             cc_solver.SetLearningRateParams(lr0, lr_k);
         }
         cc_solver.Init();
-        solver.ResetEvalCount();
         uint64_t next_log_eval = (uint64_t)log_every;
-        
+        WallClockController wallclock{time_budget_seconds};
+        std::vector<ConvergenceRow> convergence_rows;
+        if (time_budget_seconds > 0.0 || !convergence_csv_path.empty()) {
+            wallclock.start();
+            convergence_rows.push_back(MeasureBestRow(solver, cc_solver.GetGlobalBest(), 0, 0.0));
+        }
+
+        int completed_generations = 0;
         for (int gen = 0; gen < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals); gen++) {
+            if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && !wallclock.can_start_generation()) break;
             cc_solver.RunGeneration(gen);
+            completed_generations = gen + 1;
             cc_solver.LogOpStatsIfNeeded(gen, gen == max_generations - 1);
             cc_solver.LogWeightsIfNeeded(gen, gen == max_generations - 1);
             cc_solver.LogGlobalStatsIfNeeded(gen, gen == max_generations - 1);
             cc_solver.LogDiversityIfNeeded(gen, gen == max_generations - 1);
+            if (time_budget_seconds > 0.0 || !convergence_csv_path.empty()) {
+                convergence_rows.push_back(
+                    MeasureBestRow(solver, cc_solver.GetGlobalBest(), completed_generations, wallclock.elapsed_seconds()));
+            }
             
             if (max_evals > 0) {
                 while (solver.GetEvalCount() >= next_log_eval) {
                     cout << "Eval " << next_log_eval << ": best_fit = " << cc_solver.GetGlobalBestFit() << endl;
                     next_log_eval += (uint64_t)log_every;
                 }
-            } else if ((gen + 1) % log_every == 0 || gen == max_generations - 1) {
-                cout << "Gen " << (gen + 1) << ": best_fit = " << cc_solver.GetGlobalBestFit() << endl;
+            } else if (completed_generations % log_every == 0 || gen == max_generations - 1) {
+                cout << "Gen " << completed_generations << ": best_fit = " << cc_solver.GetGlobalBestFit() << endl;
             }
         }
         
@@ -1159,7 +1397,7 @@ int main(int argc, char* argv[])
         cout << "\n=== Final Results (CC-HIHH-UCB) ===" << endl;
         cout << "Solver: " << solver_name << endl;
         cout << "Subpopulations per block: " << nsubpop << endl;
-        cout << "Generations = " << max_generations << endl;
+        cout << "Generations = " << completed_generations << endl;
         cout << "The best solution = " << cc_solver.GetGlobalBestFit() << endl;
         cout << "CCHIHH gate_blocked_total = " << cc_solver.GetGateBlockedTotal() << endl;
         cout << "CCHIHH gate_fallback_total = " << cc_solver.GetGateFallbackTotal() << endl;
@@ -1172,6 +1410,13 @@ int main(int argc, char* argv[])
                 cout << "Schedule export written to " << schedule_export_path << endl;
             } else {
                 cout << "Schedule export failed for " << schedule_export_path << endl;
+            }
+        }
+        if (!convergence_csv_path.empty()) {
+            if (WriteConvergenceCsv(convergence_csv_path, convergence_rows)) {
+                cout << "Convergence CSV written to " << convergence_csv_path << endl;
+            } else {
+                cout << "Convergence CSV failed for " << convergence_csv_path << endl;
             }
         }
 
@@ -1191,8 +1436,8 @@ int main(int argc, char* argv[])
         slhh.SetImmigrantRate(0.15);
         slhh.SetElitismCount(std::max(2, popsize / 50));
         slhh.SetLocalSearchTrials(100);
-        slhh.Init();
         solver.ResetEvalCount();
+        slhh.Init();
         uint64_t next_log_eval = (uint64_t)log_every;
 
         for (int gen = 0; gen < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals); gen++) {
@@ -1234,8 +1479,8 @@ int main(int argc, char* argv[])
         qphh.SetMappingCap(qphh_map_cap);
         qphh.SetNumThreads(qphh_threads);
         qphh.SetLog(false, false, log_every);
-        qphh.Init();
         solver.ResetEvalCount();
+        qphh.Init();
         uint64_t next_log_eval = (uint64_t)log_every;
 
         for (int gen = 0; gen < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals); gen++) {
@@ -1263,36 +1508,179 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    if (solver_name == "IMOMA") {
-        cout << "\n=== Running IMOMA Solver ===" << endl;
-        IMOMA_Solver imoma(&solver, popsize, imoma_arc_ratio, max_generations);
-        imoma.Init();
+    if (solver_name == "L-SRTDE" || solver_name == "CGA") {
+        const string solver_tag = (solver_name == "CGA") ? "CGA (L-SRTDE)" : "L-SRTDE";
+        cout << "\n=== Running " << solver_tag << " Solver ===" << endl;
         solver.ResetEvalCount();
+        L_SRTDE_Solver lsrtde(&solver, popsize, max_evals);
+        lsrtde.SetPopulationBounds(popsize, 4);
+        lsrtde.Init();
         uint64_t next_log_eval = (uint64_t)log_every;
+        WallClockController wallclock{time_budget_seconds};
+        std::vector<ConvergenceRow> convergence_rows;
+        if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && lsrtde.HasBest()) {
+            wallclock.start();
+            convergence_rows.push_back(MeasureBestRow(solver, lsrtde.GetBestVar().data(), 0, 0.0));
+        }
 
+        int completed_generations = 0;
         for (int gen = 0; gen < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals); gen++) {
-            imoma.RunGeneration(gen);
+            if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && !wallclock.can_start_generation()) break;
+            lsrtde.RunGeneration(gen);
+            completed_generations = gen + 1;
+            if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && lsrtde.HasBest()) {
+                convergence_rows.push_back(
+                    MeasureBestRow(solver, lsrtde.GetBestVar().data(), completed_generations, wallclock.elapsed_seconds()));
+            }
             if (max_evals > 0) {
                 while (solver.GetEvalCount() >= next_log_eval) {
                     cout << "Eval " << next_log_eval
-                         << ": best_fit = " << imoma.GetBestScalarFit()
-                         << " archive = " << imoma.GetArchiveSize() << endl;
+                         << ": best_fit = " << lsrtde.GetBestFit()
+                         << " pop = " << lsrtde.GetPopulationSize()
+                         << " archive = " << lsrtde.GetArchiveSize() << endl;
                     next_log_eval += (uint64_t)log_every;
                 }
-            } else if ((gen + 1) % log_every == 0 || gen == max_generations - 1) {
-                cout << "Gen " << (gen + 1)
-                     << ": best_fit = " << imoma.GetBestScalarFit()
-                     << " archive = " << imoma.GetArchiveSize() << endl;
+            } else if (completed_generations % log_every == 0 || gen == max_generations - 1) {
+                cout << "Gen " << completed_generations
+                     << ": best_fit = " << lsrtde.GetBestFit()
+                     << " pop = " << lsrtde.GetPopulationSize()
+                     << " archive = " << lsrtde.GetArchiveSize() << endl;
             }
         }
 
         clock_t t2 = clock();
-        cout << "\n=== Final Results (IMOMA) ===" << endl;
-        cout << "Solver: " << solver_name << endl;
-        cout << "Generation = " << max_generations << endl;
-        cout << "Archive size = " << imoma.GetArchiveSize() << endl;
-        cout << "The best scalar solution = " << imoma.GetBestScalarFit() << endl;
+        cout << "\n=== Final Results (" << solver_tag << ") ===" << endl;
+        cout << "Solver: " << ((solver_name == "CGA") ? "CGA" : "L-SRTDE") << endl;
+        cout << "Generations = " << completed_generations << endl;
+        cout << "Population size = " << lsrtde.GetPopulationSize() << endl;
+        cout << "Archive size = " << lsrtde.GetArchiveSize() << endl;
+        cout << "The best solution = " << lsrtde.GetBestFit() << endl;
         cout << "Time = " << (double)(t2 - t1) / CLOCKS_PER_SEC << " s" << endl;
+        if (!convergence_csv_path.empty()) {
+            if (WriteConvergenceCsv(convergence_csv_path, convergence_rows)) {
+                cout << "Convergence CSV written to " << convergence_csv_path << endl;
+            } else {
+                cout << "Convergence CSV failed for " << convergence_csv_path << endl;
+            }
+        }
+#ifdef PROFILE_EVAL
+        PrintEvalProfile(solver);
+#endif
+        return 0;
+    }
+
+    if (solver_name == "NL-SHADE-LBC" || solver_name == "IMOMA") {
+        const string solver_tag = (solver_name == "IMOMA") ? "IMOMA (NL-SHADE-LBC)" : "NL-SHADE-LBC";
+        cout << "\n=== Running " << solver_tag << " Solver ===" << endl;
+        solver.ResetEvalCount();
+        NL_SHADE_LBC_Solver nlshade(&solver, popsize, max_evals);
+        nlshade.SetPopulationBounds(popsize, 4);
+        nlshade.Init();
+        uint64_t next_log_eval = (uint64_t)log_every;
+        WallClockController wallclock{time_budget_seconds};
+        std::vector<ConvergenceRow> convergence_rows;
+        if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && nlshade.HasBest()) {
+            wallclock.start();
+            convergence_rows.push_back(MeasureBestRow(solver, nlshade.GetBestVar().data(), 0, 0.0));
+        }
+
+        int completed_generations = 0;
+        for (int gen = 0; gen < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals); gen++) {
+            if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && !wallclock.can_start_generation()) break;
+            nlshade.RunGeneration(gen);
+            completed_generations = gen + 1;
+            if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && nlshade.HasBest()) {
+                convergence_rows.push_back(
+                    MeasureBestRow(solver, nlshade.GetBestVar().data(), completed_generations, wallclock.elapsed_seconds()));
+            }
+            if (max_evals > 0) {
+                while (solver.GetEvalCount() >= next_log_eval) {
+                    cout << "Eval " << next_log_eval
+                         << ": best_fit = " << nlshade.GetBestFit()
+                         << " pop = " << nlshade.GetPopulationSize()
+                         << " archive = " << nlshade.GetArchiveSize() << endl;
+                    next_log_eval += (uint64_t)log_every;
+                }
+            } else if (completed_generations % log_every == 0 || gen == max_generations - 1) {
+                cout << "Gen " << completed_generations
+                     << ": best_fit = " << nlshade.GetBestFit()
+                     << " pop = " << nlshade.GetPopulationSize()
+                     << " archive = " << nlshade.GetArchiveSize() << endl;
+            }
+        }
+
+        clock_t t2 = clock();
+        cout << "\n=== Final Results (" << solver_tag << ") ===" << endl;
+        cout << "Solver: " << ((solver_name == "IMOMA") ? "IMOMA" : "NL-SHADE-LBC") << endl;
+        cout << "Generation = " << completed_generations << endl;
+        cout << "Population size = " << nlshade.GetPopulationSize() << endl;
+        cout << "Archive size = " << nlshade.GetArchiveSize() << endl;
+        cout << "The best scalar solution = " << nlshade.GetBestFit() << endl;
+        cout << "Time = " << (double)(t2 - t1) / CLOCKS_PER_SEC << " s" << endl;
+        if (!convergence_csv_path.empty()) {
+            if (WriteConvergenceCsv(convergence_csv_path, convergence_rows)) {
+                cout << "Convergence CSV written to " << convergence_csv_path << endl;
+            } else {
+                cout << "Convergence CSV failed for " << convergence_csv_path << endl;
+            }
+        }
+#ifdef PROFILE_EVAL
+        PrintEvalProfile(solver);
+#endif
+        return 0;
+    }
+
+    if (is_rde_solver) {
+        cout << "\n=== Running RDE Solver ===" << endl;
+        solver.ResetEvalCount();
+        rde_config.eval_budget = (max_evals > 0) ? max_evals : rde_config.eval_budget;
+        SolverRDE rde(&solver, rde_config);
+        rde.Init();
+        uint64_t next_log_eval = (uint64_t)log_every;
+        WallClockController wallclock{time_budget_seconds};
+        std::vector<ConvergenceRow> convergence_rows;
+        if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && rde.HasBest()) {
+            wallclock.start();
+            convergence_rows.push_back(MeasureBestRow(solver, rde.GetBestVar().data(), 0, 0.0));
+        }
+
+        int completed_generations = 0;
+        for (int gen = 0; gen < max_generations && solver.GetEvalCount() < rde.GetEvalBudget(); ++gen) {
+            if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && !wallclock.can_start_generation()) break;
+            rde.RunGeneration(gen);
+            completed_generations = gen + 1;
+            if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && rde.HasBest()) {
+                convergence_rows.push_back(
+                    MeasureBestRow(solver, rde.GetBestVar().data(), completed_generations, wallclock.elapsed_seconds()));
+            }
+            while (solver.GetEvalCount() >= next_log_eval && next_log_eval <= rde.GetEvalBudget()) {
+                cout << "Eval " << next_log_eval
+                     << ": best_fit = " << rde.GetBestFit()
+                     << " pop = " << rde.GetPopulationSize()
+                     << " archive = " << rde.GetArchiveSize()
+                     << " gamma = [" << rde.GetGamma1() << ", " << rde.GetGamma2() << "]" << endl;
+                next_log_eval += (uint64_t)log_every;
+            }
+        }
+
+        clock_t t2 = clock();
+        cout << "\n=== Final Results (RDE) ===" << endl;
+        cout << "Solver: rde" << endl;
+        cout << "Generations = " << completed_generations << endl;
+        cout << "Evaluation budget = " << rde.GetEvalBudget() << endl;
+        cout << "Evaluations used = " << solver.GetEvalCount() << endl;
+        cout << "Population size = " << rde.GetPopulationSize() << endl;
+        cout << "Archive size = " << rde.GetArchiveSize() << endl;
+        cout << "Strategy share gamma = [" << rde.GetGamma1() << ", " << rde.GetGamma2() << "]" << endl;
+        cout << "The best solution = " << rde.GetBestFit() << endl;
+        cout << "Time = " << (double)(t2 - t1) / CLOCKS_PER_SEC << " s" << endl;
+        if (!convergence_csv_path.empty()) {
+            if (WriteConvergenceCsv(convergence_csv_path, convergence_rows)) {
+                cout << "Convergence CSV written to " << convergence_csv_path << endl;
+            } else {
+                cout << "Convergence CSV failed for " << convergence_csv_path << endl;
+            }
+        }
 #ifdef PROFILE_EVAL
         PrintEvalProfile(solver);
 #endif
@@ -1313,20 +1701,33 @@ int main(int argc, char* argv[])
         dsac_de.SetBufferSize(40000);
         dsac_de.SetBatchSize(512);
         dsac_de.SetTrainingEnabled(true);
-        dsac_de.Init();
         solver.ResetEvalCount();
+        dsac_de.Init();
         uint64_t next_log_eval = (uint64_t)log_every;
+        WallClockController wallclock{time_budget_seconds};
+        std::vector<ConvergenceRow> convergence_rows;
+        if (time_budget_seconds > 0.0 || !convergence_csv_path.empty()) {
+            wallclock.start();
+            convergence_rows.push_back(MeasureBestRow(solver, dsac_de.GetGlobalBest(), 0, 0.0));
+        }
 
+        int completed_generations = 0;
         for (int gen = 0; gen < max_generations && (max_evals == 0 || solver.GetEvalCount() < max_evals); gen++) {
+            if ((time_budget_seconds > 0.0 || !convergence_csv_path.empty()) && !wallclock.can_start_generation()) break;
             dsac_de.RunGeneration(gen);
+            completed_generations = gen + 1;
+            if (time_budget_seconds > 0.0 || !convergence_csv_path.empty()) {
+                convergence_rows.push_back(
+                    MeasureBestRow(solver, dsac_de.GetGlobalBest(), completed_generations, wallclock.elapsed_seconds()));
+            }
             if (max_evals > 0) {
                 while (solver.GetEvalCount() >= next_log_eval) {
                     cout << "Eval " << next_log_eval
                          << ": best_fit = " << dsac_de.GetGlobalBestFit() << endl;
                     next_log_eval += (uint64_t)log_every;
                 }
-            } else if ((gen + 1) % log_every == 0 || gen == max_generations - 1) {
-                cout << "Gen " << (gen + 1)
+            } else if (completed_generations % log_every == 0 || gen == max_generations - 1) {
+                cout << "Gen " << completed_generations
                      << ": best_fit = " << dsac_de.GetGlobalBestFit() << endl;
             }
         }
@@ -1334,9 +1735,16 @@ int main(int argc, char* argv[])
         clock_t t2 = clock();
         cout << "\n=== Final Results (DSAC-DE) ===" << endl;
         cout << "Solver: " << solver_name << endl;
-        cout << "Generation = " << max_generations << endl;
+        cout << "Generation = " << completed_generations << endl;
         cout << "The best solution = " << dsac_de.GetGlobalBestFit() << endl;
         cout << "Time = " << (double)(t2 - t1) / CLOCKS_PER_SEC << " s" << endl;
+        if (!convergence_csv_path.empty()) {
+            if (WriteConvergenceCsv(convergence_csv_path, convergence_rows)) {
+                cout << "Convergence CSV written to " << convergence_csv_path << endl;
+            } else {
+                cout << "Convergence CSV failed for " << convergence_csv_path << endl;
+            }
+        }
 
         // Print operator statistics
         cout << "\nOperator Statistics:" << endl;

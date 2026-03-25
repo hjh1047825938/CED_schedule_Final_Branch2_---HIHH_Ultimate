@@ -14,6 +14,20 @@
  *        then pass to CED_Schedule_Fast() for each evaluation.
  */
 struct Workspace {
+    struct StressConfig {
+        double cloud_capacity_scale = 1.0;
+        double edge_capacity_scale = 1.0;
+        double device_capacity_scale = 1.0;
+        double communication_scale = 1.0;
+
+        bool is_nominal() const {
+            return cloud_capacity_scale == 1.0 &&
+                   edge_capacity_scale == 1.0 &&
+                   device_capacity_scale == 1.0 &&
+                   communication_scale == 1.0;
+        }
+    };
+
     // Normalization and weighting parameters for weighted objective
     double f1_ref = 1.0;   // Reference makespan
     double f2_ref = 1.0;   // Reference energy
@@ -21,6 +35,7 @@ struct Workspace {
     double last_makespan = 0.0;
     double last_energy = 0.0;
     double last_fitness = 0.0;
+    StressConfig stress;
 
     // Decision variable buffers
     std::vector<bool> ce_sele;      // Cloud/Edge selection [CE_Tnum]
@@ -184,6 +199,10 @@ struct Workspace {
 
     void set_alpha(double weight) {
         alpha = std::clamp(weight, 0.0, 1.0);
+    }
+
+    void set_stress_config(const StressConfig& cfg) {
+        stress = cfg;
     }
 };
 

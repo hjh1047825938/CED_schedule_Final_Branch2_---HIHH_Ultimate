@@ -28,6 +28,12 @@
     <ClCompile Include="C:\Users\Hu\Desktop\CED_schedule_Final - 副本\src\DSAC_DE.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\Hu\Desktop\CED_schedule_Final - 副本\src\L_SRTDE.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Hu\Desktop\CED_schedule_Final - 副本\src\NL_SHADE_LBC.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\Hu\Desktop\CED_schedule_Final - 副本\include\Multimethod.h">
@@ -61,6 +67,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\Hu\Desktop\CED_schedule_Final - 副本\include\DSAC_DE.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Hu\Desktop\CED_schedule_Final - 副本\include\L_SRTDE.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Hu\Desktop\CED_schedule_Final - 副本\include\NL_SHADE_LBC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

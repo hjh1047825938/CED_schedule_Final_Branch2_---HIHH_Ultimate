@@ -14,6 +14,9 @@ set(SOURCES
     src/IMOMA.cpp
     src/CGA.cpp
     src/DSAC_DE.cpp
+    src/L_SRTDE.cpp
+    src/NL_SHADE_LBC.cpp
+    src/solver_rde.cpp
 )
 
 set(CORE_SOURCES
@@ -33,6 +36,9 @@ set(HEADERS
     include/CGA.h
     include/Rng.h
     include/DSAC_DE.h
+    include/L_SRTDE.h
+    include/NL_SHADE_LBC.h
+    include/solver_rde.h
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})

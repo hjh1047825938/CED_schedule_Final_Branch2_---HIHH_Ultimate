@@ -1,0 +1,4 @@
+Figure 24 excludes PPO per user instruction.
+PPO alpha=0.2/0.8 traces are not present in the repository, so PPO is omitted from alpha sensitivity.
+Figures 25 and 26 use T500 degradation data.
+Missing degradation data for: PPO.

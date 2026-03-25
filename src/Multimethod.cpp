@@ -96,6 +96,7 @@ MultiMet::MultiMet(int psize, int nn, double lb, double ub, int c_num, int e_num
         ws.f1_ref = workspace.f1_ref;
         ws.f2_ref = workspace.f2_ref;
         ws.alpha = workspace.alpha;
+        ws.stress = workspace.stress;
     }
 
     sel_rfitness.resize(Popsize);
@@ -305,6 +306,7 @@ void MultiMet::ComputeReferenceValues()
         ws.f1_ref = workspace.f1_ref;
         ws.f2_ref = workspace.f2_ref;
         ws.alpha = workspace.alpha;
+        ws.stress = workspace.stress;
     }
 
     cout << "[Normalization] f1_ref (makespan) = " << workspace.f1_ref << endl;
@@ -314,6 +316,14 @@ void MultiMet::ComputeReferenceValues()
 
 void MultiMet::Initial()
 {
+    for (int t = 0; t < ws_pool.size(); ++t) {
+        Workspace& ws = ws_pool.get(t);
+        ws.f1_ref = workspace.f1_ref;
+        ws.f2_ref = workspace.f2_ref;
+        ws.alpha = workspace.alpha;
+        ws.stress = workspace.stress;
+    }
+
     std::mt19937 init_rng(static_cast<uint32_t>(seed));
     auto rand01 = [&]() -> double {
         std::uniform_real_distribution<double> dist(0.0, 1.0);
@@ -926,6 +936,7 @@ double MultiMet::EvalWithWorkspace(const double* var, Workspace& ws)
     ws.f1_ref = workspace.f1_ref;
     ws.f2_ref = workspace.f2_ref;
     ws.alpha = workspace.alpha;
+    ws.stress = workspace.stress;
     return EvaluFunc(var, ws, Cnum, Enum, Dnum, CE_Tnum, M_Jnum, M_OPTnum, CETask_Property, MTask_Time, EtoD_Distance, DtoD_Distance, AvailDeviceList, EnergyList, CloudDevices, EdgeDevices, ws.cloud_load.data(), ws.edge_load.data(), DeviceLoad, CETask_coDevice, ws.edge_device_comm.data(), ws.st_rows.data(), ws.et_rows.data(), ws.ce_st.data(), ws.ce_et.data());
 }
 

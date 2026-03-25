@@ -1,0 +1,4 @@
+﻿scale,source_dir,dest_dir,file_count,cv_note
+T100,..\rerun_full\alpha0.5\T100,cchihh_alpha0p5\\00_main\\T100,50,rerun_full canonical alpha0.5 main
+T200,..\rerun_full\alpha0.5\T200,cchihh_alpha0p5\\00_main\\T200,50,rerun_full canonical alpha0.5 main
+T500,..\cchihh\T500\alpha0.5,cchihh_alpha0p5\\00_main\\T500,50,rewritten/smoothed alpha0.5 main from cchihh/T500/alpha0.5

@@ -26,11 +26,25 @@ struct PPOConfig {
     double value_coef = 0.5;
     double max_grad_norm = 0.5;
     double beta_min = 1e-3;
+    double time_budget_seconds = 0.0;
+};
+
+struct PPOCurvePoint {
+    double time_seconds = 0.0;
+    int generation = 0;
+    double best_fitness = 0.0;
+    double best_f1 = 0.0;
+    double best_f2 = 0.0;
 };
 
 struct PPORunResult {
     std::vector<double> best_curve;
+    std::vector<PPOCurvePoint> curve_points;
+    std::vector<double> best_action;
     double final_best = 0.0;
+    double final_makespan = 0.0;
+    double final_energy = 0.0;
+    int completed_episodes = 0;
 };
 
 class PPOScheduler {
@@ -115,6 +129,7 @@ private:
 
     std::vector<Transition> buffer_;
     RunningStats stats_{};
+    double progress_ratio_ = 0.0;
 
     void InitNetwork();
     void InitLayer(Layer& layer, int in_dim, int out_dim);

@@ -5,6 +5,7 @@
 #include "Rng.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -139,7 +140,10 @@ std::array<double, 7> PPOScheduler::BuildState(int episode_idx) const {
     const double mean_fit = (stats_.count > 0) ? (stats_.sum_fit / (double)stats_.count) : stats_.best_fit;
     const double base = std::max(std::fabs(stats_.best_fit), 1.0);
     const double improve = stats_.last_best_improve;
-    const double progress = (cfg_.episodes > 1) ? (double)episode_idx / (double)(cfg_.episodes - 1) : 1.0;
+    double progress = (cfg_.episodes > 1) ? (double)episode_idx / (double)(cfg_.episodes - 1) : 1.0;
+    if (cfg_.time_budget_seconds > 0.0) {
+        progress = progress_ratio_;
+    }
     const double success_rate = stats_.success_window.empty()
                                     ? 0.0
                                     : (double)stats_.success_sum / (double)stats_.success_window.size();
@@ -473,6 +477,7 @@ void PPOScheduler::UpdatePPO() {
 PPORunResult PPOScheduler::Train() {
     PPORunResult result;
     result.best_curve.reserve((size_t)cfg_.episodes);
+    result.best_action.assign((size_t)std::max(0, action_dim_), 0.5);
 
     if (!solver_ || action_dim_ <= 0) {
         return result;
@@ -485,10 +490,16 @@ PPORunResult PPOScheduler::Train() {
     stats_.best_fit = std::numeric_limits<double>::infinity();
     stats_.last_reward = 0.0;
     stats_.last_best_improve = 0.0;
+    progress_ratio_ = 0.0;
     if (solver_->gbest && std::isfinite(solver_->gbest_fit)) {
-        stats_.best_fit = solver_->gbest_fit;
+        Workspace best_ws;
+        best_ws.resize(solver_->Cnum, solver_->CE_Tnum, solver_->M_Jnum, solver_->M_OPTnum, solver_->Enum, solver_->Dnum);
+        stats_.best_fit = solver_->EvalWithWorkspace(solver_->gbest, best_ws);
+        result.final_makespan = best_ws.last_makespan;
+        result.final_energy = best_ws.last_energy;
         for (int d = 0; d < action_dim_; ++d) {
             const double x = std::clamp(solver_->gbest[d], 0.0, 1.0);
+            result.best_action[(size_t)d] = x;
             stats_.best_action[(size_t)d] = x;
             stats_.last_action[(size_t)d] = x;
             stats_.prev_action[(size_t)d] = x;
@@ -498,7 +509,15 @@ PPORunResult PPOScheduler::Train() {
         stats_.count = 1;
     }
 
+    const auto t0 = std::chrono::steady_clock::now();
+    result.curve_points.push_back({0.0, 0, stats_.best_fit, result.final_makespan, result.final_energy});
+
     for (int ep = 0; ep < cfg_.episodes; ++ep) {
+        if (cfg_.time_budget_seconds > 0.0) {
+            const double elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+            if (elapsed >= cfg_.time_budget_seconds) break;
+            progress_ratio_ = std::clamp(elapsed / cfg_.time_budget_seconds, 0.0, 1.0);
+        }
         const auto state = BuildState(ep);
 
         ForwardCache actor_cache;
@@ -529,6 +548,10 @@ PPORunResult PPOScheduler::Train() {
 
         if (fitness < stats_.best_fit) {
             stats_.best_fit = fitness;
+            result.final_makespan = solver_->workspace.last_makespan;
+            result.final_energy = solver_->workspace.last_energy;
+            result.best_action = tr.action;
+            stats_.best_action = tr.action;
             stats_.last_best_improve = (std::isfinite(prev_best) && std::fabs(prev_best) > kEps)
                                            ? (prev_best - fitness) / std::fabs(prev_best)
                                            : 0.0;
@@ -553,6 +576,13 @@ PPORunResult PPOScheduler::Train() {
 
         buffer_.push_back(std::move(tr));
         result.best_curve.push_back(stats_.best_fit);
+        result.completed_episodes = ep + 1;
+        result.curve_points.push_back(
+            {std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count(),
+             ep + 1,
+             stats_.best_fit,
+             result.final_makespan,
+             result.final_energy});
 
         if ((int)buffer_.size() >= cfg_.update_every) {
             UpdatePPO();

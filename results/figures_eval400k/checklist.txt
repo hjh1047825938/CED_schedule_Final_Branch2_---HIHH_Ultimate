@@ -1,0 +1,21 @@
+OK fig08_cc_ablation.pdf - CCHIHH-full vs noCC, 3 scales
+OK fig09_hi_ablation.pdf - CCHIHH-full vs noHI, 3 scales
+OK fig10_op_selection_T500.pdf - Operator selection probability
+OK fig11_early_late_bar_T500.pdf - Early/late bar chart
+OK fig12_weight_heatmap_T500.pdf - Weight evolution heatmap
+OK fig13_migration_ablation.pdf - CCHIHH-full vs noMig
+OK fig14_gate_ablation.pdf - CCHIHH-full vs noGate
+OK fig15_tgate_sensitivity.pdf - Tgate sensitivity [available local values: 5,10,15,20,25]
+OK fig16_component_heatmap.pdf - 5x3 contribution heatmap
+OK fig17_alpha_sensitivity.pdf - alpha sensitivity 3x3 grid
+OK fig18_baseline_boxplot.pdf - 5-algorithm box plots
+OK fig19_conv_cga_imoma.pdf - Convergence vs CGA/IMOMA
+OK fig20_conv_ppo.pdf - Convergence vs PPO
+OK fig21_conv_dsac.pdf - Convergence vs DSAC-DE
+OK fig22_boxplot_no_ppo.pdf - 4-algorithm box plots
+OK fig23_makespan_energy_scatter.pdf - Makespan-energy scatter [from results/wallclock]
+OK fig24_radar.pdf - Multi-dimensional radar
+OK fig25_runtime_bar.pdf - Wall-clock time
+OK fig26_cd_diagram.pdf - Critical Difference diagram [PPO alpha=0.2/0.8 from results/wallclock]
+OK fig27_gantt_T200.pdf - Gantt chart [from results/rerun_schedule]
+OK updated_tables.txt - All table values (LaTeX)
